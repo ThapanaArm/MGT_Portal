@@ -1,0 +1,6 @@
+@MGT.Portal.Api_HostAddress = http://localhost:5038
+
+GET {{MGT.Portal.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

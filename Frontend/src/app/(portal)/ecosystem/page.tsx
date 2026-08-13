@@ -1,0 +1,139 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { api } from "@/lib/api";
+import { EmptyRow, ScopeTag, TypeChip } from "@/components/ui";
+import { AppAvatar } from "@/components/MediaPickers";
+import type { AppSummaryDto, CategoryDto } from "@/lib/types";
+
+export default function EcosystemPage() {
+  const router = useRouter();
+  const [apps, setApps] = useState<AppSummaryDto[]>([]);
+  const [categories, setCategories] = useState<CategoryDto[]>([]);
+  const [query, setQuery] = useState("");
+  const [cat, setCat] = useState("all");
+  const [sort, setSort] = useState<"updated" | "name">("updated");
+
+  useEffect(() => {
+    api.get<AppSummaryDto[]>("/api/applications?status=active").then(setApps);
+    api.get<CategoryDto[]>("/api/categories").then(setCategories);
+  }, []);
+
+  const categoryName = (key: string) => categories.find((c) => c.key === key)?.name ?? key;
+
+  const highlight = useMemo(() => {
+    const officials = apps.filter((a) => a.type === "official");
+    const rest = apps.filter((a) => a.type !== "official");
+    return [...officials, ...rest].slice(0, 4);
+  }, [apps]);
+
+  const filtered = useMemo(() => {
+    let list = apps.filter((a) => cat === "all" || a.products.includes(cat));
+    if (query) list = list.filter((a) => (a.name + " " + a.description).toLowerCase().includes(query.toLowerCase()));
+    return list.slice().sort((x, y) => (sort === "name" ? x.name.localeCompare(y.name) : y.updatedAt.localeCompare(x.updatedAt)));
+  }, [apps, cat, query, sort]);
+
+  return (
+    <div>
+      <div
+        className="relative rounded-[14px] overflow-hidden p-9 mb-7 text-[#F3FBF9]"
+        style={{ background: "linear-gradient(135deg, var(--brand-strong), var(--brand) 55%, var(--brand-strong))" }}
+      >
+        <div className="absolute left-0 right-0 bottom-0 h-1" style={{ background: "linear-gradient(90deg, var(--brand-strong), var(--amber))" }} />
+        <div className="relative max-w-[620px]">
+          <h1 className="text-[30px] font-bold">MGT Ecosystem</h1>
+          <p className="text-[14px] opacity-90 mt-2 leading-relaxed">
+            สำรวจ Application ที่พัฒนาโดยทีมงาน Megachem บน API Portal ของบริษัท ทุกรายการผ่านการตรวจสอบจากคณะกรรมการแล้ว
+          </p>
+          <div className="flex gap-2.5 flex-wrap mt-4.5">
+            <button onClick={() => router.push("/my-apps?new=1")} className="bg-brand text-white rounded-lg px-4 py-2.5 text-[13.5px] font-semibold">
+              ลงทะเบียน Application ของคุณ
+            </button>
+            <button onClick={() => router.push("/getting-started")} className="bg-white/10 border border-white/28 text-white rounded-lg px-4 py-2.5 text-[13.5px] font-semibold hover:bg-white/18">
+              ขอสิทธิ์การใช้งาน API
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {highlight.length > 0 && (
+        <div className="mb-7">
+          <h2 className="text-[16px] font-bold mb-3.5">แนะนำ (Highlight)</h2>
+          <div className="flex gap-3.5 overflow-x-auto pb-1.5 scrollbar-thin">
+            {highlight.map((a) => (
+              <div key={a.id} onClick={() => router.push(`/ecosystem/${a.id}`)} className="flex-shrink-0 w-[250px] border border-line rounded-[14px] bg-surface overflow-hidden cursor-pointer hover:border-teal">
+                <div className="h-24 flex items-center justify-center text-4xl p-3" style={{ background: "linear-gradient(135deg, var(--teal-soft), var(--amber-soft))" }}>
+                  {a.image ? (
+                    <div className="h-full aspect-square bg-white rounded-lg p-2 flex items-center justify-center">
+                      <img src={a.image} className="max-w-full max-h-full object-contain" alt="" />
+                    </div>
+                  ) : (
+                    a.icon
+                  )}
+                </div>
+                <div className="p-3.5">
+                  <b className="block text-[13.5px]">{a.name}</b>
+                  <span className="block text-[11.5px] text-ink-dim mt-1">{categoryName(a.products[0])} · <TypeChip type={a.type} /></span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center gap-2.5 flex-wrap mb-3">
+        <h2 className="text-[16px] font-bold flex-1">สำรวจ Application</h2>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="ค้นหา Application..."
+          className="w-[260px] max-w-full border border-line-strong bg-surface rounded-lg px-3 py-2 text-[13px]"
+        />
+        <select value={sort} onChange={(e) => setSort(e.target.value as "updated" | "name")} className="border border-line-strong bg-paper rounded-lg px-2.5 py-2 text-[12.5px]">
+          <option value="updated">อัปเดตล่าสุด</option>
+          <option value="name">ชื่อ (A-Z)</option>
+        </select>
+      </div>
+
+      <div className="flex gap-1.5 flex-wrap mb-4">
+        <button onClick={() => setCat("all")} className={`border rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold ${cat === "all" ? "bg-teal-soft border-teal text-teal-strong" : "border-line-strong bg-surface text-ink-dim hover:bg-surface-2"}`}>
+          ทั้งหมด
+        </button>
+        {categories.map((c) => (
+          <button
+            key={c.key}
+            onClick={() => setCat(c.key)}
+            className={`border rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold ${cat === c.key ? "bg-teal-soft border-teal text-teal-strong" : "border-line-strong bg-surface text-ink-dim hover:bg-surface-2"}`}
+          >
+            {c.name}
+          </button>
+        ))}
+      </div>
+
+      {filtered.length ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+          {filtered.map((a) => (
+            <div key={a.id} onClick={() => router.push(`/ecosystem/${a.id}`)} className="border border-line rounded-[10px] bg-surface p-4 cursor-pointer hover:border-teal hover:bg-surface-2 flex flex-col gap-2.5">
+              <div className="flex items-center gap-2.5">
+                <AppAvatar image={a.image} icon={a.icon} />
+                <div>
+                  <b className="block text-[13.5px]">{a.name}</b>
+                  <TypeChip type={a.type} />
+                </div>
+              </div>
+              <p className="text-[12px] text-ink-dim leading-relaxed line-clamp-3 flex-1">{a.description}</p>
+              <div className="flex gap-1 flex-wrap">
+                {a.products.map((p) => (
+                  <ScopeTag key={p}>{categoryName(p)}</ScopeTag>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <EmptyRow>ไม่พบ Application ที่ตรงกับเงื่อนไข</EmptyRow>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,17 @@
+## .NET build artifacts
+bin/
+obj/
+*.user
+
+## Secrets — connection strings and JWT signing key live in `dotnet user-secrets`,
+## never in these files. Keep this rule even if one shows up empty/placeholder.
+**/appsettings.Development.json
+**/appsettings.*.local.json
+**/secrets.json
+*.pfx
+
+## IDE / OS
+.vs/
+.vscode/
+*.swp
+.DS_Store
