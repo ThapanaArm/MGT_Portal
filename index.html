@@ -1,0 +1,1176 @@
+<title>Megachem API Portal — Prototype</title>
+<style>
+  :root{
+    --paper:#F5F6F4; --surface:#FFFFFF; --surface-2:#EDF0EE; --surface-3:#E4E8E5;
+    --ink:#12181A; --ink-dim:#4B5457; --ink-faint:#7C8688;
+    --line:rgba(18,24,26,.10); --line-strong:rgba(18,24,26,.20);
+    --teal:#0E6E66; --teal-strong:#0A544E; --teal-soft:#E3F1EE;
+    --amber:#B96A24; --amber-soft:#F7E9DA;
+    --get:#0E6E66; --get-soft:#E3F1EE;
+    --post:#2F7D46; --post-soft:#E4F2E7;
+    --put:#B96A24; --put-soft:#F7E9DA;
+    --patch:#6F52B5; --patch-soft:#ECE7F7;
+    --delete:#B2413A; --delete-soft:#F6E4E2;
+    --danger:#B2413A; --danger-soft:#F6E4E2;
+    --shadow:0 1px 2px rgba(18,24,26,.06),0 10px 28px -14px rgba(18,24,26,.22);
+    --radius:10px; --radius-lg:14px;
+    --mono:'Cascadia Code','Consolas','SFMono-Regular',ui-monospace,Menlo,monospace;
+    --ui:'Segoe UI','Leelawadee UI',system-ui,-apple-system,'Noto Sans Thai',sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#0F1517; --surface:#161F22; --surface-2:#1C262A; --surface-3:#232E32;
+      --ink:#E7ECEB; --ink-dim:#9CAAAC; --ink-faint:#6E7B7D;
+      --line:rgba(231,236,235,.10); --line-strong:rgba(231,236,235,.20);
+      --teal:#4FBEB1; --teal-strong:#79D2C7; --teal-soft:rgba(79,190,177,.14);
+      --amber:#E0954B; --amber-soft:rgba(224,149,75,.14);
+      --get:#4FBEB1; --get-soft:rgba(79,190,177,.14);
+      --post:#68C486; --post-soft:rgba(104,196,134,.14);
+      --put:#E0954B; --put-soft:rgba(224,149,75,.14);
+      --patch:#AD91EF; --patch-soft:rgba(173,145,239,.14);
+      --delete:#E58176; --delete-soft:rgba(229,129,118,.14);
+      --danger:#E58176; --danger-soft:rgba(229,129,118,.14);
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 32px -16px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0F1517; --surface:#161F22; --surface-2:#1C262A; --surface-3:#232E32;
+    --ink:#E7ECEB; --ink-dim:#9CAAAC; --ink-faint:#6E7B7D;
+    --line:rgba(231,236,235,.10); --line-strong:rgba(231,236,235,.20);
+    --teal:#4FBEB1; --teal-strong:#79D2C7; --teal-soft:rgba(79,190,177,.14);
+    --amber:#E0954B; --amber-soft:rgba(224,149,75,.14);
+    --get:#4FBEB1; --get-soft:rgba(79,190,177,.14);
+    --post:#68C486; --post-soft:rgba(104,196,134,.14);
+    --put:#E0954B; --put-soft:rgba(224,149,75,.14);
+    --patch:#AD91EF; --patch-soft:rgba(173,145,239,.14);
+    --delete:#E58176; --delete-soft:rgba(229,129,118,.14);
+    --danger:#E58176; --danger-soft:rgba(229,129,118,.14);
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 32px -16px rgba(0,0,0,.6);
+  }
+
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--ui);
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  h1,h2,h3,h4{font-family:var(--ui);text-wrap:balance;margin:0;}
+  button{font-family:var(--ui);}
+  code,.mono{font-family:var(--mono);}
+  ::selection{background:var(--teal-soft);}
+  a{color:var(--teal-strong);}
+  *:focus-visible{outline:2px solid var(--teal);outline-offset:2px;border-radius:4px;}
+  @media (prefers-reduced-motion: reduce){ *{animation-duration:.001ms !important; transition-duration:.001ms !important;} }
+
+  .app{min-height:100vh;}
+  .hidden{display:none !important;}
+
+  /* ---------- Login view ---------- */
+  #login-view{min-height:100vh;display:flex;align-items:center;justify-content:center;
+    padding:32px 20px; position:relative; overflow:hidden;}
+  #login-view::before{content:"";position:absolute;inset:0;
+    background:
+      radial-gradient(700px 420px at 12% -8%, var(--teal-soft), transparent 60%),
+      radial-gradient(600px 380px at 105% 10%, var(--amber-soft), transparent 55%);
+    pointer-events:none;}
+  .login-card{position:relative;width:100%;max-width:960px;display:grid;grid-template-columns:1.1fr 1fr;
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;}
+  .login-brand{background:linear-gradient(165deg,var(--teal-strong),var(--teal) 60%, var(--teal-strong));
+    color:#F3FBF9;padding:44px 38px;display:flex;flex-direction:column;justify-content:space-between;gap:28px;position:relative;}
+  .login-brand::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;
+    background:linear-gradient(90deg,var(--teal-strong),var(--amber));}
+  .brand-mark{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.04em;font-size:15px;}
+  .brand-mark .dot{width:9px;height:9px;border-radius:50%;background:var(--amber);box-shadow:0 0 0 4px rgba(255,255,255,.14);}
+  .login-brand h1{font-size:30px;line-height:1.28;font-weight:600;max-width:22ch;}
+  .login-brand p{font-size:14px;line-height:1.7;opacity:.86;max-width:34ch;margin:10px 0 0;}
+  .login-stats{display:flex;gap:22px;font-size:12px;opacity:.9;flex-wrap:wrap;}
+  .login-stats b{display:block;font-size:19px;font-family:var(--mono);font-weight:600;}
+  .login-form-wrap{padding:44px 38px;display:flex;flex-direction:column;gap:18px;}
+  .login-form-wrap h2{font-size:19px;font-weight:600;}
+  .login-form-wrap .sub{color:var(--ink-dim);font-size:13px;margin-top:4px;}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field label{font-size:12.5px;color:var(--ink-dim);font-weight:600;}
+  .field input{border:1px solid var(--line-strong);background:var(--paper);color:var(--ink);
+    border-radius:8px;padding:10px 12px;font-size:14px;font-family:var(--ui);}
+  .field input:focus{border-color:var(--teal);}
+  .btn{cursor:pointer;border-radius:8px;border:1px solid transparent;font-size:13.5px;font-weight:600;
+    padding:10px 16px;display:inline-flex;align-items:center;gap:8px;justify-content:center;transition:filter .12s,transform .05s;}
+  .btn:active{transform:translateY(1px);}
+  .btn-primary{background:var(--teal);color:#F3FBF9;}
+  .btn-primary:hover{filter:brightness(1.06);}
+  .btn-ghost{background:transparent;border-color:var(--line-strong);color:var(--ink);}
+  .btn-ghost:hover{background:var(--surface-2);}
+  .btn-sm{padding:6px 11px;font-size:12.5px;}
+
+  /* ---------- Portal shell ---------- */
+  #portal-view{display:grid;grid-template-columns:236px 1fr;min-height:100vh;}
+  .sidebar{background:var(--surface);border-right:1px solid var(--line);padding:18px 14px;
+    display:flex;flex-direction:column;gap:22px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+  .sb-brand{display:flex;align-items:center;gap:9px;padding:4px 6px 2px;}
+  .sb-brand .mark{width:26px;height:26px;border-radius:7px;background:linear-gradient(155deg,var(--teal-strong),var(--teal));
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .sb-brand .mark svg{width:15px;height:15px;color:#F3FBF9;}
+  .sb-brand .txt b{display:block;font-size:13.5px;letter-spacing:.02em;}
+  .sb-brand .txt span{display:block;font-size:10.5px;color:var(--ink-faint);font-family:var(--mono);}
+
+  .sb-group{display:flex;flex-direction:column;gap:2px;}
+  .sb-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint);
+    padding:0 10px;margin-bottom:6px;font-weight:700;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;
+    border:1px solid transparent;background:none;width:100%;text-align:left;color:var(--ink);font-size:13px;}
+  .nav-item svg{width:16px;height:16px;flex-shrink:0;color:var(--ink-dim);}
+  .nav-item:hover{background:var(--surface-2);}
+  .nav-item.active{background:var(--teal-soft);color:var(--teal-strong);font-weight:600;}
+  .nav-item.active svg{color:var(--teal-strong);}
+  .nav-item .count{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);
+    background:var(--surface-2);border-radius:999px;padding:1px 7px;}
+  .nav-item.active .count{background:var(--surface);color:var(--teal-strong);}
+  .nav-item .lock{margin-left:auto;width:12px;height:12px;color:var(--ink-faint);}
+
+  .sb-foot{margin-top:auto;border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:8px;}
+  .role-chip{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:8px;background:var(--surface-2);}
+  .role-chip .av{width:26px;height:26px;border-radius:50%;background:var(--amber-soft);color:var(--amber);
+    display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+  .role-chip .meta b{display:block;font-size:12px;}
+  .role-chip .meta span{display:block;font-size:10.5px;color:var(--ink-dim);}
+
+  .main{display:flex;flex-direction:column;min-width:0;}
+  .topbar{position:sticky;top:0;z-index:5;background:var(--paper);border-bottom:1px solid var(--line);
+    padding:12px 26px;display:flex;align-items:center;gap:14px;}
+  .topbar h2{font-size:15.5px;font-weight:700;}
+  .topbar .path-hint{font-size:11.5px;color:var(--ink-faint);font-family:var(--mono);}
+  .search{margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--surface);
+    border:1px solid var(--line-strong);border-radius:8px;padding:7px 11px;width:280px;max-width:40vw;}
+  .search svg{width:14px;height:14px;color:var(--ink-faint);flex-shrink:0;}
+  .search input{border:none;background:none;outline:none;font-size:13px;width:100%;color:var(--ink);font-family:var(--ui);}
+  .icon-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-dim);flex-shrink:0;}
+  .icon-btn:hover{background:var(--surface-2);color:var(--ink);}
+  .icon-btn svg{width:15px;height:15px;}
+
+  .env-switch{display:flex;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:8px;padding:2px;gap:2px;flex-shrink:0;}
+  .env-btn{border:none;background:none;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;color:var(--ink-dim);cursor:pointer;font-family:var(--ui);}
+  .env-btn[data-env="sandbox"].active{background:var(--surface);color:var(--teal-strong);box-shadow:var(--shadow);}
+  .env-btn[data-env="production"].active{background:var(--amber-soft);color:var(--amber);}
+  .env-chip{font-size:10.5px;font-weight:700;letter-spacing:.03em;border-radius:999px;padding:2px 9px;white-space:nowrap;}
+  .env-chip.env-sandbox{background:var(--teal-soft);color:var(--teal-strong);}
+  .env-chip.env-production{background:var(--amber-soft);color:var(--amber);}
+  .env-banner{display:flex;align-items:center;gap:8px;background:var(--amber-soft);color:var(--amber);
+    border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-size:12.5px;margin-bottom:16px;}
+  .env-banner svg{width:15px;height:15px;flex-shrink:0;}
+
+  .content{padding:22px 26px 60px;max-width:980px;width:100%;margin:0 auto;}
+  .page-head{margin-bottom:18px;}
+  .page-head .eyebrow{display:flex;align-items:center;gap:8px;font-size:11px;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--ink-faint);font-weight:700;margin-bottom:6px;}
+  .page-head .eyebrow .swatch{width:8px;height:8px;border-radius:2px;background:var(--teal);}
+  .page-head h1{font-size:22px;font-weight:700;}
+  .page-head p{color:var(--ink-dim);font-size:13.5px;margin-top:6px;max-width:62ch;line-height:1.6;}
+
+  .base-url{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);
+    border-radius:8px;padding:9px 12px;margin-top:14px;font-family:var(--mono);font-size:12.5px;flex-wrap:wrap;}
+  .base-url .tag{color:var(--ink-faint);font-family:var(--ui);font-size:11px;text-transform:uppercase;letter-spacing:.06em;}
+  .base-url code{color:var(--teal-strong);}
+
+  /* endpoint cards */
+  .endpoint{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);margin-bottom:10px;overflow:hidden;}
+  .endpoint.locked{opacity:.72;}
+  .ep-row{display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;user-select:none;}
+  .ep-row:hover{background:var(--surface-2);}
+  .method{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.03em;border-radius:6px;
+    padding:4px 8px;flex-shrink:0;width:56px;text-align:center;}
+  .method.get{background:var(--get-soft);color:var(--get);}
+  .method.post{background:var(--post-soft);color:var(--post);}
+  .method.put{background:var(--put-soft);color:var(--put);}
+  .method.patch{background:var(--patch-soft);color:var(--patch);}
+  .method.delete{background:var(--delete-soft);color:var(--delete);}
+  .ep-path{font-family:var(--mono);font-size:13px;flex-shrink:0;}
+  .ep-summary{color:var(--ink-dim);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
+  .scope-tag{font-size:10.5px;font-family:var(--mono);background:var(--surface-2);color:var(--ink-dim);
+    border-radius:999px;padding:2px 8px;flex-shrink:0;white-space:nowrap;}
+  .lock-badge{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--danger);flex-shrink:0;}
+  .lock-badge svg{width:12px;height:12px;}
+  .chevron{width:14px;height:14px;color:var(--ink-faint);flex-shrink:0;transition:transform .15s;}
+  .endpoint.open .chevron{transform:rotate(90deg);}
+
+  .ep-detail{display:none;border-top:1px solid var(--line);padding:16px;background:var(--paper);}
+  .endpoint.open .ep-detail{display:block;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+  @media (max-width:760px){ .grid2{grid-template-columns:1fr;} #login-view .login-card{grid-template-columns:1fr;} .login-brand{display:none;} }
+  .ep-detail h4{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-faint);margin-bottom:8px;font-weight:700;}
+  .param-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  .param-table th{text-align:left;color:var(--ink-faint);font-weight:600;font-size:10.5px;text-transform:uppercase;
+    letter-spacing:.05em;padding:0 8px 6px 0;border-bottom:1px solid var(--line);}
+  .param-table td{padding:7px 8px 7px 0;border-bottom:1px solid var(--line);vertical-align:top;}
+  .param-table code{color:var(--teal-strong);font-size:12px;}
+  .param-req{color:var(--danger);font-size:10px;font-weight:700;}
+  .code-panel{background:var(--surface-3);border:1px solid var(--line);border-radius:8px;padding:12px;
+    font-family:var(--mono);font-size:12px;line-height:1.65;color:var(--ink);overflow-x:auto;white-space:pre;}
+  .code-panel .k{color:var(--teal-strong);}
+  .code-panel .s{color:var(--amber);}
+  .status-pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);
+    background:var(--post-soft);color:var(--post);border-radius:999px;padding:3px 9px;margin-bottom:8px;}
+  .status-pill.pending{background:var(--surface-2);color:var(--ink-faint);}
+  .resp-tabs{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap;}
+  .resp-tab{border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-dim);
+    font-family:var(--mono);font-size:11px;padding:4px 9px;border-radius:6px;cursor:pointer;}
+  .resp-tab:hover{background:var(--surface-2);}
+  .resp-tab.active{background:var(--teal-soft);border-color:var(--teal);color:var(--teal-strong);font-weight:700;}
+  .try-row{display:flex;align-items:center;gap:10px;margin-top:12px;}
+  .curl-copy{margin-top:10px;}
+
+  .locked-note{display:flex;align-items:center;gap:10px;background:var(--danger-soft);color:var(--danger);
+    border-radius:8px;padding:9px 12px;font-size:12.5px;margin-top:12px;}
+  .locked-note svg{width:15px;height:15px;flex-shrink:0;}
+  .locked-note .req-btn{margin-left:auto;flex-shrink:0;}
+
+  /* tokens page */
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:16px;}
+  .panel h3{font-size:14px;font-weight:700;margin-bottom:4px;}
+  .panel .hint{font-size:12px;color:var(--ink-dim);margin-bottom:14px;}
+
+  .steps-list{display:flex;flex-direction:column;margin-bottom:18px;}
+  .step-item{display:flex;gap:16px;}
+  .step-marker{display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
+  .step-num{width:34px;height:34px;border-radius:50%;background:var(--teal-soft);color:var(--teal-strong);
+    font-family:var(--mono);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    border:1px solid var(--line);}
+  .step-line{width:1px;flex:1;min-height:20px;background:var(--line-strong);margin:4px 0;}
+  .step-body{padding-bottom:22px;padding-top:5px;}
+  .step-body h3{font-size:13.5px;font-weight:700;}
+  .step-body p{font-size:12.5px;color:var(--ink-dim);margin-top:4px;line-height:1.6;max-width:52ch;}
+
+  .scope-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-bottom:14px;}
+  .scope-check{display:flex;align-items:center;gap:8px;border:1px solid var(--line-strong);border-radius:8px;
+    padding:8px 10px;font-size:12.5px;cursor:pointer;}
+  .scope-check input{accent-color:var(--teal);}
+  .scope-check.disabled{opacity:.45;cursor:not-allowed;}
+  .scope-check code{font-size:11.5px;}
+  .expiry-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+  .expiry-row label{font-size:12.5px;color:var(--ink-dim);}
+  select{border:1px solid var(--line-strong);background:var(--paper);color:var(--ink);border-radius:8px;
+    padding:8px 10px;font-size:12.5px;font-family:var(--ui);}
+
+  table.tok-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  table.tok-table th{text-align:left;color:var(--ink-faint);font-size:10.5px;text-transform:uppercase;
+    letter-spacing:.05em;padding:0 10px 8px 0;border-bottom:1px solid var(--line);font-weight:700;}
+  table.tok-table td{padding:10px 10px 10px 0;border-bottom:1px solid var(--line);vertical-align:middle;}
+  table.tok-table tr:last-child td{border-bottom:none;}
+  .tok-value{font-family:var(--mono);background:var(--surface-2);border-radius:6px;padding:3px 8px;font-size:11.5px;}
+  .tok-scopes{display:flex;gap:4px;flex-wrap:wrap;}
+  .empty-row{color:var(--ink-faint);font-size:12.5px;padding:18px 0;text-align:center;}
+
+  /* my app */
+  .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);}
+  table.app-table{width:100%;min-width:820px;border-collapse:collapse;font-size:12.5px;}
+  table.app-table th{text-align:left;color:var(--ink-faint);font-size:10.5px;text-transform:uppercase;
+    letter-spacing:.05em;font-weight:700;padding:11px 14px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  table.app-table td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top;}
+  table.app-table tbody tr{cursor:pointer;}
+  table.app-table tbody tr:hover{background:var(--surface-2);}
+  table.app-table tbody tr:last-child td{border-bottom:none;}
+  .app-name-cell b{display:block;font-size:13px;}
+  .app-name-cell span{display:block;font-size:11px;color:var(--ink-faint);margin-top:2px;}
+  .app-date-cell{white-space:nowrap;color:var(--ink-dim);font-family:var(--mono);font-size:11.5px;}
+  .app-row-arrow{color:var(--teal-strong);font-weight:600;white-space:nowrap;}
+
+  .type-chip{font-size:10.5px;font-weight:700;letter-spacing:.03em;border-radius:999px;padding:2px 9px;white-space:nowrap;}
+  .type-registered{background:var(--surface-2);color:var(--ink-dim);}
+  .type-verify{background:var(--put-soft);color:var(--put);}
+  .type-official{background:var(--teal-soft);color:var(--teal-strong);}
+
+  .status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block;}
+  .status-dot.st-active{background:var(--post);}
+  .status-dot.st-pending{background:var(--put);}
+  .status-dot.st-draft{background:var(--ink-faint);}
+  .status-dot.st-suspended{background:var(--danger);}
+  .status-text{font-size:11.5px;color:var(--ink-dim);font-weight:600;}
+
+  .type-ladder{display:flex;align-items:center;margin-top:6px;}
+  .ladder-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;text-align:center;}
+  .ladder-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--line-strong);background:var(--surface);}
+  .ladder-step.done .ladder-dot{background:var(--teal-soft);border-color:var(--teal);}
+  .ladder-step.current .ladder-dot{background:var(--teal);border-color:var(--teal);}
+  .ladder-label{font-size:10.5px;color:var(--ink-faint);font-weight:600;}
+  .ladder-step.current .ladder-label{color:var(--teal-strong);}
+  .ladder-line{flex:0 0 24px;height:2px;background:var(--line-strong);margin-bottom:20px;}
+
+  .log-list{display:flex;flex-direction:column;}
+  .log-item{display:flex;gap:12px;}
+  .log-marker{display:flex;flex-direction:column;align-items:center;flex-shrink:0;padding-top:4px;}
+  .log-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+  .log-dot.log-create{background:var(--teal);}
+  .log-dot.log-review{background:var(--put);}
+  .log-dot.log-update{background:var(--ink-faint);}
+  .log-dot.log-publish{background:var(--post);}
+  .log-dot.log-unpublish{background:var(--danger);}
+  .log-line{width:1px;flex:1;min-height:18px;background:var(--line-strong);margin:4px 0;}
+  .log-body{padding-bottom:16px;}
+  .log-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .log-top b{font-size:12.5px;}
+  .log-date{font-size:11px;color:var(--ink-faint);}
+  .log-actor{font-size:11.5px;color:var(--ink-dim);margin-top:2px;}
+
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--ink);
+    color:var(--paper);font-size:12.5px;padding:10px 16px;border-radius:8px;opacity:0;pointer-events:none;
+    transition:opacity .18s,transform .18s;z-index:50;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .toast svg{width:14px;height:14px;color:var(--teal);flex-shrink:0;}
+
+  .proto-flag{position:fixed;top:10px;right:10px;font-size:10.5px;font-family:var(--mono);
+    background:var(--amber-soft);color:var(--amber);border:1px solid var(--line);padding:3px 9px;border-radius:999px;z-index:40;}
+</style>
+
+<div class="app">
+
+  <!-- ============ LOGIN VIEW ============ -->
+  <div id="login-view">
+    <div class="login-card">
+      <div class="login-brand">
+        <div>
+          <div class="brand-mark"><span class="dot"></span> MEGACHEM</div>
+          <h1 style="margin-top:22px;">Internal API Portal สำหรับพนักงานทุกแผนก</h1>
+          <p>เข้าถึง API ของบริษัทแบบรวมศูนย์ พร้อมระบบสิทธิ์ตามบทบาท (Role-based Access) และ Token สำหรับเรียกใช้งานแต่ละหมวดหมู่</p>
+        </div>
+        <div class="login-stats">
+          <div><b>5</b>หมวดหมู่ API</div>
+          <div><b>15</b>Endpoints</div>
+          <div><b>24/7</b>พร้อมใช้งาน</div>
+        </div>
+      </div>
+      <div class="login-form-wrap">
+        <div>
+          <h2>เข้าสู่ระบบ</h2>
+          <div class="sub">ใช้บัญชี Megachem SSO ของคุณ (ต้นแบบ — ไม่เชื่อมต่อระบบจริง)</div>
+        </div>
+        <div class="field">
+          <label for="li-user">อีเมลบริษัท</label>
+          <input id="li-user" type="text" placeholder="firstname.l@megachem.co.th" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="li-pass">รหัสผ่าน</label>
+          <input id="li-pass" type="password" placeholder="••••••••" autocomplete="off">
+        </div>
+        <button class="btn btn-primary" style="width:100%;margin-top:2px;" onclick="loginAs('sales')">เข้าสู่ระบบ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PORTAL VIEW ============ -->
+  <div id="portal-view" class="hidden">
+    <aside class="sidebar">
+      <div class="sb-brand">
+        <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg></div>
+        <div class="txt"><b>Megachem</b><span>API Portal</span></div>
+      </div>
+
+      <div class="sb-group">
+        <div class="sb-label">นักพัฒนา</div>
+        <button class="nav-item" id="nav-getstarted" onclick="showGetStarted()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m8 6-5 6 5 6M16 6l5 6-5 6M13 4l-2 16"/></svg>
+          เริ่มต้นใช้งาน
+        </button>
+      </div>
+
+      <div class="sb-group">
+        <div class="sb-label">หมวดหมู่ API</div>
+        <div id="cat-nav"></div>
+      </div>
+
+      <div class="sb-group">
+        <div class="sb-label">My App</div>
+        <button class="nav-item" id="nav-apps" onclick="showApps()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6"/></svg>
+          My App
+          <span class="count" id="apps-count"></span>
+        </button>
+      </div>
+
+      <div class="sb-group">
+        <div class="sb-label">บัญชีของฉัน</div>
+        <button class="nav-item" id="nav-tokens" onclick="showTokens()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0L19 4m-3.5 3.5L18 10"/></svg>
+          Token ของฉัน
+        </button>
+      </div>
+
+      <div class="sb-foot">
+        <div class="role-chip">
+          <div class="av" id="role-av">SL</div>
+          <div class="meta"><b id="role-name">Sales</b><span id="role-user">user@megachem.co.th</span></div>
+        </div>
+        <button class="btn btn-ghost btn-sm" style="width:100%;" onclick="logout()">ออกจากระบบ</button>
+      </div>
+    </aside>
+
+    <div class="main">
+      <div class="topbar">
+        <div>
+          <h2 id="tb-title">Sales API</h2>
+          <div class="path-hint" id="tb-hint">/api/v1/sales</div>
+        </div>
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="ep-search" placeholder="ค้นหา endpoint, path, คำอธิบาย..." oninput="renderCategory()">
+        </div>
+        <div class="env-switch" id="env-switch">
+          <button class="env-btn active" data-env="sandbox" onclick="setEnv('sandbox')">Developer</button>
+          <button class="env-btn" data-env="production" onclick="setEnv('production')">Production</button>
+        </div>
+        <button class="icon-btn" title="สลับธีม" onclick="toggleTheme()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        </button>
+      </div>
+      <div class="content" id="content"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span id="toast-text"></span></div>
+  <div class="proto-flag">PROTOTYPE · ไม่เชื่อมต่อระบบจริง</div>
+</div>
+
+<script>
+/* ---------------- Data model ---------------- */
+const ICONS = {
+  sales:'<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m7 14 4-4 3 3 5-6"/>',
+  purchase:'<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/>',
+  inventory:'<path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v9l9 5 9-5V8M12 13v9"/>',
+  finance:'<circle cx="12" cy="12" r="9"/><path d="M9.5 15.5c.6.7 1.5 1 2.5 1 1.7 0 3-1 3-2.2 0-1.5-1.3-2-3-2.4-1.7-.4-3-1-3-2.4 0-1.2 1.3-2.2 3-2.2 1 0 1.9.3 2.5 1M12 6.5v11"/>',
+  hr:'<circle cx="9" cy="8" r="3.2"/><path d="M2.5 19c.7-3 3-4.8 6.5-4.8s5.8 1.8 6.5 4.8"/><circle cx="17.5" cy="8.5" r="2.6"/><path d="M16 14.4c2.6.4 4.3 2 4.9 4.6"/>',
+  lock:'<rect x="4" y="10.5" width="16" height="9.5" rx="2"/><path d="M7.5 10.5V7a4.5 4.5 0 0 1 9 0v3.5"/>',
+  apps:'<rect x="3" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6"/>',
+  github:'<path d="M9 19c-4.3 1.3-4.3-2.2-6-2.6m12 4.6v-3.2c0-.9.3-1.5.7-1.8-2.5-.3-5.2-1.3-5.2-5.6 0-1.2.4-2.2 1.1-3-.1-.3-.5-1.5.1-3.1 0 0 .9-.3 3 1.1a10 10 0 0 1 5.5 0c2.1-1.4 3-1.1 3-1.1.6 1.6.2 2.8.1 3.1.7.8 1.1 1.8 1.1 3 0 4.3-2.7 5.3-5.2 5.6.4.4.8 1.1.8 2.2V21"/>',
+  back:'<path d="m12 19-7-7 7-7M5 12h14"/>',
+  warning:'<path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/>'
+};
+
+const ROLES = {
+  admin:{name:'ผู้ดูแลระบบ', short:'AD', user:'it-digital@megachem.co.th', scopes:['*']},
+  sales:{name:'พนักงานขาย', short:'SL', user:'sales.staff@megachem.co.th', scopes:['sales.read','sales.write','inventory.read']},
+  purchase:{name:'พนักงานจัดซื้อ', short:'PU', user:'purchase.staff@megachem.co.th', scopes:['purchase.read','purchase.write','inventory.read']},
+  finance:{name:'พนักงานการเงิน', short:'FI', user:'finance.staff@megachem.co.th', scopes:['finance.read','finance.write','sales.read','purchase.read']},
+  hr:{name:'ฝ่ายบุคคล', short:'HR', user:'hr.staff@megachem.co.th', scopes:['hr.read','hr.write']}
+};
+
+const CATEGORIES = [
+  {key:'sales', name:'Sales', base:'/api/v1/sales', desc:'จัดการคำสั่งขาย ใบเสนอราคา และข้อมูลลูกค้า สำหรับทีมขายและหน้าร้าน', rateLimit:'120 คำขอ / นาที'},
+  {key:'purchase', name:'Purchase', base:'/api/v1/purchase', desc:'จัดการใบสั่งซื้อ ผู้ขาย (Vendor) และการอนุมัติจัดซื้อ', rateLimit:'120 คำขอ / นาที'},
+  {key:'inventory', name:'Inventory', base:'/api/v1/inventory', desc:'ตรวจสอบสต๊อกสินค้า คลังสินค้า และการเคลื่อนไหวของสินค้าคงคลัง', rateLimit:'180 คำขอ / นาที'},
+  {key:'finance', name:'Finance', base:'/api/v1/finance', desc:'ใบแจ้งหนี้ การชำระเงิน และรายงานทางการเงิน', rateLimit:'60 คำขอ / นาที'},
+  {key:'hr', name:'HR', base:'/api/v1/hr', desc:'ข้อมูลพนักงาน การลา และเงินเดือน (ข้อมูลอ่อนไหว จำกัดสิทธิ์)', rateLimit:'30 คำขอ / นาที'}
+];
+
+const ENDPOINTS = {
+  sales:[
+    {m:'GET', p:'/orders', sum:'ดึงรายการคำสั่งขายทั้งหมด พร้อมตัวกรองตามช่วงวันที่และสถานะ', scope:'sales.read',
+      desc:'ใช้สำหรับแสดงรายการคำสั่งขายในหน้า Dashboard หรือระบบ POS รองรับการแบ่งหน้าและกรองตามสถานะ',
+      params:[['status','query','string','no','กรองตามสถานะ เช่น open, paid, cancelled'],['from','query','date','no','วันที่เริ่มต้น (YYYY-MM-DD)'],['page','query','integer','no','เลขหน้า เริ่มที่ 1']],
+      resp:'{\n  "data": [\n    { "id": "SO-20260811-004", "customer": "บจก. ไทยเคมีภัณฑ์", "total": 184500, "currency": "THB", "status": "open" }\n  ],\n  "page": 1,\n  "total": 132\n}',
+      respFields:[['data[].id','string','รหัสคำสั่งขาย'],['data[].customer','string','ชื่อลูกค้า'],['data[].total','number','ยอดรวม (บาท)'],['data[].status','string','สถานะคำสั่งขาย'],['page','integer','หน้าปัจจุบัน'],['total','integer','จำนวนรายการทั้งหมด']]},
+    {m:'POST', p:'/orders', sum:'สร้างคำสั่งขายใหม่ในระบบ', scope:'sales.write',
+      desc:'สร้างคำสั่งขายใหม่และตัดสต๊อกสินค้าจากคลังที่ระบุโดยอัตโนมัติทันทีที่บันทึกสำเร็จ',
+      params:[['customer_id','body','string','yes','รหัสลูกค้า'],['items','body','array','yes','รายการสินค้าและจำนวน'],['warehouse','body','string','no','คลังที่ต้องการตัดสต๊อก']],
+      reqBody:'{\n  "customer_id": "CUST-1042",\n  "items": [\n    { "sku": "CHM-2201", "qty": 4 }\n  ],\n  "warehouse": "WH-BKK-01"\n}',
+      resp:'{\n  "id": "SO-20260813-091",\n  "status": "open",\n  "created_at": "2026-08-13T09:41:00+07:00"\n}',
+      respFields:[['id','string','รหัสคำสั่งขายที่สร้าง'],['status','string','สถานะเริ่มต้นของคำสั่งขาย'],['created_at','string (ISO 8601)','วันเวลาที่สร้างรายการ']]},
+    {m:'GET', p:'/customers/{id}', sum:'ดึงข้อมูลลูกค้ารายตัว รวมประวัติการสั่งซื้อโดยสรุป', scope:'sales.read',
+      desc:'ดึงข้อมูลลูกค้ารายตัวพร้อมวงเงินเครดิตและยอดค้างชำระปัจจุบัน ใช้ตรวจสอบก่อนอนุมัติคำสั่งขาย',
+      params:[['id','path','string','yes','รหัสลูกค้า']],
+      resp:'{\n  "id": "CUST-1042",\n  "name": "บจก. ไทยเคมีภัณฑ์",\n  "credit_limit": 500000,\n  "outstanding": 92300\n}',
+      respFields:[['id','string','รหัสลูกค้า'],['name','string','ชื่อลูกค้า'],['credit_limit','number','วงเงินเครดิต (บาท)'],['outstanding','number','ยอดค้างชำระ (บาท)']]}
+  ],
+  purchase:[
+    {m:'GET', p:'/orders', sum:'ดึงรายการใบสั่งซื้อ (PO) ทั้งหมด', scope:'purchase.read',
+      desc:'ดึงรายการใบสั่งซื้อทั้งหมดของบริษัท ใช้สำหรับติดตามสถานะการจัดซื้อและงบประมาณคงเหลือ',
+      params:[['vendor_id','query','string','no','กรองตามผู้ขาย'],['status','query','string','no','pending, approved, received']],
+      resp:'{\n  "data": [\n    { "id": "PO-2026-0231", "vendor": "Global Solvent Supply", "total": 76500, "status": "pending" }\n  ]\n}',
+      respFields:[['data[].id','string','รหัสใบสั่งซื้อ'],['data[].vendor','string','ชื่อผู้ขาย'],['data[].total','number','มูลค่ารวม (บาท)'],['data[].status','string','สถานะใบสั่งซื้อ']]},
+    {m:'POST', p:'/orders/{id}/approve', sum:'อนุมัติใบสั่งซื้อ (ต้องมีสิทธิ์ผู้อนุมัติ)', scope:'purchase.write',
+      desc:'อนุมัติใบสั่งซื้อที่รอดำเนินการ เปลี่ยนสถานะเป็น approved และแจ้งเตือนผู้ขายโดยอัตโนมัติ',
+      params:[['id','path','string','yes','รหัสใบสั่งซื้อ'],['note','body','string','no','บันทึกการอนุมัติ']],
+      reqBody:'{\n  "note": "อนุมัติตามงบประมาณไตรมาส 3"\n}',
+      resp:'{\n  "id": "PO-2026-0231",\n  "status": "approved",\n  "approved_by": "purchase.staff@megachem.co.th"\n}',
+      respFields:[['id','string','รหัสใบสั่งซื้อ'],['status','string','สถานะหลังอนุมัติ'],['approved_by','string','อีเมลผู้อนุมัติ']]},
+    {m:'GET', p:'/vendors', sum:'ดึงรายชื่อผู้ขาย/ซัพพลายเออร์ พร้อมคะแนนประเมิน', scope:'purchase.read',
+      desc:'ดึงรายชื่อผู้ขาย/ซัพพลายเออร์ทั้งหมด พร้อมคะแนนประเมินคุณภาพล่าสุด',
+      params:[['category','query','string','no','หมวดหมู่สินค้าที่จัดหา']],
+      resp:'{\n  "data": [\n    { "id": "VEN-018", "name": "Global Solvent Supply", "rating": 4.6 }\n  ]\n}',
+      respFields:[['data[].id','string','รหัสผู้ขาย'],['data[].name','string','ชื่อผู้ขาย'],['data[].rating','number','คะแนนประเมิน (เต็ม 5)']]}
+  ],
+  inventory:[
+    {m:'GET', p:'/stock', sum:'ตรวจสอบยอดคงเหลือสินค้าคงคลังตามคลัง/สาขา', scope:'inventory.read',
+      desc:'ตรวจสอบยอดคงเหลือสินค้าคงคลังแบบเรียลไทม์ กรองตามรหัสสินค้าหรือคลังสินค้าได้',
+      params:[['sku','query','string','no','รหัสสินค้า'],['warehouse','query','string','no','รหัสคลังสินค้า']],
+      resp:'{\n  "sku": "CHM-2201",\n  "name": "Ethanol 95% (200L Drum)",\n  "on_hand": 342,\n  "reserved": 40,\n  "unit": "drum"\n}',
+      respFields:[['sku','string','รหัสสินค้า'],['name','string','ชื่อสินค้า'],['on_hand','integer','จำนวนคงเหลือทั้งหมด'],['reserved','integer','จำนวนที่ถูกจองแล้ว'],['unit','string','หน่วยนับ']]},
+    {m:'POST', p:'/transfers', sum:'สร้างรายการโอนย้ายสินค้าระหว่างคลัง', scope:'inventory.write',
+      desc:'สร้างรายการโอนย้ายสินค้าระหว่างคลัง สถานะเริ่มต้นจะเป็น in_transit จนกว่าคลังปลายทางจะยืนยันรับสินค้า',
+      params:[['sku','body','string','yes','รหัสสินค้า'],['from_warehouse','body','string','yes','คลังต้นทาง'],['to_warehouse','body','string','yes','คลังปลายทาง'],['qty','body','number','yes','จำนวน']],
+      reqBody:'{\n  "sku": "CHM-2201",\n  "from_warehouse": "WH-BKK-01",\n  "to_warehouse": "WH-CNX-02",\n  "qty": 20\n}',
+      resp:'{\n  "id": "TRF-00871",\n  "status": "in_transit"\n}',
+      respFields:[['id','string','รหัสรายการโอนย้าย'],['status','string','สถานะการโอนย้าย']]},
+    {m:'GET', p:'/warehouses', sum:'ดึงรายชื่อคลังสินค้าทั้งหมดของบริษัท', scope:'inventory.read',
+      desc:'ดึงรายชื่อคลังสินค้าทั้งหมดของบริษัท พร้อมเปอร์เซ็นต์การใช้พื้นที่ปัจจุบัน',
+      params:[], resp:'{\n  "data": [\n    { "id": "WH-BKK-01", "name": "คลังกลาง บางนา", "capacity_pct": 78 }\n  ]\n}',
+      respFields:[['data[].id','string','รหัสคลัง'],['data[].name','string','ชื่อคลัง'],['data[].capacity_pct','number','เปอร์เซ็นต์การใช้พื้นที่คลัง']]}
+  ],
+  finance:[
+    {m:'GET', p:'/invoices', sum:'ดึงรายการใบแจ้งหนี้ พร้อมสถานะการชำระเงิน', scope:'finance.read',
+      desc:'ดึงรายการใบแจ้งหนี้พร้อมสถานะการชำระเงินและวันครบกำหนด ใช้ติดตามลูกหนี้ค้างชำระ',
+      params:[['status','query','string','no','unpaid, paid, overdue'],['customer_id','query','string','no','กรองตามลูกค้า']],
+      resp:'{\n  "data": [\n    { "id": "INV-2026-3391", "amount": 184500, "status": "unpaid", "due_date": "2026-08-25" }\n  ]\n}',
+      respFields:[['data[].id','string','รหัสใบแจ้งหนี้'],['data[].amount','number','จำนวนเงิน (บาท)'],['data[].status','string','สถานะการชำระเงิน'],['data[].due_date','string (date)','วันครบกำหนดชำระ']]},
+    {m:'POST', p:'/payments', sum:'บันทึกรายการรับ/จ่ายชำระเงิน', scope:'finance.write',
+      desc:'บันทึกรายการรับหรือจ่ายชำระเงินเข้าระบบบัญชี และอัปเดตสถานะใบแจ้งหนี้ที่เกี่ยวข้อง',
+      params:[['invoice_id','body','string','yes','รหัสใบแจ้งหนี้'],['amount','body','number','yes','จำนวนเงิน'],['method','body','string','yes','bank_transfer, cheque, cash']],
+      reqBody:'{\n  "invoice_id": "INV-2026-3391",\n  "amount": 184500,\n  "method": "bank_transfer"\n}',
+      resp:'{\n  "id": "PMT-88213",\n  "status": "confirmed"\n}',
+      respFields:[['id','string','รหัสรายการชำระเงิน'],['status','string','สถานะการยืนยันรายการ']]},
+    {m:'GET', p:'/reports/summary', sum:'สรุปภาพรวมทางการเงินรายเดือน (รายรับ/รายจ่าย)', scope:'finance.read',
+      desc:'สรุปภาพรวมรายรับ-รายจ่ายรายเดือน สำหรับจัดทำรายงานผู้บริหารและวางแผนงบประมาณ',
+      params:[['month','query','string','yes','YYYY-MM']],
+      resp:'{\n  "month": "2026-07",\n  "revenue": 12480000,\n  "expense": 8920000,\n  "net": 3560000\n}',
+      respFields:[['month','string (YYYY-MM)','เดือนที่สรุปรายงาน'],['revenue','number','รายรับรวม (บาท)'],['expense','number','รายจ่ายรวม (บาท)'],['net','number','กำไร/ขาดทุนสุทธิ (บาท)']]}
+  ],
+  hr:[
+    {m:'GET', p:'/employees/{id}', sum:'ดึงข้อมูลพนักงานรายบุคคล (ข้อมูลส่วนบุคคล)', scope:'hr.read',
+      desc:'ดึงข้อมูลพนักงานรายบุคคล ใช้สำหรับระบบ HR ภายในเท่านั้น (มีข้อมูลส่วนบุคคล)',
+      params:[['id','path','string','yes','รหัสพนักงาน']],
+      resp:'{\n  "id": "EMP-0512",\n  "name": "สมชาย ใจดี",\n  "department": "Sales",\n  "position": "Sales Executive"\n}',
+      respFields:[['id','string','รหัสพนักงาน'],['name','string','ชื่อ-นามสกุล'],['department','string','แผนก'],['position','string','ตำแหน่ง']]},
+    {m:'GET', p:'/leave-requests', sum:'ดึงรายการคำขอลาที่รอดำเนินการ', scope:'hr.read',
+      desc:'ดึงรายการคำขอลาที่รอดำเนินการหรือประวัติการลาของพนักงาน',
+      params:[['status','query','string','no','pending, approved, rejected']],
+      resp:'{\n  "data": [\n    { "id": "LV-1092", "employee": "EMP-0512", "type": "annual", "days": 2, "status": "pending" }\n  ]\n}',
+      respFields:[['data[].id','string','รหัสคำขอลา'],['data[].employee','string','รหัสพนักงาน'],['data[].type','string','ประเภทการลา'],['data[].days','integer','จำนวนวันลา'],['data[].status','string','สถานะคำขอ']]},
+    {m:'POST', p:'/payroll/run', sum:'สั่งประมวลผลรอบเงินเดือน (สิทธิ์จำกัดเฉพาะ HR)', scope:'hr.write',
+      desc:'สั่งประมวลผลรอบเงินเดือน สำหรับผู้มีสิทธิ์ระดับ HR เท่านั้น ไม่สามารถย้อนกลับได้หลังเริ่มประมวลผล',
+      params:[['period','body','string','yes','YYYY-MM'],['department','body','string','no','จำกัดเฉพาะแผนก']],
+      reqBody:'{\n  "period": "2026-08",\n  "department": "Sales"\n}',
+      resp:'{\n  "run_id": "PR-2026-08",\n  "status": "processing",\n  "employees": 214\n}',
+      respFields:[['run_id','string','รหัสรอบประมวลผล'],['status','string','สถานะการประมวลผล'],['employees','integer','จำนวนพนักงานที่อยู่ในรอบนี้']]}
+  ]
+};
+
+const METHOD_CLASS = {GET:'get',POST:'post',PUT:'put',PATCH:'patch',DELETE:'delete'};
+
+const APP_TYPES = ['registered','verify','official'];
+const TYPE_META = {
+  registered:{label:'Registered', desc:'ลงทะเบียนแล้ว ยังไม่ผ่านการตรวจสอบ'},
+  verify:{label:'Verify', desc:'ผ่านการยืนยันตัวตนและตรวจสอบเบื้องต้นแล้ว'},
+  official:{label:'Official', desc:'ได้รับการรับรองอย่างเป็นทางการ ใช้งาน Production เต็มรูปแบบ'}
+};
+const STATUS_META = {
+  active:{label:'Active', cls:'st-active'},
+  pending:{label:'Pending Review', cls:'st-pending'},
+  draft:{label:'Draft', cls:'st-draft'},
+  suspended:{label:'Suspended', cls:'st-suspended'}
+};
+const ACTION_META = {
+  create:{label:'Create New', cls:'log-create'},
+  review:{label:'Send Review', cls:'log-review'},
+  update:{label:'Updated', cls:'log-update'},
+  publish:{label:'Publish', cls:'log-publish'},
+  unpublish:{label:'Unpublish', cls:'log-unpublish'}
+};
+
+const ENV_META = {
+  sandbox:{label:'Developer (Sandbox)', short:'Sandbox', host:'sandbox-api.megachem.co.th', cls:'env-sandbox'},
+  production:{label:'Production', short:'Production', host:'api.megachem.co.th', cls:'env-production'}
+};
+
+const SEED_APPS = [
+  {id:'app-1', name:'Sales Mobile App', desc:'แอปพลิเคชันสำหรับทีมขายภาคสนาม ใช้เช็คสต๊อกสินค้าและสร้างคำสั่งขายผ่านมือถือแบบเรียลไทม์',
+    subdomain:'sales-mobile', github:'github.com/megachem/sales-mobile-app', products:['sales','inventory'],
+    status:'active', type:'official', owner:'sales.staff@megachem.co.th', created:'2026-03-14', updated:'2026-08-05',
+    log:[
+      {type:'create', date:'2026-03-14', actor:'sales.staff@megachem.co.th'},
+      {type:'review', date:'2026-03-20', actor:'sales.staff@megachem.co.th'},
+      {type:'publish', date:'2026-04-02', actor:'it-digital@megachem.co.th', note:'อนุมัติขึ้น Production'},
+      {type:'update', date:'2026-08-05', actor:'sales.staff@megachem.co.th', note:'เพิ่มสิทธิ์ Inventory API'}
+    ]},
+  {id:'app-2', name:'PO Approval Bot', desc:'บอทแจ้งเตือนและอนุมัติใบสั่งซื้อผ่าน Line Notify สำหรับผู้บริหารฝ่ายจัดซื้อ',
+    subdomain:'po-approval-bot', github:'github.com/megachem/po-approval-bot', products:['purchase'],
+    status:'pending', type:'verify', owner:'purchase.staff@megachem.co.th', created:'2026-06-02', updated:'2026-08-10',
+    log:[
+      {type:'create', date:'2026-06-02', actor:'purchase.staff@megachem.co.th'},
+      {type:'update', date:'2026-07-15', actor:'purchase.staff@megachem.co.th', note:'แก้ไข GitHub repository'},
+      {type:'review', date:'2026-08-10', actor:'purchase.staff@megachem.co.th'}
+    ]},
+  {id:'app-3', name:'Finance Insight Dashboard', desc:'แดชบอร์ดสรุปรายรับ-รายจ่ายและสถานะใบแจ้งหนี้แบบเรียลไทม์สำหรับทีมการเงิน',
+    subdomain:'finance-insight', github:'github.com/megachem/finance-insight', products:['finance','sales'],
+    status:'draft', type:'registered', owner:'finance.staff@megachem.co.th', created:'2026-07-30', updated:'2026-07-30',
+    log:[
+      {type:'create', date:'2026-07-30', actor:'finance.staff@megachem.co.th'}
+    ]}
+];
+
+/* ---------------- State ---------------- */
+let state = { role:null, activeCat:'sales', tokens:[], apps:SEED_APPS.slice(), activeAppId:null, showAppForm:false, editingApp:false, env:'sandbox' };
+
+function setEnv(env){
+  state.env = env;
+  document.querySelectorAll('.env-btn').forEach(b=> b.classList.toggle('active', b.dataset.env===env));
+  if(state.page==='category') renderCategory();
+  else if(state.page==='tokens') renderTokens();
+}
+
+function iconSvg(key, extra){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" '+(extra||'')+'>'+ICONS[key]+'</svg>';
+}
+
+function hasScope(scope){
+  if(!state.role) return false;
+  const scopes = ROLES[state.role].scopes;
+  return scopes.includes('*') || scopes.includes(scope);
+}
+
+/* ---------------- Login ---------------- */
+function loginAs(roleKey){
+  state.role = roleKey;
+  state.activeCat = 'sales';
+  seedTokenIfNeeded();
+  document.getElementById('login-view').classList.add('hidden');
+  document.getElementById('portal-view').classList.remove('hidden');
+  const r = ROLES[roleKey];
+  document.getElementById('role-av').textContent = r.short;
+  document.getElementById('role-name').textContent = r.name;
+  document.getElementById('role-user').textContent = r.user;
+  buildCatNav();
+  document.getElementById('apps-count').textContent = state.apps.length;
+  showCategory('sales');
+  showToast('เข้าสู่ระบบสำเร็จ ในฐานะ '+r.name);
+}
+function logout(){
+  state.role = null;
+  document.getElementById('portal-view').classList.add('hidden');
+  document.getElementById('login-view').classList.remove('hidden');
+}
+function seedTokenIfNeeded(){
+  if(state.tokens.length) return;
+  const r = ROLES[state.role];
+  const firstScope = r.scopes.includes('*') ? 'sales.read' : r.scopes[0];
+  if(!firstScope) return;
+  state.tokens.push({
+    id:'tok_'+Math.random().toString(36).slice(2,8),
+    value:'mgc_test_'+Math.random().toString(36).slice(2,10)+'••••••••',
+    scopes:[firstScope], created:'2026-08-01', expiry:'90 วัน', env:'sandbox'
+  });
+}
+
+/* ---------------- Sidebar nav ---------------- */
+function buildCatNav(){
+  const wrap = document.getElementById('cat-nav');
+  wrap.innerHTML = CATEGORIES.map(c=>{
+    const eps = ENDPOINTS[c.key];
+    const allowedCount = eps.filter(e=>hasScope(e.scope)).length;
+    const anyAllowed = allowedCount>0;
+    return '<button class="nav-item" data-cat="'+c.key+'" onclick="showCategory(\''+c.key+'\')">'
+      + iconSvg(c.key) + c.name
+      + (anyAllowed ? '<span class="count">'+allowedCount+'/'+eps.length+'</span>' : iconSvg('lock',''))
+      + '</button>';
+  }).join('');
+  highlightNav();
+}
+function highlightNav(){
+  document.querySelectorAll('#cat-nav .nav-item').forEach(el=>{
+    el.classList.toggle('active', el.dataset.cat===state.activeCat && state.page==='category');
+  });
+  document.getElementById('nav-tokens').classList.toggle('active', state.page==='tokens');
+  document.getElementById('nav-getstarted').classList.toggle('active', state.page==='getstarted');
+  document.getElementById('nav-apps').classList.toggle('active', state.page==='apps-list' || state.page==='apps-detail');
+}
+
+function showCategory(key){
+  state.page = 'category';
+  state.activeCat = key;
+  document.getElementById('ep-search').value='';
+  const c = CATEGORIES.find(x=>x.key===key);
+  document.getElementById('tb-title').textContent = c.name+' API';
+  document.getElementById('tb-hint').textContent = c.base;
+  highlightNav();
+  renderCategory();
+}
+
+const GETTING_STARTED_STEPS = [
+  {title:'Explore API Products', desc:'ค้นหาและเลือก API ที่เหมาะกับ Application ของคุณ'},
+  {title:'Register Your App', desc:'ลงทะเบียน Application และข้อมูลผู้รับผิดชอบ'},
+  {title:'Request API Access', desc:'เลือก API และขอสิทธิ์สำหรับ Development'},
+  {title:'Get Sandbox Credentials', desc:'รับ Token ID และ Token Secret สำหรับทดสอบ'},
+  {title:'Develop & Test', desc:'พัฒนา Integration และทดสอบ Application'},
+  {title:'Submit for Review', desc:'ส่ง Application เพื่อตรวจสอบความพร้อม'},
+  {title:'Get Production Access', desc:'ผ่านการอนุมัติและรับ Production Credential'},
+  {title:'Publish Your App', desc:'เผยแพร่ Application บน MGT App'}
+];
+
+function showGetStarted(){
+  state.page = 'getstarted';
+  document.getElementById('tb-title').textContent = 'เริ่มต้นใช้งาน';
+  document.getElementById('tb-hint').textContent = 'Developer Onboarding';
+  highlightNav();
+  renderGetStarted();
+}
+
+function renderGetStarted(){
+  const stepsHtml = GETTING_STARTED_STEPS.map((s,i)=>{
+    const n = i+1;
+    return '<div class="step-item">'
+      + '<div class="step-marker"><span class="step-num">'+String(n).padStart(2,'0')+'</span>'+(n<GETTING_STARTED_STEPS.length?'<span class="step-line"></span>':'')+'</div>'
+      + '<div class="step-body"><h3>'+s.title+'</h3><p>'+s.desc+'</p></div>'
+      + '</div>';
+  }).join('');
+
+  document.getElementById('content').innerHTML =
+    '<div class="page-head"><div class="eyebrow"><span class="swatch"></span>นักพัฒนา</div>'
+    + '<h1>สนใจ API เริ่มยังไง?</h1>'
+    + '<p>ทำตามขั้นตอนด้านล่างเพื่อเริ่มพัฒนาและเชื่อมต่อกับ Megachem API ตั้งแต่สำรวจ API ไปจนถึงเผยแพร่ Application จริง</p></div>'
+    + '<div class="panel"><h3 style="margin-bottom:2px;">Get Started</h3>'
+    + '<div class="hint">8 ขั้นตอนสู่การใช้งาน API แบบ Production</div>'
+    + '<div class="steps-list">'+stepsHtml+'</div>'
+    + '<button class="btn btn-primary" style="margin-top:6px;" onclick="goRegisterApp()">เริ่มลงทะเบียน App</button>'
+    + '</div>';
+}
+
+function renderCategory(){
+  const key = state.activeCat;
+  const c = CATEGORIES.find(x=>x.key===key);
+  const q = (document.getElementById('ep-search').value||'').toLowerCase();
+  const eps = ENDPOINTS[key].filter(e=> (e.p+' '+e.sum).toLowerCase().includes(q) );
+
+  const env = ENV_META[state.env];
+  let html = '<div class="page-head">'
+    + '<div class="eyebrow"><span class="swatch"></span>หมวดหมู่ API</div>'
+    + '<h1>'+c.name+'</h1><p>'+c.desc+'</p>'
+    + '<div class="base-url"><span class="tag">Base URL</span><code>https://'+env.host+c.base+'</code>'
+    + '<span class="env-chip '+env.cls+'">'+env.short+'</span>'
+    + '<span class="tag" style="margin-left:auto;">Rate Limit</span><code>'+c.rateLimit+'</code></div>'
+    + '</div>';
+
+  if(state.env==='production'){
+    html += '<div class="env-banner">'+iconSvg('warning','')+'<span>โหมด Production — การเรียก API จริงจะมีผลกับข้อมูลจริงของบริษัท ใช้ Token ระดับ Production เท่านั้น</span></div>';
+  }
+
+  html += eps.map((e,i)=>renderEndpoint(key,e,i)).join('');
+  if(!eps.length) html += '<div class="empty-row">ไม่พบ endpoint ที่ตรงกับคำค้นหา</div>';
+  document.getElementById('content').innerHTML = html;
+}
+
+function buildReqHeaders(method){
+  const rows = [['Authorization','Bearer &lt;token&gt;','required','โทเคนสำหรับยืนยันตัวตนและตรวจสอบสิทธิ์']];
+  if(['POST','PUT','PATCH'].includes(method)) rows.push(['Content-Type','application/json','required','รูปแบบข้อมูลของ request body']);
+  rows.push(['Accept','application/json','optional','รูปแบบข้อมูลที่ต้องการรับกลับ']);
+  return rows;
+}
+function buildErrorExamples(e){
+  const errs = [{code:401, label:'Unauthorized', resp:'{\n  "error": "unauthorized",\n  "message": "Token ไม่ถูกต้อง หมดอายุ หรือไม่มีสิทธิ์เข้าถึง scope นี้"\n}'}];
+  if(e.p.includes('{id}')){
+    errs.push({code:404, label:'Not Found', resp:'{\n  "error": "not_found",\n  "message": "ไม่พบข้อมูลตาม id ที่ระบุ"\n}'});
+  } else if(e.params.some(p=>p[3]==='yes')){
+    errs.push({code:400, label:'Bad Request', resp:'{\n  "error": "validation_error",\n  "message": "ข้อมูลที่ส่งมาไม่ครบถ้วนหรือไม่ถูกต้อง"\n}'});
+  }
+  return errs;
+}
+function respTabsForEndpoint(catKey, idx){
+  const e = ENDPOINTS[catKey][idx];
+  return [{code:200, label:'OK', resp:e.resp}].concat(buildErrorExamples(e));
+}
+function selectRespTab(id, code){
+  const parts = id.split('-'); const idx = Number(parts.pop()); const catKey = parts.join('-');
+  const tabs = respTabsForEndpoint(catKey, idx);
+  const tab = tabs.find(t=>t.code===code);
+  if(!tab) return;
+  document.getElementById('resp-'+id).textContent = tab.resp;
+  const statusEl = document.getElementById('status-'+id);
+  statusEl.textContent = 'ตัวอย่าง '+tab.code+' '+tab.label;
+  statusEl.className = 'status-pill pending';
+  document.querySelectorAll('#resptabs-'+id+' .resp-tab').forEach(b=> b.classList.toggle('active', Number(b.dataset.code)===code));
+}
+
+function renderEndpoint(catKey, e, idx){
+  const id = catKey+'-'+idx;
+  const allowed = hasScope(e.scope);
+  const paramsRows = e.params.map(p=>'<tr><td><code>'+p[0]+'</code></td><td>'+p[1]+'</td><td>'+p[2]+'</td>'
+    +'<td>'+(p[3]==='yes'?'<span class="param-req">required</span>':'optional')+'</td><td>'+p[4]+'</td></tr>').join('');
+  const paramsTable = e.params.length ? (
+    '<table class="param-table"><thead><tr><th>Parameter</th><th>ตำแหน่ง</th><th>ชนิด</th><th>จำเป็น</th><th>คำอธิบาย</th></tr></thead><tbody>'+paramsRows+'</tbody></table>'
+  ) : '<div style="color:var(--ink-faint);font-size:12.5px;">ไม่มีพารามิเตอร์</div>';
+
+  const headerRows = buildReqHeaders(e.m).map(h=>'<tr><td><code>'+h[0]+'</code></td><td><code>'+h[1]+'</code></td>'
+    +'<td>'+(h[2]==='required'?'<span class="param-req">required</span>':'optional')+'</td><td>'+h[3]+'</td></tr>').join('');
+  const headersTable = '<table class="param-table"><thead><tr><th>Header</th><th>ค่า</th><th>จำเป็น</th><th>คำอธิบาย</th></tr></thead><tbody>'+headerRows+'</tbody></table>';
+
+  const respFieldsTable = e.respFields ? (
+    '<table class="param-table"><thead><tr><th>Field</th><th>ชนิด</th><th>คำอธิบาย</th></tr></thead><tbody>'
+    + e.respFields.map(f=>'<tr><td><code>'+f[0]+'</code></td><td>'+f[1]+'</td><td>'+f[2]+'</td></tr>').join('')
+    + '</tbody></table>'
+  ) : '';
+
+  const curl = 'curl -X '+e.m+' https://'+ENV_META[state.env].host+CATEGORIES.find(c=>c.key===catKey).base+e.p+' \\\n  -H "Authorization: Bearer <token>"'
+    + (e.reqBody ? ' \\\n  -H "Content-Type: application/json" \\\n  -d \''+e.reqBody.replace(/\n\s*/g,' ')+'\'' : '');
+
+  const errTabs = buildErrorExamples(e);
+  const tabsHtml = '<div class="resp-tabs" id="resptabs-'+id+'">'
+    + '<button class="resp-tab active" data-code="200" onclick="selectRespTab(\''+id+'\',200)">200 OK</button>'
+    + errTabs.map(t=>'<button class="resp-tab" data-code="'+t.code+'" onclick="selectRespTab(\''+id+'\','+t.code+')">'+t.code+' '+t.label+'</button>').join('')
+    + '</div>';
+
+  const detail = allowed ? (
+    '<p style="font-size:12.5px;color:var(--ink-dim);line-height:1.6;margin:0 0 14px;">'+(e.desc||e.sum)+'</p>'
+    + '<div class="grid2">'
+    + '<div><h4>Request Headers</h4>'+headersTable
+      + '<h4 style="margin-top:14px;">Parameters</h4>'+paramsTable
+      + (e.reqBody ? '<h4 style="margin-top:14px;">Request Body</h4><div class="code-panel">'+escapeHtml(e.reqBody)+'</div>' : '')
+      + '<h4 style="margin-top:14px;">cURL</h4><div class="code-panel">'+escapeHtml(curl)+'</div>'
+    + '</div>'
+    + '<div><h4>ตัวอย่าง Response</h4>'
+      + tabsHtml
+      + '<div class="status-pill pending" id="status-'+id+'">ยังไม่ได้เรียกใช้งาน</div>'
+      + '<div class="code-panel" id="resp-'+id+'">'+escapeHtml(e.resp)+'</div>'
+      + '<div class="try-row"><button class="btn btn-primary btn-sm" onclick="tryIt(\''+id+'\',this)">▶ Try it out</button>'
+      + '<span style="font-size:11.5px;color:var(--ink-faint);">จำลองการเรียก API ด้วยข้อมูลตัวอย่าง</span></div>'
+      + (respFieldsTable ? '<h4 style="margin-top:16px;">Response Fields</h4>'+respFieldsTable : '')
+    + '</div>'
+    + '</div>'
+  ) : (
+    '<div class="locked-note">'+iconSvg('lock','')+'<span>บทบาทของคุณ ('+ROLES[state.role].name+') ไม่มีสิทธิ์ <code class="mono">'+e.scope+'</code> — ต้องขอสิทธิ์เพิ่มเติมก่อนเรียกใช้งาน</span>'
+    + '<button class="btn btn-ghost btn-sm req-btn" onclick="requestAccess(\''+e.scope+'\')">ขอสิทธิ์การเข้าถึง</button></div>'
+  );
+
+  return '<div class="endpoint'+(allowed?'':' locked')+'" id="ep-'+id+'">'
+    + '<div class="ep-row" onclick="toggleEp(\''+id+'\')">'
+    + '<span class="method '+METHOD_CLASS[e.m]+'">'+e.m+'</span>'
+    + '<span class="ep-path">'+e.p+'</span>'
+    + '<span class="ep-summary">'+e.sum+'</span>'
+    + (allowed ? '<span class="scope-tag">'+e.scope+'</span>' : '<span class="lock-badge">'+iconSvg('lock','')+' locked</span>')
+    + '<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 6 6 6-6 6"/></svg>'
+    + '</div>'
+    + '<div class="ep-detail">'+detail+'</div>'
+    + '</div>';
+}
+
+function toggleEp(id){
+  const el = document.getElementById('ep-'+id);
+  el.classList.toggle('open');
+}
+function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escapeAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function tryIt(id, btn){
+  const statusEl = document.getElementById('status-'+id);
+  statusEl.textContent = 'กำลังเรียก...';
+  statusEl.className = 'status-pill pending';
+  btn.disabled = true;
+  setTimeout(()=>{
+    selectRespTab(id, 200);
+    statusEl.textContent = '200 OK · '+ENV_META[state.env].short+' · 118ms';
+    statusEl.className = 'status-pill';
+    btn.disabled = false;
+  }, 550);
+}
+
+function requestAccess(scope){
+  showToast('ส่งคำขอสิทธิ์ '+scope+' ให้ผู้ดูแลระบบแล้ว (จำลอง)');
+}
+
+/* ---------------- My App ---------------- */
+function goRegisterApp(){
+  showApps();
+  state.showAppForm = true;
+  renderAppsList();
+}
+function showApps(){
+  state.page = 'apps-list';
+  state.activeAppId = null;
+  state.editingApp = false;
+  document.getElementById('tb-title').textContent = 'My App';
+  document.getElementById('tb-hint').textContent = 'Application ที่ลงทะเบียนไว้';
+  highlightNav();
+  renderAppsList();
+}
+function renderAppsList(){
+  const toggleLabel = state.showAppForm ? 'ยกเลิก' : '+ ลงทะเบียน Application ใหม่';
+  const rows = state.apps.map(a=>renderAppRow(a)).join('');
+  const table = state.apps.length ? (
+    '<div class="table-wrap"><table class="app-table"><thead><tr>'
+    + '<th>Application</th><th>Type</th><th>Status</th><th>API Products</th><th>Created</th><th>Updated</th><th></th>'
+    + '</tr></thead><tbody>'+rows+'</tbody></table></div>'
+  ) : '<div class="empty-row">ยังไม่มี Application — ลงทะเบียนรายการแรกของคุณด้านบน</div>';
+
+  document.getElementById('content').innerHTML =
+    '<div class="page-head"><div class="eyebrow"><span class="swatch"></span>My App</div>'
+    + '<h1>Application ของฉัน</h1><p>รายการ Application ที่ลงทะเบียนไว้กับ Megachem API Portal พร้อมสถานะและระดับความน่าเชื่อถือ (Application Type)</p>'
+    + '<button class="btn btn-primary" style="margin-top:14px;" onclick="toggleAppForm()">'+toggleLabel+'</button></div>'
+    + (state.showAppForm ? renderAppForm() : table);
+}
+function renderAppRow(a){
+  const st = STATUS_META[a.status];
+  const ty = TYPE_META[a.type];
+  const chips = a.products.map(p=>{
+    const c = CATEGORIES.find(x=>x.key===p);
+    return '<span class="scope-tag">'+(c?c.name:p)+'</span>';
+  }).join('');
+  return '<tr onclick="showAppDetail(\''+a.id+'\')">'
+    + '<td class="app-name-cell"><b>'+a.name+'</b><span class="mono">'+a.subdomain+'.megachem.co.th</span></td>'
+    + '<td><span class="type-chip type-'+a.type+'">'+ty.label+'</span></td>'
+    + '<td><span class="status-dot '+st.cls+'"></span> <span class="status-text">'+st.label+'</span></td>'
+    + '<td><div class="tok-scopes">'+chips+'</div></td>'
+    + '<td class="app-date-cell">'+a.created+'</td>'
+    + '<td class="app-date-cell">'+a.updated+'</td>'
+    + '<td class="app-row-arrow">ดูรายละเอียด →</td>'
+    + '</tr>';
+}
+function toggleAppForm(){
+  state.showAppForm = !state.showAppForm;
+  renderAppsList();
+}
+function renderAppForm(){
+  const productChecks = CATEGORIES.map(c=>'<label class="scope-check"><input type="checkbox" value="'+c.key+'" class="app-product-check"><span>'+c.name+'</span></label>').join('');
+  return '<div class="panel"><h3>ลงทะเบียน Application ใหม่</h3>'
+    + '<div class="hint">กรอกข้อมูล Application ของคุณ — สถานะเริ่มต้นจะเป็น Draft และ Type เป็น Registered จนกว่าจะผ่านการตรวจสอบ</div>'
+    + '<div class="field" style="margin-bottom:10px;"><label>Application Name</label><input id="af-name" type="text" placeholder="เช่น Warehouse Scanner App"></div>'
+    + '<div class="field" style="margin-bottom:10px;"><label>Application Description</label><input id="af-desc" type="text" placeholder="อธิบายสั้น ๆ ว่า Application นี้ใช้ทำอะไร"></div>'
+    + '<div class="field" style="margin-bottom:10px;"><label>Subdomain</label><input id="af-subdomain" type="text" placeholder="เช่น warehouse-scanner"></div>'
+    + '<div class="field" style="margin-bottom:14px;"><label>Link Github</label><input id="af-github" type="text" placeholder="github.com/megachem/your-repo"></div>'
+    + '<div class="field" style="margin-bottom:6px;"><label>API Products ที่ต้องการใช้งาน</label></div>'
+    + '<div class="scope-grid" id="af-products">'+productChecks+'</div>'
+    + '<button class="btn btn-primary" onclick="submitAppForm()">ส่งลงทะเบียน</button>'
+    + '</div>';
+}
+function submitAppForm(){
+  const name = document.getElementById('af-name').value.trim();
+  if(!name){ showToast('กรุณากรอกชื่อ Application'); return; }
+  const desc = document.getElementById('af-desc').value.trim() || '-';
+  const subdomain = document.getElementById('af-subdomain').value.trim() || name.toLowerCase().replace(/[^a-z0-9]+/g,'-');
+  const github = document.getElementById('af-github').value.trim() || '-';
+  const products = Array.from(document.querySelectorAll('#af-products input:checked')).map(i=>i.value);
+  const r = ROLES[state.role];
+  state.apps.unshift({
+    id:'app-'+Math.random().toString(36).slice(2,8),
+    name, desc, subdomain, github, products,
+    status:'draft', type:'registered', owner:r.user, created:'2026-08-13', updated:'2026-08-13',
+    log:[{type:'create', date:'2026-08-13', actor:r.user}]
+  });
+  state.showAppForm = false;
+  document.getElementById('apps-count').textContent = state.apps.length;
+  renderAppsList();
+  showToast('ลงทะเบียน Application สำเร็จ');
+}
+function showAppDetail(id){
+  state.page = 'apps-detail';
+  state.activeAppId = id;
+  state.editingApp = false;
+  const a = state.apps.find(x=>x.id===id);
+  document.getElementById('tb-title').textContent = a.name;
+  document.getElementById('tb-hint').textContent = 'My App / รายละเอียด Application';
+  highlightNav();
+  renderAppDetail();
+}
+
+function addAppLog(a, type, note){
+  a.log.unshift({type, date:'2026-08-13', actor:ROLES[state.role].user, note});
+}
+function sendForReview(id){
+  const a = state.apps.find(x=>x.id===id);
+  a.status = 'pending'; a.updated = '2026-08-13';
+  addAppLog(a,'review');
+  renderAppDetail();
+  showToast('ส่ง Application เข้าสู่กระบวนการตรวจสอบแล้ว');
+}
+function publishApp(id){
+  const a = state.apps.find(x=>x.id===id);
+  a.status = 'active'; a.updated = '2026-08-13';
+  addAppLog(a,'publish');
+  renderAppDetail();
+  showToast('เผยแพร่ Application แล้ว');
+}
+function unpublishApp(id){
+  const a = state.apps.find(x=>x.id===id);
+  a.status = 'suspended'; a.updated = '2026-08-13';
+  addAppLog(a,'unpublish');
+  renderAppDetail();
+  showToast('ยกเลิกการเผยแพร่ Application แล้ว');
+}
+function renderStatusActions(a){
+  if(a.status==='draft') return '<button class="btn btn-ghost btn-sm" onclick="sendForReview(\''+a.id+'\')">ส่งตรวจสอบ (Send Review)</button>';
+  if(a.status==='pending') return '<button class="btn btn-ghost btn-sm" onclick="publishApp(\''+a.id+'\')">เผยแพร่ (Publish)</button>';
+  if(a.status==='active') return '<button class="btn btn-ghost btn-sm" onclick="unpublishApp(\''+a.id+'\')" style="color:var(--danger);">ยกเลิกเผยแพร่ (Unpublish)</button>';
+  if(a.status==='suspended') return '<button class="btn btn-ghost btn-sm" onclick="publishApp(\''+a.id+'\')">เผยแพร่อีกครั้ง (Publish)</button>';
+  return '';
+}
+
+function toggleAppEdit(){
+  state.editingApp = !state.editingApp;
+  renderAppDetail();
+}
+function renderAppEditForm(a){
+  const productChecks = CATEGORIES.map(c=>{
+    const checked = a.products.includes(c.key) ? ' checked' : '';
+    return '<label class="scope-check"><input type="checkbox" value="'+c.key+'" class="ae-product-check"'+checked+'><span>'+c.name+'</span></label>';
+  }).join('');
+  return '<div class="panel"><h3>แก้ไขข้อมูล Application</h3>'
+    + '<div class="field" style="margin-bottom:10px;"><label>Application Name</label><input id="ae-name" type="text" value="'+escapeAttr(a.name)+'"></div>'
+    + '<div class="field" style="margin-bottom:10px;"><label>Application Description</label><input id="ae-desc" type="text" value="'+escapeAttr(a.desc)+'"></div>'
+    + '<div class="field" style="margin-bottom:10px;"><label>Subdomain</label><input id="ae-subdomain" type="text" value="'+escapeAttr(a.subdomain)+'"></div>'
+    + '<div class="field" style="margin-bottom:14px;"><label>Link Github</label><input id="ae-github" type="text" value="'+escapeAttr(a.github)+'"></div>'
+    + '<div class="field" style="margin-bottom:6px;"><label>API Products ที่ต้องการใช้งาน</label></div>'
+    + '<div class="scope-grid" id="ae-products">'+productChecks+'</div>'
+    + '<div style="display:flex;gap:8px;margin-top:12px;"><button class="btn btn-primary" onclick="saveAppEdit()">บันทึกการแก้ไข</button>'
+    + '<button class="btn btn-ghost" onclick="toggleAppEdit()">ยกเลิก</button></div>'
+    + '</div>';
+}
+function saveAppEdit(){
+  const a = state.apps.find(x=>x.id===state.activeAppId);
+  a.name = document.getElementById('ae-name').value.trim() || a.name;
+  a.desc = document.getElementById('ae-desc').value.trim() || a.desc;
+  a.subdomain = document.getElementById('ae-subdomain').value.trim() || a.subdomain;
+  a.github = document.getElementById('ae-github').value.trim() || a.github;
+  a.products = Array.from(document.querySelectorAll('#ae-products input:checked')).map(i=>i.value);
+  a.updated = '2026-08-13';
+  addAppLog(a,'update');
+  state.editingApp = false;
+  document.getElementById('tb-title').textContent = a.name;
+  renderAppDetail();
+  showToast('บันทึกการแก้ไขแล้ว');
+}
+
+function renderAppLog(a){
+  const items = a.log.map((l,i)=>{
+    const meta = ACTION_META[l.type];
+    const last = i===a.log.length-1;
+    return '<div class="log-item"><div class="log-marker"><span class="log-dot '+meta.cls+'"></span>'+(last?'':'<span class="log-line"></span>')+'</div>'
+      + '<div class="log-body"><div class="log-top"><b>'+meta.label+'</b><span class="log-date mono">'+l.date+'</span></div>'
+      + '<div class="log-actor">'+l.actor+(l.note?' · '+l.note:'')+'</div></div></div>';
+  }).join('');
+  return '<div class="panel"><h3>ประวัติการเปลี่ยนแปลง (Activity Log)</h3><div class="log-list">'+items+'</div></div>';
+}
+
+function renderAppDetail(){
+  const a = state.apps.find(x=>x.id===state.activeAppId);
+  const st = STATUS_META[a.status];
+  const chips = a.products.map(p=>{
+    const c = CATEGORIES.find(x=>x.key===p);
+    return '<span class="scope-tag">'+(c?c.name:p)+'</span>';
+  }).join('');
+  const curIdx = APP_TYPES.indexOf(a.type);
+  const ladder = APP_TYPES.map((t,i)=>{
+    const cls = i<curIdx ? 'done' : (i===curIdx ? 'current' : 'todo');
+    return '<div class="ladder-step '+cls+'"><span class="ladder-dot"></span><span class="ladder-label">'+TYPE_META[t].label+'</span></div>';
+  }).join('<span class="ladder-line"></span>');
+
+  const leftCol = state.editingApp ? renderAppEditForm(a) : (
+    '<div class="panel"><h3>Application Description</h3><div class="hint" style="margin-bottom:0;">'+a.desc+'</div></div>'
+    + '<div class="panel"><h3>Subdomain</h3><div class="base-url" style="margin-top:0;"><code>https://'+a.subdomain+'.megachem.co.th</code></div></div>'
+    + '<div class="panel"><h3>Link Github</h3><a href="https://'+a.github+'" target="_blank" rel="noopener" class="mono" style="font-size:12.5px;display:inline-flex;align-items:center;">'+iconSvg('github','style="width:14px;height:14px;margin-right:6px;"')+a.github+'</a></div>'
+    + '<div class="panel"><h3>API Products ที่ต้องการใช้งาน</h3><div class="tok-scopes">'+chips+'</div></div>'
+  );
+
+  document.getElementById('content').innerHTML =
+    '<button class="btn btn-ghost btn-sm" onclick="showApps()">'+iconSvg('back','')+' กลับไปยัง My App</button>'
+    + '<div class="page-head" style="margin-top:14px;"><div class="eyebrow"><span class="swatch"></span>My App</div>'
+    + '<h1>'+a.name+'</h1>'
+    + '<div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;">'
+    + '<span class="status-dot '+st.cls+'"></span><span class="status-text">'+st.label+'</span>'
+    + '<span style="color:var(--line-strong);">·</span>'
+    + '<span class="mono" style="font-size:12px;color:var(--ink-dim);">ลงทะเบียนเมื่อ '+a.created+' · แก้ไขล่าสุด '+a.updated+' · โดย '+a.owner+'</span>'
+    + '</div>'
+    + '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">'
+    + '<button class="btn btn-ghost btn-sm" onclick="toggleAppEdit()">'+(state.editingApp?'ปิดการแก้ไข':'แก้ไข')+'</button>'
+    + renderStatusActions(a)
+    + '</div>'
+    + '</div>'
+    + '<div class="grid2">'
+    + '<div>'+leftCol+'</div>'
+    + '<div>'
+    + '<div class="panel"><h3>Application Type</h3><div class="hint">'+TYPE_META[a.type].desc+'</div>'
+    + '<div class="type-ladder">'+ladder+'</div></div>'
+    + '<div class="panel"><h3>Status</h3><div style="display:flex;align-items:center;gap:8px;"><span class="status-dot '+st.cls+'"></span><span class="status-text">'+st.label+'</span></div>'
+    + '<div class="hint" style="margin-top:10px;margin-bottom:0;">Active = ใช้งาน Production ได้ · Pending Review = รอตรวจสอบ · Draft = ยังไม่ส่งตรวจสอบ · Suspended = ถูกระงับการใช้งาน</div></div>'
+    + '</div>'
+    + '</div>'
+    + renderAppLog(a);
+}
+
+/* ---------------- Tokens page ---------------- */
+function showTokens(){
+  state.page = 'tokens';
+  document.getElementById('tb-title').textContent = 'Token ของฉัน';
+  document.getElementById('tb-hint').textContent = 'จัดการ API Token และสิทธิ์การเข้าถึง';
+  highlightNav();
+  renderTokens();
+}
+function renderTokens(){
+  const r = ROLES[state.role];
+  const allScopes = [];
+  CATEGORIES.forEach(c=> ENDPOINTS[c.key].forEach(e=>{ if(!allScopes.includes(e.scope)) allScopes.push(e.scope); }));
+
+  const scopeChecks = allScopes.map(s=>{
+    const ok = hasScope(s);
+    return '<label class="scope-check'+(ok?'':' disabled')+'"><input type="checkbox" value="'+s+'" '+(ok?'':'disabled')+'><code class="mono">'+s+'</code></label>';
+  }).join('');
+
+  const rows = state.tokens.map(t=>{
+    const scopesHtml = t.scopes.map(s=>'<span class="scope-tag">'+s+'</span>').join('');
+    const tEnv = ENV_META[t.env||'sandbox'];
+    return '<tr><td><span class="tok-value">'+t.value+'</span></td>'
+      +'<td><span class="env-chip '+tEnv.cls+'">'+tEnv.short+'</span></td>'
+      +'<td class="tok-scopes">'+scopesHtml+'</td>'
+      +'<td>'+t.created+'</td><td>'+t.expiry+'</td>'
+      +'<td style="display:flex;gap:6px;"><button class="btn btn-ghost btn-sm" onclick="copyToken(\''+t.id+'\')">คัดลอก</button>'
+      +'<button class="btn btn-ghost btn-sm" onclick="revokeToken(\''+t.id+'\')" style="color:var(--danger);">เพิกถอน</button></td></tr>';
+  }).join('');
+
+  document.getElementById('content').innerHTML =
+    '<div class="page-head"><div class="eyebrow"><span class="swatch"></span>บัญชีของฉัน</div>'
+    + '<h1>Token ของฉัน</h1><p>สร้างและจัดการ API Token สำหรับเรียกใช้งาน Megachem API — ขอบเขตสิทธิ์ (Scope) จะจำกัดตามบทบาทของคุณเสมอ ('+r.name+')</p></div>'
+    + '<div class="panel"><h3>สร้าง Token ใหม่</h3><div class="hint">เลือกขอบเขตสิทธิ์และ Environment ที่ต้องการ — ตัวเลือกที่จางไว้หมายถึงบทบาทของคุณยังไม่มีสิทธิ์นั้น</div>'
+    + '<div class="scope-grid" style="margin-bottom:12px;">'
+    + '<label class="scope-check"><input type="radio" name="tok-env" value="sandbox" '+(state.env==='sandbox'?'checked':'')+'><span>Developer (Sandbox)</span></label>'
+    + '<label class="scope-check"><input type="radio" name="tok-env" value="production" '+(state.env==='production'?'checked':'')+'><span>Production</span></label>'
+    + '</div>'
+    + '<div class="scope-grid" id="scope-grid">'+scopeChecks+'</div>'
+    + '<div class="expiry-row"><label>อายุการใช้งาน</label><select id="expiry-select"><option>30 วัน</option><option selected>90 วัน</option><option>ไม่มีวันหมดอายุ</option></select></div>'
+    + '<button class="btn btn-primary" onclick="generateToken()">+ สร้าง Token</button></div>'
+    + '<div class="panel"><h3>Token ที่ใช้งานอยู่</h3><div class="hint">'+state.tokens.length+' token</div>'
+    + (state.tokens.length ? '<div class="table-wrap"><table class="tok-table"><thead><tr><th>Token</th><th>Environment</th><th>Scope</th><th>สร้างเมื่อ</th><th>หมดอายุใน</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>' : '<div class="empty-row">ยังไม่มี Token — สร้างรายการแรกของคุณด้านบน</div>')
+    + '</div>';
+}
+function generateToken(){
+  const checked = Array.from(document.querySelectorAll('#scope-grid input:checked')).map(i=>i.value);
+  if(!checked.length){ showToast('กรุณาเลือกอย่างน้อย 1 ขอบเขตสิทธิ์'); return; }
+  const env = document.querySelector('input[name="tok-env"]:checked').value;
+  const expiry = document.getElementById('expiry-select').value;
+  const prefix = env==='production' ? 'mgc_live_' : 'mgc_test_';
+  state.tokens.push({
+    id:'tok_'+Math.random().toString(36).slice(2,8),
+    value:prefix+Math.random().toString(36).slice(2,10)+'••••••••',
+    scopes:checked, created:'2026-08-13', expiry, env
+  });
+  renderTokens();
+  showToast(env==='production' ? 'สร้าง Production Token สำเร็จ — เก็บรักษาอย่างปลอดภัย' : 'สร้าง Token ใหม่สำเร็จ');
+}
+function copyToken(id){
+  const t = state.tokens.find(x=>x.id===id);
+  if(t && navigator.clipboard){ navigator.clipboard.writeText(t.value).catch(()=>{}); }
+  showToast('คัดลอก Token แล้ว (ค่าจำลอง)');
+}
+function revokeToken(id){
+  state.tokens = state.tokens.filter(x=>x.id!==id);
+  renderTokens();
+  showToast('เพิกถอน Token แล้ว');
+}
+
+/* ---------------- Misc ---------------- */
+let toastTimer;
+function showToast(msg){
+  const el = document.getElementById('toast');
+  document.getElementById('toast-text').textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), 2400);
+}
+function toggleTheme(){
+  const root = document.documentElement;
+  const cur = root.getAttribute('data-theme');
+  if(cur==='dark'){ root.setAttribute('data-theme','light'); }
+  else if(cur==='light'){ root.removeAttribute('data-theme'); }
+  else { root.setAttribute('data-theme','dark'); }
+}
+
+</script>
