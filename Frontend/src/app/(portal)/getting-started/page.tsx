@@ -2,35 +2,34 @@
 
 import { useRouter } from "next/navigation";
 import { Panel, Btn } from "@/components/ui";
+import { useLocale } from "@/lib/locale-context";
 
 const STEPS = [
-  { title: "Explore API Products", desc: "ค้นหาและเลือก API ที่เหมาะกับ Application ของคุณ" },
-  { title: "Register Your App", desc: "ลงทะเบียน Application และข้อมูลผู้รับผิดชอบ" },
-  { title: "Request API Access", desc: "เลือก API และขอสิทธิ์สำหรับ Development" },
-  { title: "Get Sandbox Credentials", desc: "รับ Token ID และ Token Secret สำหรับทดสอบ" },
-  { title: "Develop & Test", desc: "พัฒนา Integration และทดสอบ Application" },
-  { title: "Submit for Review", desc: "ส่ง Application เพื่อตรวจสอบความพร้อม" },
-  { title: "Get Production Access", desc: "ผ่านการอนุมัติและรับ Production Credential" },
-  { title: "Publish Your App", desc: "เผยแพร่ Application บน MGT App" },
+  { title: "Explore API Products", descKey: "gettingStarted.stepExploreDesc" },
+  { title: "Register Your App", descKey: "gettingStarted.stepRegisterDesc" },
+  { title: "Request API Access", descKey: "gettingStarted.stepRequestDesc" },
+  { title: "Get Sandbox Credentials", descKey: "gettingStarted.stepSandboxDesc" },
+  { title: "Develop & Test", descKey: "gettingStarted.stepDevelopDesc" },
+  { title: "Submit for Review", descKey: "gettingStarted.stepSubmitDesc" },
+  { title: "Get Production Access", descKey: "gettingStarted.stepProductionDesc" },
+  { title: "Publish Your App", descKey: "gettingStarted.stepPublishDesc" },
 ];
 
 export default function GettingStartedPage() {
   const router = useRouter();
+  const { t } = useLocale();
 
   return (
     <div>
       <div className="mb-4.5">
         <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-ink-faint font-bold mb-1.5">
-          <span className="w-2 h-2 rounded-sm bg-teal" /> นักพัฒนา
+          <span className="w-2 h-2 rounded-sm bg-teal" /> {t("nav.developerSection")}
         </div>
-        <h1 className="text-[22px] font-bold">สนใจ API เริ่มยังไง?</h1>
-        <p className="text-ink-dim text-[13.5px] mt-1.5 max-w-[62ch] leading-relaxed">
-          ทำตามขั้นตอนด้านล่างเพื่อเริ่มพัฒนาและเชื่อมต่อกับ Megachem API ตั้งแต่สำรวจ API ไปจนถึงเผยแพร่
-          Application จริง
-        </p>
+        <h1 className="text-[22px] font-bold">{t("gettingStarted.heading")}</h1>
+        <p className="text-ink-dim text-[13.5px] mt-1.5 max-w-[62ch] leading-relaxed">{t("gettingStarted.desc")}</p>
       </div>
 
-      <Panel title="Get Started" hint="8 ขั้นตอนสู่การใช้งาน API แบบ Production">
+      <Panel title="Get Started" hint={t("gettingStarted.panelHint")}>
         <div className="flex flex-col mb-4">
           {STEPS.map((s, i) => (
             <div key={s.title} className="flex gap-4">
@@ -42,13 +41,13 @@ export default function GettingStartedPage() {
               </div>
               <div className="pb-5.5 pt-1">
                 <h3 className="text-[13.5px] font-bold">{s.title}</h3>
-                <p className="text-[12.5px] text-ink-dim mt-1 leading-relaxed max-w-[52ch]">{s.desc}</p>
+                <p className="text-[12.5px] text-ink-dim mt-1 leading-relaxed max-w-[52ch]">{t(s.descKey)}</p>
               </div>
             </div>
           ))}
         </div>
         <Btn variant="primary" onClick={() => router.push("/my-apps?new=1")}>
-          เริ่มลงทะเบียน App
+          {t("gettingStarted.startBtn")}
         </Btn>
       </Panel>
     </div>

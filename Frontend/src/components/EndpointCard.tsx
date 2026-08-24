@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { useEnv, ENV_HOST } from "@/lib/env-context";
 import { useAudience } from "@/lib/audience-context";
@@ -10,7 +11,7 @@ import { buildRespTabs, buildReqHeaders } from "@/lib/errorExamples";
 import { MethodBadge, ScopeTag, Btn } from "@/components/ui";
 import FriendlyResult from "@/components/FriendlyResult";
 import JsonTable from "@/components/JsonTable";
-import type { CategoryDto, EndpointDto } from "@/lib/types";
+import type { AppSummaryDto, CategoryDto, EndpointDto } from "@/lib/types";
 
 function ParamTable({ rows, headers, requiredCol }: { rows: string[][]; headers: string[]; requiredCol?: number }) {
   if (!rows.length) return <div className="text-[12.5px] text-ink-faint">ไม่มีพารามิเตอร์</div>;
@@ -90,18 +91,30 @@ export default function EndpointCard({
   /** Shown as a small tag above the headline — used on the cross-category search page where results mix categories. */
   categoryLabel?: string;
 }) {
-  const { hasScope } = useAuth();
+  const { user, hasScope } = useAuth();
   const { env } = useEnv();
   const { audience } = useAudience();
   const toast = useToast();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState(200);
   const [status, setStatus] = useState<{ text: string; pending: boolean } | null>(null);
   const [loading, setLoading] = useState(false);
-  const [keyGranted, setKeyGranted] = useState(false);
-  const [keyLoading, setKeyLoading] = useState(false);
+  const [myApps, setMyApps] = useState<AppSummaryDto[] | null>(null);
+  const [requestLoading, setRequestLoading] = useState(false);
 
   const allowed = hasScope(endpoint.scope);
+
+  useEffect(() => {
+    if (open && audience === "business" && myApps === null) {
+      api
+        .get<AppSummaryDto[]>("/api/applications")
+        .then((apps) => setMyApps(apps.filter((a) => a.ownerEmail === user?.email)))
+        .catch(() => setMyApps([]));
+    }
+  }, [open, audience, myApps, user?.email]);
+
+  const myActiveApp = myApps?.find((a) => a.status === "active" && a.products.includes(category.key));
   const tabs = buildRespTabs(endpoint);
   const activeTab = tabs.find((t) => t.code === tab) ?? tabs[0];
   const host = ENV_HOST[env];
@@ -119,16 +132,17 @@ export default function EndpointCard({
     }, 550);
   };
 
-  const requestKey = async () => {
-    setKeyLoading(true);
+  const requestAccess = async () => {
+    setRequestLoading(true);
     try {
-      await api.post("/api/tokens", { scopes: [endpoint.scope], env: "sandbox", expiry: "90 วัน" });
-      setKeyGranted(true);
-      toast("ได้กุญแจแล้ว — เก็บไว้ที่หน้า “Token ของฉัน”");
+      const apps: AppSummaryDto[] =
+        myApps ?? (await api.get<AppSummaryDto[]>("/api/applications").then((all) => all.filter((a) => a.ownerEmail === user?.email)));
+      if (myApps === null) setMyApps(apps);
+      router.push(apps.length === 0 ? "/my-apps?new=1" : "/my-apps");
     } catch {
-      toast("ขอกุญแจไม่สำเร็จ ลองใหม่อีกครั้ง");
+      toast("ตรวจสอบ Application ไม่สำเร็จ ลองใหม่อีกครั้ง");
     } finally {
-      setKeyLoading(false);
+      setRequestLoading(false);
     }
   };
 
@@ -194,15 +208,24 @@ export default function EndpointCard({
           )}
 
           <div className="flex items-center gap-2.5 mt-4 pt-3.5 border-t border-line flex-wrap">
-            <span className="text-[11.5px] text-ink-dim">
-              🔑 กุญแจที่ใช้งานนี้: <code className="font-mono text-[11px] bg-surface-2 rounded px-1.5 py-0.5">{endpoint.scope}</code>
-            </span>
-            {keyGranted ? (
-              <span className="text-[11.5px] text-post font-semibold">ได้กุญแจแล้ว ✅</span>
+            {allowed ? (
+              <>
+                <span className="text-[11.5px] text-post font-semibold">
+                  ✓ มีสิทธิ์แล้ว{myActiveApp ? ` · ${myActiveApp.name}` : ""}
+                </span>
+                <Btn size="sm" variant="primary" onClick={tryIt} disabled={loading}>
+                  ทดลอง API
+                </Btn>
+              </>
             ) : (
-              <Btn size="sm" onClick={requestKey} disabled={keyLoading}>
-                {keyLoading ? "กำลังขอ..." : "ขอกุญแจ"}
-              </Btn>
+              <>
+                <span className="text-[11.5px] text-ink-dim">
+                  🔐 ต้องการสิทธิ์: <code className="font-mono text-[11px] bg-surface-2 rounded px-1.5 py-0.5">{endpoint.scope}</code>
+                </span>
+                <Btn size="sm" onClick={requestAccess} disabled={requestLoading}>
+                  {requestLoading ? "กำลังตรวจสอบ..." : "ขอสิทธิ์ใช้งาน"}
+                </Btn>
+              </>
             )}
           </div>
         </div>

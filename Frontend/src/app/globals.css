@@ -38,8 +38,12 @@
   --danger-soft: #f6e4e2;
 }
 
+/* Dark palette lives in one place and is applied two ways:
+   - system preference, unless the user has explicitly chosen light (data-theme="light")
+   - explicit user choice (data-theme="dark"), regardless of system preference
+   Keep both blocks' values identical when editing. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --paper: #0f1517;
     --surface: #192326;
     --surface-2: #1f2a2e;
@@ -56,8 +60,6 @@
     --amber: #e0954b;
     --amber-soft: rgba(224, 149, 75, 0.14);
 
-    /* Rich mid-tone teal (not pastel) so hero banners/buttons still read as a
-       deliberate brand fill against a near-black page instead of blowing out. */
     --brand: #16786f;
     --brand-strong: #0f5a53;
 
@@ -74,6 +76,42 @@
     --danger: #e58176;
     --danger-soft: rgba(229, 129, 118, 0.14);
   }
+}
+
+:root[data-theme="dark"] {
+  --paper: #0f1517;
+  --surface: #192326;
+  --surface-2: #1f2a2e;
+  --surface-3: #263237;
+  --ink: #e7ecec;
+  --ink-dim: #9caaac;
+  --ink-faint: #6e7b7d;
+  --line: rgba(231, 236, 235, 0.14);
+  --line-strong: rgba(231, 236, 235, 0.26);
+
+  --teal: #4fbeb1;
+  --teal-strong: #79d2c7;
+  --teal-soft: rgba(79, 190, 177, 0.14);
+  --amber: #e0954b;
+  --amber-soft: rgba(224, 149, 75, 0.14);
+
+  /* Rich mid-tone teal (not pastel) so hero banners/buttons still read as a
+     deliberate brand fill against a near-black page instead of blowing out. */
+  --brand: #16786f;
+  --brand-strong: #0f5a53;
+
+  --get: #4fbeb1;
+  --get-soft: rgba(79, 190, 177, 0.14);
+  --post: #68c486;
+  --post-soft: rgba(104, 196, 134, 0.14);
+  --put: #e0954b;
+  --put-soft: rgba(224, 149, 75, 0.14);
+  --patch: #ad91ef;
+  --patch-soft: rgba(173, 145, 239, 0.14);
+  --delete: #e58176;
+  --delete-soft: rgba(229, 129, 118, 0.14);
+  --danger: #e58176;
+  --danger-soft: rgba(229, 129, 118, 0.14);
 }
 
 @theme inline {
@@ -108,7 +146,7 @@
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
 
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-prompt);
   --font-mono: var(--font-geist-mono);
 }
 
@@ -124,4 +162,36 @@ body {
 .scrollbar-thin::-webkit-scrollbar-thumb {
   background: var(--line-strong);
   border-radius: 999px;
+}
+
+/* --- Login illustration motion (decorative only) --- */
+@keyframes mgt-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-9px); }
+}
+@keyframes mgt-float-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes mgt-ring {
+  0% { transform: scale(1); opacity: 0.5; }
+  80%, 100% { transform: scale(1.8); opacity: 0; }
+}
+@keyframes mgt-sweep {
+  0% { transform: translateX(-120%); }
+  60%, 100% { transform: translateX(220%); }
+}
+
+.mgt-float { animation: mgt-float 7s ease-in-out infinite; }
+.mgt-float-soft { animation: mgt-float-soft 5.5s ease-in-out infinite; }
+.mgt-ring { animation: mgt-ring 3s ease-out infinite; }
+.mgt-sweep { animation: mgt-sweep 4.5s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mgt-float,
+  .mgt-float-soft,
+  .mgt-ring,
+  .mgt-sweep {
+    animation: none;
+  }
 }

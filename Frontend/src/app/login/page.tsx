@@ -3,14 +3,16 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/lib/toast";
+import { useLocale } from "@/lib/locale-context";
 import { ApiError } from "@/lib/api";
+import LanguageToggle from "@/components/LanguageToggle";
 
 const ROLE_PRESETS = [
-  { email: "sales.staff@megachem.co.th", password: "Sales@123", label: "พนักงานขาย (Sales)" },
-  { email: "purchase.staff@megachem.co.th", password: "Purchase@123", label: "พนักงานจัดซื้อ (Purchase)" },
-  { email: "finance.staff@megachem.co.th", password: "Finance@123", label: "พนักงานการเงิน (Finance)" },
-  { email: "hr.staff@megachem.co.th", password: "Hr@123", label: "ฝ่ายบุคคล (HR)" },
-  { email: "it-digital@megachem.co.th", password: "Admin@123", label: "ผู้ดูแลระบบ (Admin)" },
+  { email: "sales.staff@megachem.co.th", password: "Sales@123", labelKey: "login.roleSales" },
+  { email: "purchase.staff@megachem.co.th", password: "Purchase@123", labelKey: "login.rolePurchase" },
+  { email: "finance.staff@megachem.co.th", password: "Finance@123", labelKey: "login.roleFinance" },
+  { email: "hr.staff@megachem.co.th", password: "Hr@123", labelKey: "login.roleHr" },
+  { email: "it-digital@megachem.co.th", password: "Admin@123", labelKey: "login.roleAdmin" },
 ];
 
 function IconMail() {
@@ -105,6 +107,7 @@ function IconChevron() {
 export default function LoginPage() {
   const { login } = useAuth();
   const toast = useToast();
+  const { t } = useLocale();
   const [roleIdx, setRoleIdx] = useState(0);
   const [email, setEmail] = useState(ROLE_PRESETS[0].email);
   const [password, setPassword] = useState(ROLE_PRESETS[0].password);
@@ -126,7 +129,7 @@ export default function LoginPage() {
     try {
       await login(email, password, remember);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "เข้าสู่ระบบไม่สำเร็จ");
+      setError(err instanceof ApiError ? err.message : t("login.loginFailed"));
     } finally {
       setBusy(false);
     }
@@ -150,54 +153,133 @@ export default function LoginPage() {
               MGT <span style={{ color: "var(--teal-strong)" }}>Hub</span>
             </h1>
             <div className="w-11 h-1 rounded-full mt-4 mb-4" style={{ background: "var(--teal)" }} />
-            <div className="text-[19px] font-bold text-ink">สำหรับพนักงานทุกแผนก</div>
-            <p className="mt-3 text-[13.5px] leading-relaxed text-ink-dim max-w-[36ch]">
-              เข้าถึง API ของบริษัทแบบรวมศูนย์ พร้อมระบบสิทธิ์ตามบทบาท (Role-based Access) และ Token
-              สำหรับเรียกใช้งานแต่ละหมวดหมู่
-            </p>
+            <div className="text-[19px] font-bold text-ink">{t("login.forDepartment")}</div>
+            <p className="mt-3 text-[13.5px] leading-relaxed text-ink-dim max-w-[36ch]">{t("login.heroDesc")}</p>
           </div>
 
-          {/* Illustration: isometric cards evoking "API" + secured access, built with real 3D transforms (no source asset available for this) */}
-          <div className="relative h-[210px] mt-8 flex items-center justify-center select-none" aria-hidden style={{ perspective: "1000px" }}>
-            <div className="relative" style={{ transformStyle: "preserve-3d", transform: "rotateX(52deg) rotateZ(-38deg)" }}>
-              {/* base platform */}
-              <div
-                className="absolute rounded-[28px]"
-                style={{
-                  width: 190,
-                  height: 190,
-                  left: -95,
-                  top: -95,
-                  background: "rgba(255,255,255,.55)",
-                  transform: "translateZ(0px)",
-                  boxShadow: "0 6px 30px rgba(10,84,78,.18)",
-                }}
-              />
-              {/* API card — extruded block: side face + top face */}
-              <div className="absolute" style={{ transform: "translate(-46px, -34px) translateZ(0px)" }}>
-                <div className="absolute rounded-2xl" style={{ width: 118, height: 88, left: 0, top: 0, background: "var(--teal-strong)" }} />
+          {/* Illustration: aurora-lit tile with a glass "API request" card and a floating security
+              badge — depicts an authorized API call. Pure CSS (no source asset available for this). */}
+          <div
+            className="relative h-[268px] mt-8 rounded-[26px] overflow-hidden select-none"
+            aria-hidden
+            style={{ background: "linear-gradient(155deg, #04100f, #06201c 45%, #0b2a25)" }}
+          >
+            {/* aurora blobs */}
+            <div className="absolute rounded-full" style={{ width: 280, height: 280, left: -80, top: -110, background: "radial-gradient(circle, rgba(95,208,194,.5), transparent 62%)", filter: "blur(34px)" }} />
+            <div className="absolute rounded-full" style={{ width: 240, height: 240, right: -70, bottom: -100, background: "radial-gradient(circle, rgba(14,110,102,.75), transparent 62%)", filter: "blur(36px)" }} />
+            <div className="absolute rounded-full" style={{ width: 160, height: 160, right: 30, top: -60, background: "radial-gradient(circle, rgba(224,149,75,.3), transparent 62%)", filter: "blur(32px)" }} />
+
+            {/* fine grid, faded at the edges */}
+            <div
+              className="absolute inset-0 opacity-[0.16]"
+              style={{
+                backgroundImage:
+                  "linear-gradient(rgba(255,255,255,.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.6) 1px, transparent 1px)",
+                backgroundSize: "34px 34px",
+                maskImage: "radial-gradient(115% 85% at 50% 42%, #000 38%, transparent 76%)",
+                WebkitMaskImage: "radial-gradient(115% 85% at 50% 42%, #000 38%, transparent 76%)",
+              }}
+            />
+
+            {/* drifting light specks */}
+            <span className="absolute w-1 h-1 rounded-full bg-white/60 mgt-float-soft" style={{ left: "12%", top: "26%" }} />
+            <span className="absolute w-1.5 h-1.5 rounded-full bg-[#7ee0d1]/70 mgt-float" style={{ right: "13%", top: "20%" }} />
+            <span className="absolute w-1 h-1 rounded-full bg-[#e0954b]/70 mgt-float-soft" style={{ right: "20%", bottom: "16%" }} />
+
+            <div className="relative h-full flex items-center justify-center">
+              <div className="relative mgt-float">
+                {/* Glass request card */}
                 <div
-                  className="absolute rounded-2xl flex items-center justify-center"
-                  style={{ width: 118, height: 88, left: 0, top: 0, transform: "translateZ(26px)", background: "linear-gradient(155deg, var(--teal), var(--teal-strong))" }}
+                  className="relative w-[286px] rounded-[18px] overflow-hidden"
+                  style={{
+                    background: "rgba(255,255,255,.09)",
+                    border: "1px solid rgba(255,255,255,.2)",
+                    boxShadow: "0 26px 55px -14px rgba(0,0,0,.65)",
+                    backdropFilter: "blur(14px)",
+                    WebkitBackdropFilter: "blur(14px)",
+                  }}
                 >
-                  <span className="text-white font-extrabold text-[18px] tracking-wide" style={{ transform: "rotateZ(38deg) rotateX(-52deg)" }}>
-                    API
-                  </span>
+                  {/* light sweep across the glass */}
+                  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    <div
+                      className="absolute top-0 bottom-0 w-16 mgt-sweep"
+                      style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,.14), transparent)" }}
+                    />
+                  </div>
+
+                  {/* title bar */}
+                  <div className="relative flex items-center gap-1.5 px-3.5 py-2.5" style={{ borderBottom: "1px solid rgba(255,255,255,.12)" }}>
+                    <span className="w-[7px] h-[7px] rounded-full bg-white/25" />
+                    <span className="w-[7px] h-[7px] rounded-full bg-white/25" />
+                    <span className="w-[7px] h-[7px] rounded-full bg-white/25" />
+                    <span
+                      className="ml-auto text-[9px] font-bold tracking-[0.12em] rounded-full px-2 py-[3px]"
+                      style={{ color: "#8ee8da", background: "rgba(126,224,209,.14)", border: "1px solid rgba(126,224,209,.3)" }}
+                    >
+                      200 OK
+                    </span>
+                  </div>
+
+                  {/* request line */}
+                  <div className="relative px-3.5 pt-3.5 pb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] font-extrabold tracking-wider rounded px-1.5 py-[3px]" style={{ color: "#06302b", background: "#5fd0c2" }}>
+                        GET
+                      </span>
+                      <span className="font-mono text-[11.5px] text-white/90">/v1/sales/orders</span>
+                    </div>
+
+                    {/* response skeleton */}
+                    <div className="mt-3.5 flex flex-col gap-[7px]">
+                      <div className="flex gap-1.5">
+                        <span className="h-[7px] rounded-full bg-white/22" style={{ width: "34%" }} />
+                        <span className="h-[7px] rounded-full" style={{ width: "22%", background: "rgba(126,224,209,.55)" }} />
+                        <span className="h-[7px] rounded-full bg-white/14" style={{ width: "18%" }} />
+                      </div>
+                      <div className="flex gap-1.5">
+                        <span className="h-[7px] rounded-full bg-white/14" style={{ width: "26%" }} />
+                        <span className="h-[7px] rounded-full bg-white/22" style={{ width: "42%" }} />
+                      </div>
+                      <div className="flex gap-1.5">
+                        <span className="h-[7px] rounded-full" style={{ width: "20%", background: "rgba(224,149,75,.5)" }} />
+                        <span className="h-[7px] rounded-full bg-white/14" style={{ width: "30%" }} />
+                        <span className="h-[7px] rounded-full bg-white/22" style={{ width: "16%" }} />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              {/* Lock card — extruded block */}
-              <div className="absolute" style={{ transform: "translate(28px, 20px) translateZ(0px)" }}>
-                <div className="absolute rounded-2xl" style={{ width: 104, height: 104, left: 0, top: 0, background: "#CFE3DE" }} />
-                <div
-                  className="absolute rounded-2xl flex items-center justify-center bg-white"
-                  style={{ width: 104, height: 104, left: 0, top: 0, transform: "translateZ(30px)" }}
-                >
-                  <span style={{ color: "var(--teal-strong)", transform: "rotateZ(38deg) rotateX(-52deg)" }}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-9 h-9">
+
+                {/* Floating security badge */}
+                <div className="absolute -right-5 -bottom-5 mgt-float-soft">
+                  <span className="absolute inset-0 rounded-[18px] mgt-ring" style={{ background: "rgba(95,208,194,.45)" }} />
+                  <div
+                    className="relative w-[58px] h-[58px] rounded-[18px] flex items-center justify-center"
+                    style={{
+                      background: "linear-gradient(145deg, #6fdccd, #0e6e66)",
+                      border: "1px solid rgba(255,255,255,.35)",
+                      boxShadow: "0 14px 30px -6px rgba(0,0,0,.55), 0 0 34px rgba(95,208,194,.45)",
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
                       <rect x="4" y="10.5" width="16" height="9.5" rx="2" />
                       <path d="M7.5 10.5V7a4.5 4.5 0 0 1 9 0v3.5" />
                     </svg>
-                  </span>
+                  </div>
+                </div>
+
+                {/* Scope chip */}
+                <div
+                  className="absolute -left-4 -top-4 flex items-center gap-1.5 rounded-full px-2.5 py-1 mgt-float-soft"
+                  style={{
+                    background: "rgba(255,255,255,.12)",
+                    border: "1px solid rgba(255,255,255,.24)",
+                    backdropFilter: "blur(10px)",
+                    WebkitBackdropFilter: "blur(10px)",
+                    boxShadow: "0 10px 24px -8px rgba(0,0,0,.5)",
+                  }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#7ee0d1" }} />
+                  <span className="font-mono text-[9.5px] text-white/85">sales.read</span>
                 </div>
               </div>
             </div>
@@ -206,17 +288,20 @@ export default function LoginPage() {
 
         {/* ---- Right panel: form ---- */}
         <form onSubmit={submit} className="p-10 md:p-12 flex flex-col gap-4">
-          <div>
-            <h2 className="text-[24px] font-extrabold text-ink">เข้าสู่ระบบ</h2>
-            <div className="text-ink-dim text-[13px] mt-1.5 leading-relaxed">
-              ใช้บัญชี Megachem SSO ของคุณ
-              <br />
-              (ต้นแบบ — ไม่เชื่อมต่อระบบจริง)
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-[24px] font-extrabold text-ink">{t("login.title")}</h2>
+              <div className="text-ink-dim text-[13px] mt-1.5 leading-relaxed">
+                {t("login.subtitleLine1")}
+                <br />
+                {t("login.subtitleLine2")}
+              </div>
             </div>
+            <LanguageToggle />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-[12.5px] text-ink-dim font-semibold">อีเมลบริษัท</label>
+            <label className="text-[12.5px] text-ink-dim font-semibold">{t("login.companyEmail")}</label>
             <div className={inputWrap}>
               <span className="text-ink-faint flex-shrink-0"><IconMail /></span>
               <input
@@ -231,7 +316,7 @@ export default function LoginPage() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-[12.5px] text-ink-dim font-semibold">รหัสผ่าน</label>
+            <label className="text-[12.5px] text-ink-dim font-semibold">{t("login.password")}</label>
             <div className={inputWrap}>
               <span className="text-ink-faint flex-shrink-0"><IconLock /></span>
               <input
@@ -245,7 +330,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => setShowPassword((s) => !s)}
                 className="text-ink-faint hover:text-ink-dim flex-shrink-0"
-                aria-label={showPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
+                aria-label={showPassword ? t("login.hidePassword") : t("login.showPassword")}
               >
                 <IconEye off={showPassword} />
               </button>
@@ -253,7 +338,7 @@ export default function LoginPage() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-[12.5px] text-ink-dim font-semibold">บทบาท (สำหรับแผนก)</label>
+            <label className="text-[12.5px] text-ink-dim font-semibold">{t("login.role")}</label>
             <div className={`${inputWrap} relative`}>
               <span className="text-ink-faint flex-shrink-0"><IconUser /></span>
               <select
@@ -263,7 +348,7 @@ export default function LoginPage() {
               >
                 {ROLE_PRESETS.map((r, i) => (
                   <option key={r.email} value={i}>
-                    {r.label}
+                    {t(r.labelKey)}
                   </option>
                 ))}
               </select>
@@ -283,15 +368,15 @@ export default function LoginPage() {
                 onChange={(e) => setRemember(e.target.checked)}
                 className="w-4 h-4 accent-[var(--teal)]"
               />
-              จำฉันไว้ในระบบ
+              {t("login.rememberMe")}
             </label>
             <button
               type="button"
-              onClick={() => toast("กรุณาติดต่อฝ่าย IT เพื่อรีเซ็ตรหัสผ่าน")}
+              onClick={() => toast(t("login.forgotToast"))}
               className="font-semibold hover:underline"
               style={{ color: "var(--teal-strong)" }}
             >
-              ลืมรหัสผ่าน?
+              {t("login.forgotPassword")}
             </button>
           </div>
 
@@ -302,22 +387,22 @@ export default function LoginPage() {
             style={{ background: "var(--teal-strong)" }}
           >
             <IconLock />
-            {busy ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
+            {busy ? t("login.loggingIn") : t("login.loginBtn")}
           </button>
 
           <div className="flex items-center gap-3 text-[11.5px] text-ink-faint my-0.5">
             <span className="flex-1 h-px bg-line" />
-            หรือ
+            {t("login.or")}
             <span className="flex-1 h-px bg-line" />
           </div>
 
           <button
             type="button"
-            onClick={() => toast("การเข้าสู่ระบบด้วย SSO ยังไม่เปิดใช้งานในต้นแบบนี้")}
+            onClick={() => toast(t("login.ssoToast"))}
             className="flex items-center justify-center gap-2 border border-line-strong rounded-xl py-3.5 text-[14px] font-bold text-ink hover:bg-surface-2"
           >
             <IconKey />
-            เข้าสู่ระบบด้วย SSO
+            {t("login.ssoBtn")}
           </button>
 
           <div className="flex items-start gap-2 text-[11px] text-ink-faint mt-2 leading-relaxed">
@@ -325,8 +410,9 @@ export default function LoginPage() {
               <IconShield />
             </span>
             <span>
-              ระบบภายในสำหรับพนักงานเท่านั้น
-              <br />© 2026 Megachem (สงวนลิขสิทธิ์)
+              {t("login.internalOnly")}
+              <br />
+              {t("login.copyright")}
             </span>
           </div>
         </form>

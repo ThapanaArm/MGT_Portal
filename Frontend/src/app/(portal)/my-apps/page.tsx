@@ -51,7 +51,7 @@ export default function MyAppsPage() {
         </div>
         <h1 className="text-[22px] font-bold">Application ของฉัน</h1>
         <p className="text-ink-dim text-[13.5px] mt-1.5 max-w-[62ch] leading-relaxed">
-          รายการ Application ที่ลงทะเบียนไว้กับ Megachem API Portal พร้อมสถานะและระดับความน่าเชื่อถือ (Application
+          รายการ Application ที่ลงทะเบียนไว้กับ MGT Hub พร้อมสถานะและระดับความน่าเชื่อถือ (Application
           Type)
         </p>
         <div className="mt-3.5">

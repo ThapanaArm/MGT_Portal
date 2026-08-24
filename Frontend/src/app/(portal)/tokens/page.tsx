@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/lib/toast";
+import { useLocale } from "@/lib/locale-context";
 import { Btn, EmptyRow, EnvChip, Panel, ScopeTag } from "@/components/ui";
 import type { CategoryDto, CredEnv, EndpointDto, TokenDto } from "@/lib/types";
 
 export default function TokensPage() {
   const { user, hasScope } = useAuth();
+  const { t } = useLocale();
   const toast = useToast();
   const [tokens, setTokens] = useState<TokenDto[]>([]);
   const [allScopes, setAllScopes] = useState<string[]>([]);
@@ -65,7 +67,7 @@ export default function TokensPage() {
         </div>
         <h1 className="text-[22px] font-bold">Token ของฉัน</h1>
         <p className="text-ink-dim text-[13.5px] mt-1.5 max-w-[62ch] leading-relaxed">
-          สร้างและจัดการ API Token สำหรับเรียกใช้งาน Megachem API — ขอบเขตสิทธิ์ (Scope) จะจำกัดตามบทบาทของคุณเสมอ ({user?.roleName})
+          สร้างและจัดการ API Token สำหรับเรียกใช้งาน Megachem API — ขอบเขตสิทธิ์ (Scope) จะจำกัดตามบทบาทของคุณเสมอ ({user ? t(`roles.${user.roleKey}`) : ""})
         </p>
       </div>
 

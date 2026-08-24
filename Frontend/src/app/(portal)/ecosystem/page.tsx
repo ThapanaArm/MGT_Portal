@@ -3,12 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { useLocale } from "@/lib/locale-context";
 import { EmptyRow, ScopeTag, TypeChip } from "@/components/ui";
 import { AppAvatar } from "@/components/MediaPickers";
 import type { AppSummaryDto, CategoryDto } from "@/lib/types";
 
 export default function EcosystemPage() {
   const router = useRouter();
+  const { t } = useLocale();
   const [apps, setApps] = useState<AppSummaryDto[]>([]);
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [query, setQuery] = useState("");
@@ -42,16 +44,14 @@ export default function EcosystemPage() {
       >
         <div className="absolute left-0 right-0 bottom-0 h-1" style={{ background: "linear-gradient(90deg, var(--brand-strong), var(--amber))" }} />
         <div className="relative max-w-[620px]">
-          <h1 className="text-[30px] font-bold">MGT Ecosystem</h1>
-          <p className="text-[14px] opacity-90 mt-2 leading-relaxed">
-            สำรวจ Application ที่พัฒนาโดยทีมงาน Megachem บน API Portal ของบริษัท ทุกรายการผ่านการตรวจสอบจากคณะกรรมการแล้ว
-          </p>
+          <h1 className="text-[30px] font-bold">{t("ecosystem.title")}</h1>
+          <p className="text-[14px] opacity-90 mt-2 leading-relaxed">{t("ecosystem.desc")}</p>
           <div className="flex gap-2.5 flex-wrap mt-4.5">
             <button onClick={() => router.push("/my-apps?new=1")} className="bg-brand text-white rounded-lg px-4 py-2.5 text-[13.5px] font-semibold">
-              ลงทะเบียน Application ของคุณ
+              {t("ecosystem.registerApp")}
             </button>
             <button onClick={() => router.push("/getting-started")} className="bg-white/10 border border-white/28 text-white rounded-lg px-4 py-2.5 text-[13.5px] font-semibold hover:bg-white/18">
-              ขอสิทธิ์การใช้งาน API
+              {t("ecosystem.requestAccess")}
             </button>
           </div>
         </div>
@@ -59,7 +59,7 @@ export default function EcosystemPage() {
 
       {highlight.length > 0 && (
         <div className="mb-7">
-          <h2 className="text-[16px] font-bold mb-3.5">แนะนำ (Highlight)</h2>
+          <h2 className="text-[16px] font-bold mb-3.5">{t("ecosystem.highlight")}</h2>
           <div className="flex gap-3.5 overflow-x-auto pb-1.5 scrollbar-thin">
             {highlight.map((a) => (
               <div key={a.id} onClick={() => router.push(`/ecosystem/${a.id}`)} className="flex-shrink-0 w-[250px] border border-line rounded-[14px] bg-surface overflow-hidden cursor-pointer hover:border-teal">
@@ -83,22 +83,22 @@ export default function EcosystemPage() {
       )}
 
       <div className="flex items-center gap-2.5 flex-wrap mb-3">
-        <h2 className="text-[16px] font-bold flex-1">สำรวจ Application</h2>
+        <h2 className="text-[16px] font-bold flex-1">{t("ecosystem.exploreApps")}</h2>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="ค้นหา Application..."
+          placeholder={t("ecosystem.searchPlaceholder")}
           className="w-[260px] max-w-full border border-line-strong bg-surface rounded-lg px-3 py-2 text-[13px]"
         />
         <select value={sort} onChange={(e) => setSort(e.target.value as "updated" | "name")} className="border border-line-strong bg-paper rounded-lg px-2.5 py-2 text-[12.5px]">
-          <option value="updated">อัปเดตล่าสุด</option>
-          <option value="name">ชื่อ (A-Z)</option>
+          <option value="updated">{t("ecosystem.sortUpdated")}</option>
+          <option value="name">{t("ecosystem.sortName")}</option>
         </select>
       </div>
 
       <div className="flex gap-1.5 flex-wrap mb-4">
         <button onClick={() => setCat("all")} className={`border rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold ${cat === "all" ? "bg-teal-soft border-teal text-teal-strong" : "border-line-strong bg-surface text-ink-dim hover:bg-surface-2"}`}>
-          ทั้งหมด
+          {t("ecosystem.all")}
         </button>
         {categories.map((c) => (
           <button
@@ -112,7 +112,7 @@ export default function EcosystemPage() {
       </div>
 
       {filtered.length ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3.5">
           {filtered.map((a) => (
             <div key={a.id} onClick={() => router.push(`/ecosystem/${a.id}`)} className="border border-line rounded-[10px] bg-surface p-4 cursor-pointer hover:border-teal hover:bg-surface-2 flex flex-col gap-2.5">
               <div className="flex items-center gap-2.5">
@@ -132,7 +132,7 @@ export default function EcosystemPage() {
           ))}
         </div>
       ) : (
-        <EmptyRow>ไม่พบ Application ที่ตรงกับเงื่อนไข</EmptyRow>
+        <EmptyRow>{t("ecosystem.noResults")}</EmptyRow>
       )}
     </div>
   );
