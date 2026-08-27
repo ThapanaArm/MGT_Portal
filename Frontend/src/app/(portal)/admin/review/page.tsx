@@ -44,13 +44,13 @@ function ReviewCard({ app, categories, members, onChanged }: { app: AppSummaryDt
       <div className="flex items-center justify-between gap-2.5 flex-wrap mb-1">
         <div className="flex items-center gap-2.5">
           <AppAvatar image={app.image} icon={app.icon} size="sm" />
-          <h3 className="text-[14px] font-bold">{app.name}</h3>
+          <h3 className="text-[16.5px] font-bold">{app.name}</h3>
         </div>
-        <span className="text-[10.5px] font-bold tracking-wide rounded-full px-2.5 py-0.5 bg-teal-soft text-teal-strong whitespace-nowrap">
+        <span className="text-[13px] font-bold tracking-wide rounded-full px-2.5 py-0.5 bg-teal-soft text-teal-strong whitespace-nowrap">
           ขอระดับ {TYPE_LABEL[target]}
         </span>
       </div>
-      <div className="text-[12px] text-ink-dim mb-2.5">{app.description}</div>
+      <div className="text-[14.5px] text-ink-dim mb-2.5">{app.description}</div>
       <div className="flex gap-1.5 flex-wrap mb-1">
         {app.products.map((p) => (
           <ScopeTag key={p}>{categoryName(p)}</ScopeTag>
@@ -66,12 +66,12 @@ function ReviewCard({ app, categories, members, onChanged }: { app: AppSummaryDt
               onClick={() => vote(m.id)}
               className={`flex items-center gap-2.5 border rounded-lg px-2.5 py-2 text-left ${voted ? "bg-teal-soft border-teal" : "border-line-strong bg-paper hover:border-teal"}`}
             >
-              <span className={`w-4.5 h-4.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center text-[11px] text-white ${voted ? "bg-teal border-teal" : "border-line-strong bg-surface"}`}>
+              <span className={`w-4.5 h-4.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center text-[13.5px] text-white ${voted ? "bg-teal border-teal" : "border-line-strong bg-surface"}`}>
                 {voted ? "✓" : ""}
               </span>
               <span>
-                <b className="block text-[12.5px]">{m.name}</b>
-                <span className="block text-[11px] text-ink-faint">{m.roleTitle}</span>
+                <b className="block text-[15px]">{m.name}</b>
+                <span className="block text-[13.5px] text-ink-faint">{m.roleTitle}</span>
               </span>
             </button>
           );
@@ -79,7 +79,7 @@ function ReviewCard({ app, categories, members, onChanged }: { app: AppSummaryDt
       </div>
 
       <div className="flex items-center justify-between mt-3.5 flex-wrap gap-2">
-        <span className="text-[11.5px] text-ink-dim font-semibold">
+        <span className="text-[14px] text-ink-dim font-semibold">
           อนุมัติแล้ว {approvedCount}/3 เสียง · ต้องการอย่างน้อย {need} เสียงสำหรับระดับ {TYPE_LABEL[target]}
         </span>
         <Btn size="sm" danger onClick={reject}>ปฏิเสธคำขอ</Btn>
@@ -104,11 +104,11 @@ export default function AdminReviewPage() {
   return (
     <div>
       <div className="mb-3.5">
-        <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-ink-faint font-bold mb-1.5">
+        <div className="flex items-center gap-2 text-[13.5px] uppercase tracking-wide text-ink-faint font-bold mb-1.5">
           <span className="w-2 h-2 rounded-sm bg-teal" /> Admin
         </div>
-        <h1 className="text-[22px] font-bold">ตรวจสอบ Application</h1>
-        <p className="text-ink-dim text-[13.5px] mt-1.5 max-w-[62ch] leading-relaxed">
+        <h1 className="text-[26px] font-bold">ตรวจสอบ Application</h1>
+        <p className="text-ink-dim text-[16px] mt-1.5 max-w-[62ch] leading-relaxed">
           คณะกรรมการ 3 ท่านร่วมพิจารณาอนุมัติ Application แต่ละรายการ — เกณฑ์การอนุมัติขึ้นกับระดับ (Application
           Type) ที่ขอ: Official ต้องได้ 3/3 เสียง, Verify ต้องได้ 2/3 เสียง, Registered ต้องได้ 1/3 เสียง
         </p>

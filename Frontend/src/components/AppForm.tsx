@@ -69,53 +69,53 @@ export default function AppForm({
         <ShotsPicker shots={values.screenshots} onChange={(v) => set("screenshots", v)} />
 
         <div className="flex flex-col gap-1.5 mb-2.5">
-          <label className="text-[12.5px] text-ink-dim font-semibold">Application Name</label>
+          <label className="text-[15px] text-ink-dim font-semibold">Application Name</label>
           <input
             value={values.name}
             onChange={(e) => set("name", e.target.value)}
             placeholder="เช่น Warehouse Scanner App"
-            className="border border-line-strong bg-paper rounded-lg px-3 py-2 text-[13.5px]"
+            className="border border-line-strong bg-paper rounded-lg px-3 py-2 text-[16px]"
           />
         </div>
         <div className="flex flex-col gap-1.5 mb-2.5">
-          <label className="text-[12.5px] text-ink-dim font-semibold">Application Description</label>
+          <label className="text-[15px] text-ink-dim font-semibold">Application Description</label>
           <input
             value={values.description}
             onChange={(e) => set("description", e.target.value)}
             placeholder="อธิบายสั้น ๆ ว่า Application นี้ใช้ทำอะไร"
-            className="border border-line-strong bg-paper rounded-lg px-3 py-2 text-[13.5px]"
+            className="border border-line-strong bg-paper rounded-lg px-3 py-2 text-[16px]"
           />
         </div>
         <div className="flex flex-col gap-1.5 mb-2.5">
-          <label className="text-[12.5px] text-ink-dim font-semibold">Subdomain</label>
+          <label className="text-[15px] text-ink-dim font-semibold">Subdomain</label>
           <input
             value={values.subdomain}
             onChange={(e) => set("subdomain", e.target.value)}
             placeholder="เช่น warehouse-scanner"
-            className="border border-line-strong bg-paper rounded-lg px-3 py-2 text-[13.5px]"
+            className="border border-line-strong bg-paper rounded-lg px-3 py-2 text-[16px]"
           />
         </div>
         <div className="flex flex-col gap-1.5 mb-3.5">
-          <label className="text-[12.5px] text-ink-dim font-semibold">Link Github</label>
+          <label className="text-[15px] text-ink-dim font-semibold">Link Github</label>
           <input
             value={values.github}
             onChange={(e) => set("github", e.target.value)}
             placeholder="github.com/megachem/your-repo"
-            className="border border-line-strong bg-paper rounded-lg px-3 py-2 text-[13.5px]"
+            className="border border-line-strong bg-paper rounded-lg px-3 py-2 text-[16px]"
           />
         </div>
 
-        <label className="text-[12.5px] text-ink-dim font-semibold block mb-1.5">API Products ที่ต้องการใช้งาน</label>
+        <label className="text-[15px] text-ink-dim font-semibold block mb-1.5">API Products ที่ต้องการใช้งาน</label>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3.5">
           {categories.map((c) => (
-            <label key={c.key} className="flex items-center gap-2 border border-line-strong rounded-lg px-2.5 py-2 text-[12.5px] cursor-pointer">
+            <label key={c.key} className="flex items-center gap-2 border border-line-strong rounded-lg px-2.5 py-2 text-[15px] cursor-pointer">
               <input type="checkbox" checked={values.products.includes(c.key)} onChange={() => toggleProduct(c.key)} className="accent-teal" />
               {c.name}
             </label>
           ))}
         </div>
 
-        {error && <div className="text-[12.5px] text-danger bg-danger-soft rounded-lg px-3 py-2 mb-3">{error}</div>}
+        {error && <div className="text-[15px] text-danger bg-danger-soft rounded-lg px-3 py-2 mb-3">{error}</div>}
 
         <div className="flex gap-2">
           <Btn type="submit" variant="primary" disabled={busy}>

@@ -149,12 +149,12 @@ export default function LoginPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/mgt-logo.png" alt="MGT — Do It Right" className="h-9 w-auto object-contain" />
 
-            <h1 className="mt-9 text-[42px] leading-none font-extrabold text-ink">
+            <h1 className="mt-9 text-[46px] leading-none font-extrabold text-ink">
               MGT <span style={{ color: "var(--teal-strong)" }}>Hub</span>
             </h1>
             <div className="w-11 h-1 rounded-full mt-4 mb-4" style={{ background: "var(--teal)" }} />
-            <div className="text-[19px] font-bold text-ink">{t("login.forDepartment")}</div>
-            <p className="mt-3 text-[13.5px] leading-relaxed text-ink-dim max-w-[36ch]">{t("login.heroDesc")}</p>
+            <div className="text-[22px] font-bold text-ink">{t("login.forDepartment")}</div>
+            <p className="mt-3 text-[16px] leading-relaxed text-ink-dim max-w-[36ch]">{t("login.heroDesc")}</p>
           </div>
 
           {/* Illustration: aurora-lit tile with a glass "API request" card and a floating security
@@ -213,7 +213,7 @@ export default function LoginPage() {
                     <span className="w-[7px] h-[7px] rounded-full bg-white/25" />
                     <span className="w-[7px] h-[7px] rounded-full bg-white/25" />
                     <span
-                      className="ml-auto text-[9px] font-bold tracking-[0.12em] rounded-full px-2 py-[3px]"
+                      className="ml-auto text-[11.5px] font-bold tracking-[0.12em] rounded-full px-2 py-[3px]"
                       style={{ color: "#8ee8da", background: "rgba(126,224,209,.14)", border: "1px solid rgba(126,224,209,.3)" }}
                     >
                       200 OK
@@ -223,10 +223,10 @@ export default function LoginPage() {
                   {/* request line */}
                   <div className="relative px-3.5 pt-3.5 pb-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-[9px] font-extrabold tracking-wider rounded px-1.5 py-[3px]" style={{ color: "#06302b", background: "#5fd0c2" }}>
+                      <span className="text-[11.5px] font-extrabold tracking-wider rounded px-1.5 py-[3px]" style={{ color: "#06302b", background: "#5fd0c2" }}>
                         GET
                       </span>
-                      <span className="font-mono text-[11.5px] text-white/90">/v1/sales/orders</span>
+                      <span className="font-mono text-[14px] text-white/90">/v1/sales/orders</span>
                     </div>
 
                     {/* response skeleton */}
@@ -279,7 +279,7 @@ export default function LoginPage() {
                   }}
                 >
                   <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#7ee0d1" }} />
-                  <span className="font-mono text-[9.5px] text-white/85">sales.read</span>
+                  <span className="font-mono text-[12px] text-white/85">sales.read</span>
                 </div>
               </div>
             </div>
@@ -290,8 +290,8 @@ export default function LoginPage() {
         <form onSubmit={submit} className="p-10 md:p-12 flex flex-col gap-4">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-[24px] font-extrabold text-ink">{t("login.title")}</h2>
-              <div className="text-ink-dim text-[13px] mt-1.5 leading-relaxed">
+              <h2 className="text-[28px] font-extrabold text-ink">{t("login.title")}</h2>
+              <div className="text-ink-dim text-[15.5px] mt-1.5 leading-relaxed">
                 {t("login.subtitleLine1")}
                 <br />
                 {t("login.subtitleLine2")}
@@ -301,7 +301,7 @@ export default function LoginPage() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-[12.5px] text-ink-dim font-semibold">{t("login.companyEmail")}</label>
+            <label className="text-[15px] text-ink-dim font-semibold">{t("login.companyEmail")}</label>
             <div className={inputWrap}>
               <span className="text-ink-faint flex-shrink-0"><IconMail /></span>
               <input
@@ -310,13 +310,13 @@ export default function LoginPage() {
                 type="email"
                 required
                 placeholder="firstname.l@megachem.co.th"
-                className="flex-1 min-w-0 bg-transparent outline-none text-[14px] text-ink placeholder:text-ink-faint"
+                className="flex-1 min-w-0 bg-transparent outline-none text-[16.5px] text-ink placeholder:text-ink-faint"
               />
             </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-[12.5px] text-ink-dim font-semibold">{t("login.password")}</label>
+            <label className="text-[15px] text-ink-dim font-semibold">{t("login.password")}</label>
             <div className={inputWrap}>
               <span className="text-ink-faint flex-shrink-0"><IconLock /></span>
               <input
@@ -324,7 +324,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 type={showPassword ? "text" : "password"}
                 required
-                className="flex-1 min-w-0 bg-transparent outline-none text-[14px] text-ink"
+                className="flex-1 min-w-0 bg-transparent outline-none text-[16.5px] text-ink"
               />
               <button
                 type="button"
@@ -338,13 +338,13 @@ export default function LoginPage() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-[12.5px] text-ink-dim font-semibold">{t("login.role")}</label>
+            <label className="text-[15px] text-ink-dim font-semibold">{t("login.role")}</label>
             <div className={`${inputWrap} relative`}>
               <span className="text-ink-faint flex-shrink-0"><IconUser /></span>
               <select
                 value={roleIdx}
                 onChange={(e) => applyRole(Number(e.target.value))}
-                className="flex-1 min-w-0 bg-transparent outline-none text-[14px] text-ink appearance-none pr-5"
+                className="flex-1 min-w-0 bg-transparent outline-none text-[16.5px] text-ink appearance-none pr-5"
               >
                 {ROLE_PRESETS.map((r, i) => (
                   <option key={r.email} value={i}>
@@ -358,9 +358,9 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {error && <div className="text-[12.5px] text-danger bg-danger-soft rounded-lg px-3 py-2">{error}</div>}
+          {error && <div className="text-[15px] text-danger bg-danger-soft rounded-lg px-3 py-2">{error}</div>}
 
-          <div className="flex items-center justify-between text-[12.5px] -mt-1">
+          <div className="flex items-center justify-between text-[15px] -mt-1">
             <label className="flex items-center gap-2 cursor-pointer text-ink-dim">
               <input
                 type="checkbox"
@@ -383,14 +383,14 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={busy}
-            className="flex items-center justify-center gap-2 text-white rounded-xl py-3.5 text-[14px] font-bold mt-1 disabled:opacity-60"
+            className="flex items-center justify-center gap-2 text-white rounded-xl py-3.5 text-[16.5px] font-bold mt-1 disabled:opacity-60"
             style={{ background: "var(--teal-strong)" }}
           >
             <IconLock />
             {busy ? t("login.loggingIn") : t("login.loginBtn")}
           </button>
 
-          <div className="flex items-center gap-3 text-[11.5px] text-ink-faint my-0.5">
+          <div className="flex items-center gap-3 text-[14px] text-ink-faint my-0.5">
             <span className="flex-1 h-px bg-line" />
             {t("login.or")}
             <span className="flex-1 h-px bg-line" />
@@ -399,13 +399,13 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => toast(t("login.ssoToast"))}
-            className="flex items-center justify-center gap-2 border border-line-strong rounded-xl py-3.5 text-[14px] font-bold text-ink hover:bg-surface-2"
+            className="flex items-center justify-center gap-2 border border-line-strong rounded-xl py-3.5 text-[16.5px] font-bold text-ink hover:bg-surface-2"
           >
             <IconKey />
             {t("login.ssoBtn")}
           </button>
 
-          <div className="flex items-start gap-2 text-[11px] text-ink-faint mt-2 leading-relaxed">
+          <div className="flex items-start gap-2 text-[13.5px] text-ink-faint mt-2 leading-relaxed">
             <span className="mt-0.5 flex-shrink-0" style={{ color: "var(--teal)" }}>
               <IconShield />
             </span>

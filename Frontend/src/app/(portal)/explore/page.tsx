@@ -49,13 +49,13 @@ export default function ExplorePage() {
     });
   }, [endpoints, query, catFilter, catById]);
 
-  if (loading) return <div className="text-ink-faint text-[13px]">กำลังโหลด...</div>;
+  if (loading) return <div className="text-ink-faint text-[15.5px]">กำลังโหลด...</div>;
 
   return (
     <div>
       <div className="text-center mb-6 mt-2">
-        <h1 className="text-[24px] font-bold text-balance">คุณต้องการนำข้อมูลอะไรไปใช้?</h1>
-        <p className="text-ink-dim text-[13.5px] mt-2">ค้นหาข้อมูลและบริการที่พร้อมนำไปพัฒนา Application</p>
+        <h1 className="text-[28px] font-bold text-balance">คุณต้องการนำข้อมูลอะไรไปใช้?</h1>
+        <p className="text-ink-dim text-[16px] mt-2">ค้นหาข้อมูลและบริการที่พร้อมนำไปพัฒนา Application</p>
 
         <div className="max-w-[520px] mx-auto mt-5">
           <input
@@ -63,7 +63,7 @@ export default function ExplorePage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="เช่น ยอดขายลูกค้า, สต๊อกสินค้า, ใบแจ้งหนี้..."
-            className="w-full border border-line-strong bg-surface rounded-xl px-4 py-3 text-[14px] shadow-sm"
+            className="w-full border border-line-strong bg-surface rounded-xl px-4 py-3 text-[16.5px] shadow-sm"
           />
         </div>
 
@@ -73,7 +73,7 @@ export default function ExplorePage() {
               <button
                 key={s}
                 onClick={() => setQuery(s)}
-                className="text-[11.5px] border border-line-strong bg-surface text-ink-dim rounded-full px-3 py-1 hover:bg-surface-2"
+                className="text-[14px] border border-line-strong bg-surface text-ink-dim rounded-full px-3 py-1 hover:bg-surface-2"
               >
                 {s}
               </button>
@@ -87,7 +87,7 @@ export default function ExplorePage() {
       <div className="flex items-center justify-center gap-1.5 flex-wrap mb-5">
         <button
           onClick={() => setCatFilter("all")}
-          className={`text-[12px] font-semibold rounded-full px-3 py-1.5 border ${
+          className={`text-[14.5px] font-semibold rounded-full px-3 py-1.5 border ${
             catFilter === "all" ? "bg-teal-soft border-teal text-teal-strong" : "border-line-strong bg-surface text-ink-dim hover:bg-surface-2"
           }`}
         >
@@ -97,7 +97,7 @@ export default function ExplorePage() {
           <button
             key={c.key}
             onClick={() => setCatFilter(c.key)}
-            className={`text-[12px] font-semibold rounded-full px-3 py-1.5 border ${
+            className={`text-[14.5px] font-semibold rounded-full px-3 py-1.5 border ${
               catFilter === c.key ? "bg-teal-soft border-teal text-teal-strong" : "border-line-strong bg-surface text-ink-dim hover:bg-surface-2"
             }`}
           >
@@ -106,7 +106,7 @@ export default function ExplorePage() {
         ))}
       </div>
 
-      <div className="text-[11.5px] text-ink-faint mb-2.5">พบ {filtered.length} รายการ</div>
+      <div className="text-[14px] text-ink-faint mb-2.5">พบ {filtered.length} รายการ</div>
 
       {filtered.map((e) => {
         const cat = catById.get(e.categoryId);

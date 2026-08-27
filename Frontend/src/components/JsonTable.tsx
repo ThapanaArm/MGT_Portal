@@ -16,12 +16,12 @@ function FieldTable({ title, rows }: { title?: string; rows: [string, unknown][]
   if (!rows.length) return null;
   return (
     <div className="mb-2 last:mb-0">
-      {title && <div className="text-[10.5px] uppercase tracking-wide text-ink-faint font-bold mb-1">{title}</div>}
-      <table className="w-full border-collapse text-[12.5px]">
+      {title && <div className="text-[13px] uppercase tracking-wide text-ink-faint font-bold mb-1">{title}</div>}
+      <table className="w-full border-collapse text-[15px]">
         <thead>
           <tr>
             {["Field", "Type", "Value"].map((h) => (
-              <th key={h} className="text-left text-ink-faint font-semibold text-[10.5px] uppercase tracking-wide pb-1.5 pr-2 border-b border-line">
+              <th key={h} className="text-left text-ink-faint font-semibold text-[13px] uppercase tracking-wide pb-1.5 pr-2 border-b border-line">
                 {h}
               </th>
             ))}
@@ -31,9 +31,9 @@ function FieldTable({ title, rows }: { title?: string; rows: [string, unknown][]
           {rows.map(([k, v]) => (
             <tr key={k}>
               <td className="py-1.5 pr-2 border-b border-line align-top">
-                <code className="text-teal-strong text-[12px]">{k}</code>
+                <code className="text-teal-strong text-[14.5px]">{k}</code>
               </td>
-              <td className="py-1.5 pr-2 border-b border-line align-top text-ink-faint font-mono text-[11px]">{inferType(v)}</td>
+              <td className="py-1.5 pr-2 border-b border-line align-top text-ink-faint font-mono text-[13.5px]">{inferType(v)}</td>
               <td className="py-1.5 pr-2 border-b border-line align-top break-all">{formatVal(v)}</td>
             </tr>
           ))}
@@ -49,11 +49,11 @@ export default function JsonTable({ json }: { json: string }) {
   try {
     parsed = JSON.parse(json);
   } catch {
-    return <pre className="bg-surface-3 border border-line rounded-lg p-3 font-mono text-[12px] leading-relaxed overflow-x-auto whitespace-pre">{json}</pre>;
+    return <pre className="bg-surface-3 border border-line rounded-lg p-3 font-mono text-[14.5px] leading-relaxed overflow-x-auto whitespace-pre">{json}</pre>;
   }
 
   if (typeof parsed !== "object" || parsed === null) {
-    return <div className="text-[13px] font-semibold">{formatVal(parsed)}</div>;
+    return <div className="text-[15.5px] font-semibold">{formatVal(parsed)}</div>;
   }
 
   const obj = parsed as Record<string, unknown>;

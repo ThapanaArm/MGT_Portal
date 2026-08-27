@@ -16,17 +16,17 @@ export default function TopBar() {
       <LanguageToggle />
       <ThemeToggle />
       <div className="flex items-center gap-2 pl-3 border-l border-line" title={user?.email}>
-        <div className="w-7 h-7 rounded-full bg-amber-soft text-amber flex items-center justify-center text-[11px] font-bold flex-shrink-0">
+        <div className="w-7 h-7 rounded-full bg-amber-soft text-amber flex items-center justify-center text-[13.5px] font-bold flex-shrink-0">
           {user?.displayName?.slice(0, 2) ?? "--"}
         </div>
-        <span className="text-[12.5px] font-semibold whitespace-nowrap">{user ? t(`roles.${user.roleKey}`) : ""}</span>
+        <span className="text-[15px] font-semibold whitespace-nowrap">{user ? t(`roles.${user.roleKey}`) : ""}</span>
       </div>
       <button
         onClick={() => {
           logout();
           router.push("/login");
         }}
-        className="text-[12px] font-semibold border border-line-strong rounded-lg px-3 py-1.5 hover:bg-surface-2 whitespace-nowrap"
+        className="text-[14.5px] font-semibold border border-line-strong rounded-lg px-3 py-1.5 hover:bg-surface-2 whitespace-nowrap"
       >
         {t("common.logout")}
       </button>

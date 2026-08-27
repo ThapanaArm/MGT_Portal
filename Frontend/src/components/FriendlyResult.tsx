@@ -9,7 +9,7 @@ function formatValue(v: unknown): string {
 
 function FieldRow({ label, value }: { label: string; value: unknown }) {
   return (
-    <div className="flex items-baseline gap-2 py-1 text-[12.5px]">
+    <div className="flex items-baseline gap-2 py-1 text-[15px]">
       <span className="text-ink-dim flex-shrink-0 min-w-[120px]">{label}</span>
       <span className="font-semibold">{formatValue(value)}</span>
     </div>
@@ -38,11 +38,11 @@ export default function FriendlyResult({
   try {
     parsed = JSON.parse(json);
   } catch {
-    return <div className="text-[12.5px] text-ink-dim">{json}</div>;
+    return <div className="text-[15px] text-ink-dim">{json}</div>;
   }
 
   if (typeof parsed !== "object" || parsed === null) {
-    return <div className="text-[13px] font-semibold">{formatValue(parsed)}</div>;
+    return <div className="text-[15.5px] font-semibold">{formatValue(parsed)}</div>;
   }
 
   const obj = parsed as Record<string, unknown>;
@@ -61,7 +61,7 @@ export default function FriendlyResult({
             </div>
           ))}
           {meta.length > 0 && (
-            <div className="text-[11.5px] text-ink-faint flex gap-3 flex-wrap">
+            <div className="text-[14px] text-ink-faint flex gap-3 flex-wrap">
               {meta.map(([k, v]) => (
                 <span key={k}>
                   {metaLabelMap[k] ?? k}: <b>{formatValue(v)}</b>

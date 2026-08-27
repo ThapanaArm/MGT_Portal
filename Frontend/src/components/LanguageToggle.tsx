@@ -11,7 +11,7 @@ export default function LanguageToggle() {
         type="button"
         onClick={() => setLocale("th")}
         aria-pressed={locale === "th"}
-        className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-colors ${
+        className={`px-2.5 py-1 rounded-full text-[13.5px] font-bold transition-colors ${
           locale === "th" ? "bg-surface text-ink shadow-sm" : "text-ink-faint"
         }`}
       >
@@ -21,7 +21,7 @@ export default function LanguageToggle() {
         type="button"
         onClick={() => setLocale("en")}
         aria-pressed={locale === "en"}
-        className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-colors ${
+        className={`px-2.5 py-1 rounded-full text-[13.5px] font-bold transition-colors ${
           locale === "en" ? "bg-surface text-ink shadow-sm" : "text-ink-faint"
         }`}
       >

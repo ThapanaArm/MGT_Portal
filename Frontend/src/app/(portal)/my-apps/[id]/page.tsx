@@ -45,19 +45,19 @@ function CredentialBlock({ appId, env, cred, isAdmin, emptyNote, onChanged }: {
 
   return (
     <div className="border border-line rounded-lg p-3 bg-paper">
-      <h4 className="text-[11px] uppercase tracking-wide text-ink-faint font-bold mb-2.5 flex items-center gap-2">
+      <h4 className="text-[13.5px] uppercase tracking-wide text-ink-faint font-bold mb-2.5 flex items-center gap-2">
         <EnvChip env={env} />
       </h4>
       {cred ? (
         <>
           <div className="flex items-center gap-2 mb-2 flex-wrap">
-            <span className="text-[11px] text-ink-faint w-[76px] flex-shrink-0">Token ID</span>
-            <code className="font-mono text-[11.5px] bg-surface-2 rounded-md px-2 py-0.5 break-all flex-1 min-w-[110px]">{cred.tokenId}</code>
+            <span className="text-[13.5px] text-ink-faint w-[76px] flex-shrink-0">Token ID</span>
+            <code className="font-mono text-[14px] bg-surface-2 rounded-md px-2 py-0.5 break-all flex-1 min-w-[110px]">{cred.tokenId}</code>
             <Btn size="sm" onClick={() => copy(cred.tokenId)}>คัดลอก</Btn>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[11px] text-ink-faint w-[76px] flex-shrink-0">Token Secret</span>
-            <code className="font-mono text-[11.5px] bg-surface-2 rounded-md px-2 py-0.5 break-all flex-1 min-w-[110px]">
+            <span className="text-[13.5px] text-ink-faint w-[76px] flex-shrink-0">Token Secret</span>
+            <code className="font-mono text-[14px] bg-surface-2 rounded-md px-2 py-0.5 break-all flex-1 min-w-[110px]">
               {revealed ? cred.tokenSecret : "••••••••••••••••"}
             </code>
             <Btn size="sm" onClick={() => setRevealed((r) => !r)}>{revealed ? "ซ่อน" : "แสดง"}</Btn>
@@ -72,7 +72,7 @@ function CredentialBlock({ appId, env, cred, isAdmin, emptyNote, onChanged }: {
         </>
       ) : (
         <>
-          <div className="text-[12px] text-ink-faint">{emptyNote ?? "ยังไม่มี Credential"}</div>
+          <div className="text-[14.5px] text-ink-faint">{emptyNote ?? "ยังไม่มี Credential"}</div>
           {isAdmin && (
             <div className="mt-2.5 pt-2.5 border-t border-line">
               <Btn size="sm" onClick={regenerate}>ออก Credential ใหม่</Btn>
@@ -106,7 +106,7 @@ export default function AppDetailPage() {
 
   useEffect(load, [load]);
 
-  if (!detail) return <div className="text-ink-faint text-[13px]">กำลังโหลด...</div>;
+  if (!detail) return <div className="text-ink-faint text-[15.5px]">กำลังโหลด...</div>;
   const a = detail.summary;
   const categoryName = (key: string) => categories.find((c) => c.key === key)?.name ?? key;
 
@@ -147,17 +147,17 @@ export default function AppDetailPage() {
       </Btn>
 
       <div className="mt-3.5 mb-4.5">
-        <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-ink-faint font-bold mb-1.5">
+        <div className="flex items-center gap-2 text-[13.5px] uppercase tracking-wide text-ink-faint font-bold mb-1.5">
           <span className="w-2 h-2 rounded-sm bg-teal" /> My App
         </div>
         <div className="flex items-center gap-3.5">
           <AppAvatar image={a.image} icon={a.icon} size="lg" />
-          <h1 className="text-[22px] font-bold">{a.name}</h1>
+          <h1 className="text-[26px] font-bold">{a.name}</h1>
         </div>
         <div className="flex items-center gap-2.5 mt-2 flex-wrap">
           <StatusDot status={a.status} />
           <span className="text-line-strong">·</span>
-          <span className="font-mono text-[12px] text-ink-dim">
+          <span className="font-mono text-[14.5px] text-ink-dim">
             ลงทะเบียนเมื่อ {a.createdAt.slice(0, 10)} · แก้ไขล่าสุด {a.updatedAt.slice(0, 10)} · โดย {a.ownerEmail}
           </span>
         </div>
@@ -168,7 +168,7 @@ export default function AppDetailPage() {
               <select
                 value={reviewTarget}
                 onChange={(e) => setReviewTarget(e.target.value as AppType)}
-                className="border border-line-strong bg-paper rounded-lg px-2.5 py-1.5 text-[12px]"
+                className="border border-line-strong bg-paper rounded-lg px-2.5 py-1.5 text-[14.5px]"
               >
                 {APP_TYPES.map((t) => (
                   <option key={t} value={t}>{TYPE_LABEL[t]}</option>
@@ -178,7 +178,7 @@ export default function AppDetailPage() {
             </>
           )}
           {a.status === "pending" && (
-            <span className="text-[12px] text-ink-dim font-semibold">
+            <span className="text-[14.5px] text-ink-dim font-semibold">
               รอผลการตรวจสอบจากคณะกรรมการ — ขอระดับ {TYPE_LABEL[a.reviewTarget ?? a.type]} (
               {detail.votes.filter((v) => v.approved).length}/3 เสียงที่ต้องการ)
             </span>
@@ -220,14 +220,14 @@ export default function AppDetailPage() {
             />
           ) : (
             <>
-              <Panel title="Application Description"><div className="text-[12.5px] text-ink-dim">{a.description}</div></Panel>
+              <Panel title="Application Description"><div className="text-[15px] text-ink-dim">{a.description}</div></Panel>
               <Panel title="Subdomain">
-                <div className="font-mono text-[12.5px] bg-surface border border-line rounded-lg px-3 py-2">
+                <div className="font-mono text-[15px] bg-surface border border-line rounded-lg px-3 py-2">
                   <code className="text-teal-strong">https://{a.subdomain}.megachem.co.th</code>
                 </div>
               </Panel>
               <Panel title="Link Github">
-                <a href={`https://${a.github}`} target="_blank" rel="noopener" className="font-mono text-[12.5px] text-teal-strong">
+                <a href={`https://${a.github}`} target="_blank" rel="noopener" className="font-mono text-[15px] text-teal-strong">
                   {a.github}
                 </a>
               </Panel>
@@ -253,7 +253,7 @@ export default function AppDetailPage() {
                         i < curIdx ? "bg-teal-soft border-teal" : i === curIdx ? "bg-teal border-teal" : "border-line-strong bg-surface"
                       }`}
                     />
-                    <span className={`text-[10.5px] font-semibold ${i === curIdx ? "text-teal-strong" : "text-ink-faint"}`}>{TYPE_LABEL[t]}</span>
+                    <span className={`text-[13px] font-semibold ${i === curIdx ? "text-teal-strong" : "text-ink-faint"}`}>{TYPE_LABEL[t]}</span>
                   </div>
                   {i < APP_TYPES.length - 1 && <span className="w-6 h-0.5 bg-line-strong -mt-4" />}
                 </div>
@@ -262,7 +262,7 @@ export default function AppDetailPage() {
           </Panel>
           <Panel title="Status">
             <StatusDot status={a.status} />
-            <div className="text-[12px] text-ink-dim mt-2.5 leading-relaxed">
+            <div className="text-[14.5px] text-ink-dim mt-2.5 leading-relaxed">
               Active = ใช้งาน Production ได้ · Pending Review = รอตรวจสอบ · Draft = ยังไม่ส่งตรวจสอบ · Suspended = ถูกระงับการใช้งาน
             </div>
           </Panel>
@@ -279,10 +279,10 @@ export default function AppDetailPage() {
               </div>
               <div className="pb-4">
                 <div className="flex items-center gap-2.5 flex-wrap">
-                  <b className="text-[12.5px]">{ACTION_LABEL[l.actionType]}</b>
-                  <span className="font-mono text-[11px] text-ink-faint">{l.occurredAt.slice(0, 10)}</span>
+                  <b className="text-[15px]">{ACTION_LABEL[l.actionType]}</b>
+                  <span className="font-mono text-[13.5px] text-ink-faint">{l.occurredAt.slice(0, 10)}</span>
                 </div>
-                <div className="text-[11.5px] text-ink-dim mt-0.5">
+                <div className="text-[14px] text-ink-dim mt-0.5">
                   {l.actor}
                   {l.note ? ` · ${l.note}` : ""}
                 </div>

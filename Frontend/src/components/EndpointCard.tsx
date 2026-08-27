@@ -14,13 +14,13 @@ import JsonTable from "@/components/JsonTable";
 import type { AppSummaryDto, CategoryDto, EndpointDto } from "@/lib/types";
 
 function ParamTable({ rows, headers, requiredCol }: { rows: string[][]; headers: string[]; requiredCol?: number }) {
-  if (!rows.length) return <div className="text-[12.5px] text-ink-faint">ไม่มีพารามิเตอร์</div>;
+  if (!rows.length) return <div className="text-[15px] text-ink-faint">ไม่มีพารามิเตอร์</div>;
   return (
-    <table className="w-full border-collapse text-[12.5px]">
+    <table className="w-full border-collapse text-[15px]">
       <thead>
         <tr>
           {headers.map((h) => (
-            <th key={h} className="text-left text-ink-faint font-semibold text-[10.5px] uppercase tracking-wide pb-1.5 pr-2 border-b border-line">
+            <th key={h} className="text-left text-ink-faint font-semibold text-[13px] uppercase tracking-wide pb-1.5 pr-2 border-b border-line">
               {h}
             </th>
           ))}
@@ -35,9 +35,9 @@ function ParamTable({ rows, headers, requiredCol }: { rows: string[][]; headers:
               return (
                 <td key={j} className="py-1.5 pr-2 border-b border-line align-top">
                   {j === 0 ? (
-                    <code className="text-teal-strong text-[12px]">{cell}</code>
+                    <code className="text-teal-strong text-[14.5px]">{cell}</code>
                   ) : isRequired ? (
-                    <span className="text-danger text-[10px] font-bold">required</span>
+                    <span className="text-danger text-[12.5px] font-bold">required</span>
                   ) : isOptional ? (
                     "optional"
                   ) : (
@@ -149,15 +149,15 @@ export default function EndpointCard({
   const headerRow =
     audience === "business" ? (
       <div className="flex items-center gap-3 px-3.5 py-3.5 cursor-pointer select-none hover:bg-surface-2" onClick={() => setOpen((o) => !o)}>
-        <span className="text-[22px] flex-shrink-0">{endpoint.icon}</span>
+        <span className="text-[26px] flex-shrink-0">{endpoint.icon}</span>
         <div className="flex-1 min-w-0">
           {categoryLabel && (
-            <span className="inline-block text-[10px] font-semibold text-teal-strong bg-teal-soft rounded-full px-2 py-0.5 mb-1">
+            <span className="inline-block text-[12.5px] font-semibold text-teal-strong bg-teal-soft rounded-full px-2 py-0.5 mb-1">
               {categoryLabel}
             </span>
           )}
-          <div className="text-[14px] font-semibold leading-snug">{endpoint.summary}</div>
-          <div className="font-mono text-[10px] text-ink-faint mt-0.5">
+          <div className="text-[16.5px] font-semibold leading-snug">{endpoint.summary}</div>
+          <div className="font-mono text-[12.5px] text-ink-faint mt-0.5">
             {endpoint.method} {endpoint.path}
           </div>
         </div>
@@ -166,9 +166,9 @@ export default function EndpointCard({
     ) : (
       <div className="flex items-center gap-3 px-3.5 py-3 cursor-pointer select-none hover:bg-surface-2" onClick={() => setOpen((o) => !o)}>
         <MethodBadge method={endpoint.method} />
-        <span className="font-mono text-[13px] flex-shrink-0">{endpoint.path}</span>
-        <span className="text-ink-dim text-[12.5px] overflow-hidden text-ellipsis whitespace-nowrap flex-1">{endpoint.summary}</span>
-        {allowed ? <ScopeTag>{endpoint.scope}</ScopeTag> : <span className="text-[11px] text-danger flex items-center gap-1 flex-shrink-0">🔒 locked</span>}
+        <span className="font-mono text-[15.5px] flex-shrink-0">{endpoint.path}</span>
+        <span className="text-ink-dim text-[15px] overflow-hidden text-ellipsis whitespace-nowrap flex-1">{endpoint.summary}</span>
+        {allowed ? <ScopeTag>{endpoint.scope}</ScopeTag> : <span className="text-[13.5px] text-danger flex items-center gap-1 flex-shrink-0">🔒 locked</span>}
         <span className={`text-ink-faint flex-shrink-0 transition-transform ${open ? "rotate-90" : ""}`}>▸</span>
       </div>
     );
@@ -180,24 +180,24 @@ export default function EndpointCard({
       {open && audience === "business" && (
         <div className="border-t border-line p-4 bg-paper">
           {endpoint.scenario && (
-            <div className="flex items-start gap-2 bg-teal-soft text-teal-strong rounded-lg px-3 py-2.5 text-[12.5px] mb-3.5 leading-relaxed">
+            <div className="flex items-start gap-2 bg-teal-soft text-teal-strong rounded-lg px-3 py-2.5 text-[15px] mb-3.5 leading-relaxed">
               💡 <span>{endpoint.scenario}</span>
             </div>
           )}
           {paramsSentence(endpoint.params) && (
-            <div className="text-[12px] text-ink-dim mb-3.5">{paramsSentence(endpoint.params)}</div>
+            <div className="text-[14.5px] text-ink-dim mb-3.5">{paramsSentence(endpoint.params)}</div>
           )}
 
           <div className="flex items-center gap-2.5 mb-1">
             <Btn variant="primary" onClick={tryIt} disabled={loading}>
               ▶ ลองเลย
             </Btn>
-            <span className="text-[11.5px] text-ink-faint">ปลอดภัย ทดลองได้ ไม่กระทบข้อมูลจริง (โหมดทดลอง)</span>
+            <span className="text-[14px] text-ink-faint">ปลอดภัย ทดลองได้ ไม่กระทบข้อมูลจริง (โหมดทดลอง)</span>
           </div>
 
           {status && (
             <div className="mt-4">
-              <div className={`inline-flex items-center gap-1.5 text-[11px] font-mono rounded-full px-2.5 py-1 mb-2.5 ${status.pending ? "bg-surface-2 text-ink-faint" : "bg-post-soft text-post"}`}>
+              <div className={`inline-flex items-center gap-1.5 text-[13.5px] font-mono rounded-full px-2.5 py-1 mb-2.5 ${status.pending ? "bg-surface-2 text-ink-faint" : "bg-post-soft text-post"}`}>
                 {status.text}
               </div>
               {!status.pending && (() => {
@@ -210,7 +210,7 @@ export default function EndpointCard({
           <div className="flex items-center gap-2.5 mt-4 pt-3.5 border-t border-line flex-wrap">
             {allowed ? (
               <>
-                <span className="text-[11.5px] text-post font-semibold">
+                <span className="text-[14px] text-post font-semibold">
                   ✓ มีสิทธิ์แล้ว{myActiveApp ? ` · ${myActiveApp.name}` : ""}
                 </span>
                 <Btn size="sm" variant="primary" onClick={tryIt} disabled={loading}>
@@ -219,8 +219,8 @@ export default function EndpointCard({
               </>
             ) : (
               <>
-                <span className="text-[11.5px] text-ink-dim">
-                  🔐 ต้องการสิทธิ์: <code className="font-mono text-[11px] bg-surface-2 rounded px-1.5 py-0.5">{endpoint.scope}</code>
+                <span className="text-[14px] text-ink-dim">
+                  🔐 ต้องการสิทธิ์: <code className="font-mono text-[13.5px] bg-surface-2 rounded px-1.5 py-0.5">{endpoint.scope}</code>
                 </span>
                 <Btn size="sm" onClick={requestAccess} disabled={requestLoading}>
                   {requestLoading ? "กำลังตรวจสอบ..." : "ขอสิทธิ์ใช้งาน"}
@@ -235,34 +235,34 @@ export default function EndpointCard({
         <div className="border-t border-line p-4 bg-paper">
           {allowed ? (
             <>
-              <p className="text-[12.5px] text-ink-dim leading-relaxed mb-3.5">{endpoint.description || endpoint.summary}</p>
+              <p className="text-[15px] text-ink-dim leading-relaxed mb-3.5">{endpoint.description || endpoint.summary}</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                 <div>
-                  <h4 className="text-[11px] uppercase tracking-wide text-ink-faint font-bold mb-2">Request Headers</h4>
+                  <h4 className="text-[13.5px] uppercase tracking-wide text-ink-faint font-bold mb-2">Request Headers</h4>
                   <ParamTable headers={["Header", "ค่า", "จำเป็น", "คำอธิบาย"]} rows={buildReqHeaders(endpoint.method)} requiredCol={2} />
 
-                  <h4 className="text-[11px] uppercase tracking-wide text-ink-faint font-bold mb-2 mt-3.5">Parameters</h4>
+                  <h4 className="text-[13.5px] uppercase tracking-wide text-ink-faint font-bold mb-2 mt-3.5">Parameters</h4>
                   <ParamTable headers={["Parameter", "ตำแหน่ง", "ชนิด", "จำเป็น", "คำอธิบาย"]} rows={endpoint.params} requiredCol={3} />
 
                   {endpoint.reqBody && (
                     <>
-                      <h4 className="text-[11px] uppercase tracking-wide text-ink-faint font-bold mb-2 mt-3.5">Request Body</h4>
+                      <h4 className="text-[13.5px] uppercase tracking-wide text-ink-faint font-bold mb-2 mt-3.5">Request Body</h4>
                       <JsonTable json={endpoint.reqBody} />
                     </>
                   )}
 
-                  <h4 className="text-[11px] uppercase tracking-wide text-ink-faint font-bold mb-2 mt-3.5">cURL</h4>
-                  <pre className="bg-surface-3 border border-line rounded-lg p-3 font-mono text-[12px] leading-relaxed overflow-x-auto whitespace-pre">{curl}</pre>
+                  <h4 className="text-[13.5px] uppercase tracking-wide text-ink-faint font-bold mb-2 mt-3.5">cURL</h4>
+                  <pre className="bg-surface-3 border border-line rounded-lg p-3 font-mono text-[14.5px] leading-relaxed overflow-x-auto whitespace-pre">{curl}</pre>
                 </div>
 
                 <div>
-                  <h4 className="text-[11px] uppercase tracking-wide text-ink-faint font-bold mb-2">ตัวอย่าง Response</h4>
+                  <h4 className="text-[13.5px] uppercase tracking-wide text-ink-faint font-bold mb-2">ตัวอย่าง Response</h4>
                   <div className="flex gap-1 flex-wrap mb-2.5">
                     {tabs.map((t) => (
                       <button
                         key={t.code}
                         onClick={() => setTab(t.code)}
-                        className={`border font-mono text-[11px] px-2.5 py-1 rounded-md ${
+                        className={`border font-mono text-[13.5px] px-2.5 py-1 rounded-md ${
                           tab === t.code ? "bg-teal-soft border-teal text-teal-strong font-bold" : "border-line-strong bg-surface text-ink-dim hover:bg-surface-2"
                         }`}
                       >
@@ -270,7 +270,7 @@ export default function EndpointCard({
                       </button>
                     ))}
                   </div>
-                  <div className={`inline-flex items-center gap-1.5 text-[11px] font-mono rounded-full px-2.5 py-1 mb-2 ${status?.pending === false ? "bg-post-soft text-post" : "bg-surface-2 text-ink-faint"}`}>
+                  <div className={`inline-flex items-center gap-1.5 text-[13.5px] font-mono rounded-full px-2.5 py-1 mb-2 ${status?.pending === false ? "bg-post-soft text-post" : "bg-surface-2 text-ink-faint"}`}>
                     {status?.text ?? "ยังไม่ได้เรียกใช้งาน"}
                   </div>
                   <div className="border border-line rounded-lg p-3 bg-surface">
@@ -280,16 +280,16 @@ export default function EndpointCard({
                     <button
                       onClick={tryIt}
                       disabled={loading}
-                      className="bg-brand text-white rounded-lg px-3 py-1.5 text-[12.5px] font-semibold disabled:opacity-60"
+                      className="bg-brand text-white rounded-lg px-3 py-1.5 text-[15px] font-semibold disabled:opacity-60"
                     >
                       ▶ Try it out
                     </button>
-                    <span className="text-[11.5px] text-ink-faint">จำลองการเรียก API ด้วยข้อมูลตัวอย่าง</span>
+                    <span className="text-[14px] text-ink-faint">จำลองการเรียก API ด้วยข้อมูลตัวอย่าง</span>
                   </div>
 
                   {endpoint.respFields.length > 0 && (
                     <>
-                      <h4 className="text-[11px] uppercase tracking-wide text-ink-faint font-bold mb-2 mt-4">Response Fields</h4>
+                      <h4 className="text-[13.5px] uppercase tracking-wide text-ink-faint font-bold mb-2 mt-4">Response Fields</h4>
                       <ParamTable headers={["Field", "ชนิด", "คำอธิบาย"]} rows={endpoint.respFields.map((f) => [f[0], f[1], f[2]])} />
                     </>
                   )}
@@ -297,7 +297,7 @@ export default function EndpointCard({
               </div>
             </>
           ) : (
-            <div className="flex items-center gap-2.5 bg-danger-soft text-danger rounded-lg px-3 py-2.5 text-[12.5px]">
+            <div className="flex items-center gap-2.5 bg-danger-soft text-danger rounded-lg px-3 py-2.5 text-[15px]">
               🔒 <span>บทบาทของคุณไม่มีสิทธิ์ <code className="font-mono">{endpoint.scope}</code> — ต้องขอสิทธิ์เพิ่มเติมก่อนเรียกใช้งาน</span>
             </div>
           )}

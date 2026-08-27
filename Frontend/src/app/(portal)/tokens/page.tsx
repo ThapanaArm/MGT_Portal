@@ -62,11 +62,11 @@ export default function TokensPage() {
   return (
     <div>
       <div className="mb-3.5">
-        <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-ink-faint font-bold mb-1.5">
+        <div className="flex items-center gap-2 text-[13.5px] uppercase tracking-wide text-ink-faint font-bold mb-1.5">
           <span className="w-2 h-2 rounded-sm bg-teal" /> บัญชีของฉัน
         </div>
-        <h1 className="text-[22px] font-bold">Token ของฉัน</h1>
-        <p className="text-ink-dim text-[13.5px] mt-1.5 max-w-[62ch] leading-relaxed">
+        <h1 className="text-[26px] font-bold">Token ของฉัน</h1>
+        <p className="text-ink-dim text-[16px] mt-1.5 max-w-[62ch] leading-relaxed">
           สร้างและจัดการ API Token สำหรับเรียกใช้งาน Megachem API — ขอบเขตสิทธิ์ (Scope) จะจำกัดตามบทบาทของคุณเสมอ ({user ? t(`roles.${user.roleKey}`) : ""})
         </p>
       </div>
@@ -74,7 +74,7 @@ export default function TokensPage() {
       <Panel title="สร้าง Token ใหม่" hint="เลือกขอบเขตสิทธิ์และ Environment ที่ต้องการ — ตัวเลือกที่จางไว้หมายถึงบทบาทของคุณยังไม่มีสิทธิ์นั้น">
         <div className="grid grid-cols-2 gap-2 mb-3">
           {(["sandbox", "production"] as const).map((e) => (
-            <label key={e} className="flex items-center gap-2 border border-line-strong rounded-lg px-2.5 py-2 text-[12.5px] cursor-pointer">
+            <label key={e} className="flex items-center gap-2 border border-line-strong rounded-lg px-2.5 py-2 text-[15px] cursor-pointer">
               <input type="radio" name="env" checked={env === e} onChange={() => setEnv(e)} className="accent-teal" />
               {e === "sandbox" ? "Developer (Sandbox)" : "Production"}
             </label>
@@ -84,16 +84,16 @@ export default function TokensPage() {
           {allScopes.map((s) => {
             const ok = hasScope(s);
             return (
-              <label key={s} className={`flex items-center gap-2 border border-line-strong rounded-lg px-2.5 py-2 text-[12.5px] ${ok ? "cursor-pointer" : "opacity-45 cursor-not-allowed"}`}>
+              <label key={s} className={`flex items-center gap-2 border border-line-strong rounded-lg px-2.5 py-2 text-[15px] ${ok ? "cursor-pointer" : "opacity-45 cursor-not-allowed"}`}>
                 <input type="checkbox" disabled={!ok} checked={checked.has(s)} onChange={() => toggle(s)} className="accent-teal" />
-                <code className="font-mono text-[11.5px]">{s}</code>
+                <code className="font-mono text-[14px]">{s}</code>
               </label>
             );
           })}
         </div>
         <div className="flex items-center gap-2.5 mb-3.5 flex-wrap">
-          <label className="text-[12.5px] text-ink-dim">อายุการใช้งาน</label>
-          <select value={expiry} onChange={(e) => setExpiry(e.target.value)} className="border border-line-strong bg-paper rounded-lg px-2.5 py-2 text-[12.5px]">
+          <label className="text-[15px] text-ink-dim">อายุการใช้งาน</label>
+          <select value={expiry} onChange={(e) => setExpiry(e.target.value)} className="border border-line-strong bg-paper rounded-lg px-2.5 py-2 text-[15px]">
             <option>30 วัน</option>
             <option>90 วัน</option>
             <option>ไม่มีวันหมดอายุ</option>
@@ -105,11 +105,11 @@ export default function TokensPage() {
       <Panel title="Token ที่ใช้งานอยู่" hint={`${tokens.length} token`}>
         {tokens.length ? (
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-[12.5px]">
+            <table className="w-full border-collapse text-[15px]">
               <thead>
                 <tr>
                   {["Token", "Environment", "Scope", "สร้างเมื่อ", "หมดอายุใน", ""].map((h) => (
-                    <th key={h} className="text-left text-ink-faint text-[10.5px] uppercase tracking-wide font-bold pr-2.5 pb-2 border-b border-line whitespace-nowrap">
+                    <th key={h} className="text-left text-ink-faint text-[13px] uppercase tracking-wide font-bold pr-2.5 pb-2 border-b border-line whitespace-nowrap">
                       {h}
                     </th>
                   ))}
@@ -118,7 +118,7 @@ export default function TokensPage() {
               <tbody>
                 {tokens.map((t) => (
                   <tr key={t.id}>
-                    <td className="py-2.5 pr-2.5 border-b border-line"><code className="font-mono bg-surface-2 rounded-md px-2 py-0.5 text-[11.5px]">{t.value}</code></td>
+                    <td className="py-2.5 pr-2.5 border-b border-line"><code className="font-mono bg-surface-2 rounded-md px-2 py-0.5 text-[14px]">{t.value}</code></td>
                     <td className="py-2.5 pr-2.5 border-b border-line"><EnvChip env={t.env} /></td>
                     <td className="py-2.5 pr-2.5 border-b border-line">
                       <div className="flex gap-1 flex-wrap">

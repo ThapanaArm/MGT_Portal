@@ -46,11 +46,11 @@ export default function MyAppsPage() {
   return (
     <div>
       <div className="mb-3.5">
-        <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-ink-faint font-bold mb-1.5">
+        <div className="flex items-center gap-2 text-[13.5px] uppercase tracking-wide text-ink-faint font-bold mb-1.5">
           <span className="w-2 h-2 rounded-sm bg-teal" /> My App
         </div>
-        <h1 className="text-[22px] font-bold">Application ของฉัน</h1>
-        <p className="text-ink-dim text-[13.5px] mt-1.5 max-w-[62ch] leading-relaxed">
+        <h1 className="text-[26px] font-bold">Application ของฉัน</h1>
+        <p className="text-ink-dim text-[16px] mt-1.5 max-w-[62ch] leading-relaxed">
           รายการ Application ที่ลงทะเบียนไว้กับ MGT Hub พร้อมสถานะและระดับความน่าเชื่อถือ (Application
           Type)
         </p>
@@ -72,16 +72,16 @@ export default function MyAppsPage() {
           onCancel={() => setShowForm(false)}
         />
       ) : loading ? (
-        <div className="text-ink-faint text-[13px]">กำลังโหลด...</div>
+        <div className="text-ink-faint text-[15.5px]">กำลังโหลด...</div>
       ) : apps.length === 0 ? (
         <EmptyRow>ยังไม่มี Application — ลงทะเบียนรายการแรกของคุณด้านบน</EmptyRow>
       ) : (
         <div className="border border-line rounded-[10px] bg-surface overflow-x-auto">
-          <table className="w-full min-w-[820px] border-collapse text-[12.5px]">
+          <table className="w-full min-w-[820px] border-collapse text-[15px]">
             <thead>
               <tr>
                 {["Application", "Type", "Status", "API Products", "Created", "Updated", ""].map((h) => (
-                  <th key={h} className="text-left text-ink-faint text-[10.5px] uppercase tracking-wide font-bold px-3.5 py-2.5 border-b border-line whitespace-nowrap">
+                  <th key={h} className="text-left text-ink-faint text-[13px] uppercase tracking-wide font-bold px-3.5 py-2.5 border-b border-line whitespace-nowrap">
                     {h}
                   </th>
                 ))}
@@ -94,8 +94,8 @@ export default function MyAppsPage() {
                     <div className="flex items-center gap-2.5">
                       <AppAvatar image={a.image} icon={a.icon} size="sm" />
                       <div>
-                        <b className="block text-[13px]">{a.name}</b>
-                        <span className="block font-mono text-[11px] text-ink-faint">{a.subdomain}.megachem.co.th</span>
+                        <b className="block text-[15.5px]">{a.name}</b>
+                        <span className="block font-mono text-[13.5px] text-ink-faint">{a.subdomain}.megachem.co.th</span>
                       </div>
                     </div>
                   </td>
@@ -108,8 +108,8 @@ export default function MyAppsPage() {
                       ))}
                     </div>
                   </td>
-                  <td className="px-3.5 py-3 border-b border-line font-mono text-[11.5px] text-ink-dim whitespace-nowrap">{a.createdAt.slice(0, 10)}</td>
-                  <td className="px-3.5 py-3 border-b border-line font-mono text-[11.5px] text-ink-dim whitespace-nowrap">{a.updatedAt.slice(0, 10)}</td>
+                  <td className="px-3.5 py-3 border-b border-line font-mono text-[14px] text-ink-dim whitespace-nowrap">{a.createdAt.slice(0, 10)}</td>
+                  <td className="px-3.5 py-3 border-b border-line font-mono text-[14px] text-ink-dim whitespace-nowrap">{a.updatedAt.slice(0, 10)}</td>
                   <td className="px-3.5 py-3 border-b border-line text-teal-strong font-semibold whitespace-nowrap">ดูรายละเอียด →</td>
                 </tr>
               ))}

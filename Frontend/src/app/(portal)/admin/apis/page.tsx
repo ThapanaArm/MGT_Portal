@@ -92,11 +92,11 @@ export default function AdminApisPage() {
   return (
     <div>
       <div className="mb-3.5">
-        <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-ink-faint font-bold mb-1.5">
+        <div className="flex items-center gap-2 text-[13.5px] uppercase tracking-wide text-ink-faint font-bold mb-1.5">
           <span className="w-2 h-2 rounded-sm bg-teal" /> Admin
         </div>
-        <h1 className="text-[22px] font-bold">จัดการ API</h1>
-        <p className="text-ink-dim text-[13.5px] mt-1.5 max-w-[62ch] leading-relaxed">
+        <h1 className="text-[26px] font-bold">จัดการ API</h1>
+        <p className="text-ink-dim text-[16px] mt-1.5 max-w-[62ch] leading-relaxed">
           เพิ่ม แก้ไข หรือลบ API endpoint ในแต่ละหมวดหมู่ — การเปลี่ยนแปลงจะมีผลกับหน้าหมวดหมู่ API ทันที
         </p>
       </div>
@@ -106,7 +106,7 @@ export default function AdminApisPage() {
           <button
             key={c.key}
             onClick={() => setActiveCat(c.key)}
-            className={`border rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold ${
+            className={`border rounded-full px-3.5 py-1.5 text-[15px] font-semibold ${
               activeCat === c.key ? "bg-teal-soft border-teal text-teal-strong" : "border-line-strong bg-surface text-ink-dim hover:bg-surface-2"
             }`}
           >
@@ -123,31 +123,31 @@ export default function AdminApisPage() {
         <Panel title={editingId != null ? "แก้ไข API" : "เพิ่ม API ใหม่"} hint={`หมวดหมู่: ${categories.find((c) => c.key === activeCat)?.name ?? ""}`}>
           <form onSubmit={save} className="flex flex-col gap-2.5">
             <div>
-              <label className="text-[12.5px] text-ink-dim font-semibold block mb-1.5">Method</label>
-              <select value={form.method} onChange={(e) => setForm({ ...form, method: e.target.value })} className="border border-line-strong bg-paper rounded-lg px-3 py-2 text-[13px]">
+              <label className="text-[15px] text-ink-dim font-semibold block mb-1.5">Method</label>
+              <select value={form.method} onChange={(e) => setForm({ ...form, method: e.target.value })} className="border border-line-strong bg-paper rounded-lg px-3 py-2 text-[15.5px]">
                 {METHODS.map((m) => (
                   <option key={m} value={m}>{m}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="text-[12.5px] text-ink-dim font-semibold block mb-1.5">Path</label>
-              <input value={form.path} onChange={(e) => setForm({ ...form, path: e.target.value })} placeholder="/example" className="w-full border border-line-strong bg-paper rounded-lg px-3 py-2 text-[13px]" />
+              <label className="text-[15px] text-ink-dim font-semibold block mb-1.5">Path</label>
+              <input value={form.path} onChange={(e) => setForm({ ...form, path: e.target.value })} placeholder="/example" className="w-full border border-line-strong bg-paper rounded-lg px-3 py-2 text-[15.5px]" />
             </div>
             <div>
-              <label className="text-[12.5px] text-ink-dim font-semibold block mb-1.5">Summary (สั้น)</label>
-              <input value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} className="w-full border border-line-strong bg-paper rounded-lg px-3 py-2 text-[13px]" />
+              <label className="text-[15px] text-ink-dim font-semibold block mb-1.5">Summary (สั้น)</label>
+              <input value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} className="w-full border border-line-strong bg-paper rounded-lg px-3 py-2 text-[15.5px]" />
             </div>
             <div>
-              <label className="text-[12.5px] text-ink-dim font-semibold block mb-1.5">Description (ละเอียด)</label>
-              <input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full border border-line-strong bg-paper rounded-lg px-3 py-2 text-[13px]" />
+              <label className="text-[15px] text-ink-dim font-semibold block mb-1.5">Description (ละเอียด)</label>
+              <input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full border border-line-strong bg-paper rounded-lg px-3 py-2 text-[15.5px]" />
             </div>
             <div>
-              <label className="text-[12.5px] text-ink-dim font-semibold block mb-1.5">Scope</label>
-              <input value={form.scope} onChange={(e) => setForm({ ...form, scope: e.target.value })} placeholder="เช่น sales.read" className="w-full border border-line-strong bg-paper rounded-lg px-3 py-2 text-[13px]" />
+              <label className="text-[15px] text-ink-dim font-semibold block mb-1.5">Scope</label>
+              <input value={form.scope} onChange={(e) => setForm({ ...form, scope: e.target.value })} placeholder="เช่น sales.read" className="w-full border border-line-strong bg-paper rounded-lg px-3 py-2 text-[15.5px]" />
             </div>
             <div>
-              <label className="text-[12.5px] text-ink-dim font-semibold block mb-1.5">Icon (แสดงในมุมมองผู้ใช้ทั่วไป)</label>
+              <label className="text-[15px] text-ink-dim font-semibold block mb-1.5">Icon (แสดงในมุมมองผู้ใช้ทั่วไป)</label>
               <div className="flex flex-wrap gap-1.5">
                 {ICON_CHOICES.map((ic) => (
                   <button
@@ -162,21 +162,21 @@ export default function AdminApisPage() {
               </div>
             </div>
             <div>
-              <label className="text-[12.5px] text-ink-dim font-semibold block mb-1.5">สถานการณ์ใช้งาน (สำหรับผู้ใช้ทั่วไป)</label>
+              <label className="text-[15px] text-ink-dim font-semibold block mb-1.5">สถานการณ์ใช้งาน (สำหรับผู้ใช้ทั่วไป)</label>
               <input
                 value={form.scenario}
                 onChange={(e) => setForm({ ...form, scenario: e.target.value })}
                 placeholder="เช่น อยากรู้ยอดขายลูกค้ารายนี้ย้อนหลัง → ใช้อันนี้"
-                className="w-full border border-line-strong bg-paper rounded-lg px-3 py-2 text-[13px]"
+                className="w-full border border-line-strong bg-paper rounded-lg px-3 py-2 text-[15.5px]"
               />
             </div>
             <div>
-              <label className="text-[12.5px] text-ink-dim font-semibold block mb-1.5">ตัวอย่าง Response (JSON)</label>
+              <label className="text-[15px] text-ink-dim font-semibold block mb-1.5">ตัวอย่าง Response (JSON)</label>
               <textarea
                 value={form.respExample}
                 onChange={(e) => setForm({ ...form, respExample: e.target.value })}
                 placeholder='{ "id": "..." }'
-                className="w-full min-h-[110px] border border-line-strong bg-paper rounded-lg px-3 py-2 text-[12.5px] font-mono resize-y"
+                className="w-full min-h-[110px] border border-line-strong bg-paper rounded-lg px-3 py-2 text-[15px] font-mono resize-y"
               />
             </div>
             <div className="flex gap-2 mt-1">
@@ -187,11 +187,11 @@ export default function AdminApisPage() {
         </Panel>
       ) : (
         <div className="border border-line rounded-[10px] bg-surface overflow-x-auto">
-          <table className="w-full border-collapse text-[12.5px]">
+          <table className="w-full border-collapse text-[15px]">
             <thead>
               <tr>
                 {["Icon", "Method", "Path", "Summary", "Scope", ""].map((h) => (
-                  <th key={h} className="text-left text-ink-faint text-[10.5px] uppercase tracking-wide font-bold px-3.5 py-2.5 border-b border-line">
+                  <th key={h} className="text-left text-ink-faint text-[13px] uppercase tracking-wide font-bold px-3.5 py-2.5 border-b border-line">
                     {h}
                   </th>
                 ))}
@@ -200,7 +200,7 @@ export default function AdminApisPage() {
             <tbody>
               {endpoints.map((e) => (
                 <tr key={e.id}>
-                  <td className="px-3.5 py-3 border-b border-line text-[16px]">{e.icon}</td>
+                  <td className="px-3.5 py-3 border-b border-line text-[19px]">{e.icon}</td>
                   <td className="px-3.5 py-3 border-b border-line"><MethodBadge method={e.method} /></td>
                   <td className="px-3.5 py-3 border-b border-line font-mono">{e.path}</td>
                   <td className="px-3.5 py-3 border-b border-line">{e.summary}</td>
@@ -215,7 +215,7 @@ export default function AdminApisPage() {
               ))}
               {!endpoints.length && (
                 <tr>
-                  <td colSpan={6} className="text-center text-ink-faint text-[12.5px] py-5">ยังไม่มี API ในหมวดนี้</td>
+                  <td colSpan={6} className="text-center text-ink-faint text-[15px] py-5">ยังไม่มี API ในหมวดนี้</td>
                 </tr>
               )}
             </tbody>
