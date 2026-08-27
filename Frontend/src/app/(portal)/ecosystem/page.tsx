@@ -18,7 +18,8 @@ export default function EcosystemPage() {
   const [sort, setSort] = useState<"updated" | "name">("updated");
 
   useEffect(() => {
-    api.get<AppSummaryDto[]>("/api/applications?status=active").then(setApps);
+    // catalog=true = แคตตาล็อกที่เผยแพร่แล้ว เปิดให้พนักงานทุกคนเห็นโดยตั้งใจ
+    api.get<AppSummaryDto[]>("/api/applications?catalog=true").then(setApps);
     api.get<CategoryDto[]>("/api/categories").then(setCategories);
   }, []);
 
@@ -44,13 +45,13 @@ export default function EcosystemPage() {
       >
         <div className="absolute left-0 right-0 bottom-0 h-1" style={{ background: "linear-gradient(90deg, var(--brand-strong), var(--amber))" }} />
         <div className="relative max-w-[620px]">
-          <h1 className="text-[30px] font-bold">{t("ecosystem.title")}</h1>
-          <p className="text-[14px] opacity-90 mt-2 leading-relaxed">{t("ecosystem.desc")}</p>
+          <h1 className="text-[34px] font-bold">{t("ecosystem.title")}</h1>
+          <p className="text-[16.5px] opacity-90 mt-2 leading-relaxed">{t("ecosystem.desc")}</p>
           <div className="flex gap-2.5 flex-wrap mt-4.5">
-            <button onClick={() => router.push("/my-apps?new=1")} className="bg-brand text-white rounded-lg px-4 py-2.5 text-[13.5px] font-semibold">
+            <button onClick={() => router.push("/my-apps?new=1")} className="bg-brand text-white rounded-lg px-4 py-2.5 text-[16px] font-semibold">
               {t("ecosystem.registerApp")}
             </button>
-            <button onClick={() => router.push("/getting-started")} className="bg-white/10 border border-white/28 text-white rounded-lg px-4 py-2.5 text-[13.5px] font-semibold hover:bg-white/18">
+            <button onClick={() => router.push("/getting-started")} className="bg-white/10 border border-white/28 text-white rounded-lg px-4 py-2.5 text-[16px] font-semibold hover:bg-white/18">
               {t("ecosystem.requestAccess")}
             </button>
           </div>
@@ -59,7 +60,7 @@ export default function EcosystemPage() {
 
       {highlight.length > 0 && (
         <div className="mb-7">
-          <h2 className="text-[16px] font-bold mb-3.5">{t("ecosystem.highlight")}</h2>
+          <h2 className="text-[19px] font-bold mb-3.5">{t("ecosystem.highlight")}</h2>
           <div className="flex gap-3.5 overflow-x-auto pb-1.5 scrollbar-thin">
             {highlight.map((a) => (
               <div key={a.id} onClick={() => router.push(`/ecosystem/${a.id}`)} className="flex-shrink-0 w-[250px] border border-line rounded-[14px] bg-surface overflow-hidden cursor-pointer hover:border-teal">
@@ -73,8 +74,8 @@ export default function EcosystemPage() {
                   )}
                 </div>
                 <div className="p-3.5">
-                  <b className="block text-[13.5px]">{a.name}</b>
-                  <span className="block text-[11.5px] text-ink-dim mt-1">{categoryName(a.products[0])} · <TypeChip type={a.type} /></span>
+                  <b className="block text-[16px]">{a.name}</b>
+                  <span className="block text-[14px] text-ink-dim mt-1">{categoryName(a.products[0])} · <TypeChip type={a.type} /></span>
                 </div>
               </div>
             ))}
@@ -83,28 +84,28 @@ export default function EcosystemPage() {
       )}
 
       <div className="flex items-center gap-2.5 flex-wrap mb-3">
-        <h2 className="text-[16px] font-bold flex-1">{t("ecosystem.exploreApps")}</h2>
+        <h2 className="text-[19px] font-bold flex-1">{t("ecosystem.exploreApps")}</h2>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t("ecosystem.searchPlaceholder")}
-          className="w-[260px] max-w-full border border-line-strong bg-surface rounded-lg px-3 py-2 text-[13px]"
+          className="w-[260px] max-w-full border border-line-strong bg-surface rounded-lg px-3 py-2 text-[15.5px]"
         />
-        <select value={sort} onChange={(e) => setSort(e.target.value as "updated" | "name")} className="border border-line-strong bg-paper rounded-lg px-2.5 py-2 text-[12.5px]">
+        <select value={sort} onChange={(e) => setSort(e.target.value as "updated" | "name")} className="border border-line-strong bg-paper rounded-lg px-2.5 py-2 text-[15px]">
           <option value="updated">{t("ecosystem.sortUpdated")}</option>
           <option value="name">{t("ecosystem.sortName")}</option>
         </select>
       </div>
 
       <div className="flex gap-1.5 flex-wrap mb-4">
-        <button onClick={() => setCat("all")} className={`border rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold ${cat === "all" ? "bg-teal-soft border-teal text-teal-strong" : "border-line-strong bg-surface text-ink-dim hover:bg-surface-2"}`}>
+        <button onClick={() => setCat("all")} className={`border rounded-full px-3.5 py-1.5 text-[15px] font-semibold ${cat === "all" ? "bg-teal-soft border-teal text-teal-strong" : "border-line-strong bg-surface text-ink-dim hover:bg-surface-2"}`}>
           {t("ecosystem.all")}
         </button>
         {categories.map((c) => (
           <button
             key={c.key}
             onClick={() => setCat(c.key)}
-            className={`border rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold ${cat === c.key ? "bg-teal-soft border-teal text-teal-strong" : "border-line-strong bg-surface text-ink-dim hover:bg-surface-2"}`}
+            className={`border rounded-full px-3.5 py-1.5 text-[15px] font-semibold ${cat === c.key ? "bg-teal-soft border-teal text-teal-strong" : "border-line-strong bg-surface text-ink-dim hover:bg-surface-2"}`}
           >
             {c.name}
           </button>
@@ -118,11 +119,11 @@ export default function EcosystemPage() {
               <div className="flex items-center gap-2.5">
                 <AppAvatar image={a.image} icon={a.icon} />
                 <div>
-                  <b className="block text-[13.5px]">{a.name}</b>
+                  <b className="block text-[16px]">{a.name}</b>
                   <TypeChip type={a.type} />
                 </div>
               </div>
-              <p className="text-[12px] text-ink-dim leading-relaxed line-clamp-3 flex-1">{a.description}</p>
+              <p className="text-[14.5px] text-ink-dim leading-relaxed line-clamp-3 flex-1">{a.description}</p>
               <div className="flex gap-1 flex-wrap">
                 {a.products.map((p) => (
                   <ScopeTag key={p}>{categoryName(p)}</ScopeTag>

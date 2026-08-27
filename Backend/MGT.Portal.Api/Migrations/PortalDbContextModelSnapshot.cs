@@ -441,6 +441,30 @@ namespace MGT.Portal.Api.Migrations
                     b.ToTable("Roles");
                 });
 
+            modelBuilder.Entity("MGT.Portal.Api.Models.Team", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Key")
+                        .IsUnique();
+
+                    b.ToTable("Teams");
+                });
+
             modelBuilder.Entity("MGT.Portal.Api.Models.User", b =>
                 {
                     b.Property<int>("Id")
@@ -448,6 +472,9 @@ namespace MGT.Portal.Api.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("DataScopeOverride")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
@@ -457,11 +484,18 @@ namespace MGT.Portal.Api.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("Level")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("RoleId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TeamId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -470,6 +504,8 @@ namespace MGT.Portal.Api.Migrations
                         .IsUnique();
 
                     b.HasIndex("RoleId");
+
+                    b.HasIndex("TeamId");
 
                     b.ToTable("Users");
                 });
@@ -594,7 +630,14 @@ namespace MGT.Portal.Api.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("MGT.Portal.Api.Models.Team", "Team")
+                        .WithMany("Members")
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Role");
+
+                    b.Navigation("Team");
                 });
 
             modelBuilder.Entity("MGT.Portal.Api.Models.ApiCategory", b =>
@@ -621,6 +664,11 @@ namespace MGT.Portal.Api.Migrations
             modelBuilder.Entity("MGT.Portal.Api.Models.Role", b =>
                 {
                     b.Navigation("Users");
+                });
+
+            modelBuilder.Entity("MGT.Portal.Api.Models.Team", b =>
+                {
+                    b.Navigation("Members");
                 });
 #pragma warning restore 612, 618
         }

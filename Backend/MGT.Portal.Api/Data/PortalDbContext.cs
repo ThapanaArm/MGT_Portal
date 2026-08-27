@@ -17,6 +17,7 @@ public class PortalDbContext(DbContextOptions<PortalDbContext> options) : DbCont
     public DbSet<AppLogEntry> AppLogEntries => Set<AppLogEntry>();
     public DbSet<ApiToken> ApiTokens => Set<ApiToken>();
     public DbSet<AccessGrant> AccessGrants => Set<AccessGrant>();
+    public DbSet<Team> Teams => Set<Team>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -87,5 +88,14 @@ public class PortalDbContext(DbContextOptions<PortalDbContext> options) : DbCont
             .OnDelete(DeleteBehavior.Restrict);
 
         b.Entity<AccessGrant>().HasIndex(g => new { g.UserId, g.Revoked });
+
+        b.Entity<Team>().HasIndex(t => t.Key).IsUnique();
+
+        // ผู้ใช้ที่ยังไม่ถูกจัดทีมได้ (TeamId = null) และการลบทีมต้องไม่ลบผู้ใช้ตาม
+        b.Entity<User>()
+            .HasOne(u => u.Team)
+            .WithMany(t => t.Members)
+            .HasForeignKey(u => u.TeamId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

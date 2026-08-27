@@ -12,7 +12,7 @@ namespace MGT.Portal.Api.Controllers;
 [ApiController]
 [Route("api/applications")]
 [Authorize]
-public class ApplicationsController(PortalDbContext db) : ControllerBase
+public class ApplicationsController(PortalDbContext db, DataBoundaryResolver boundaries) : ControllerBase
 {
     private static readonly Dictionary<string, int> ReviewThreshold = new()
     {
@@ -33,11 +33,37 @@ public class ApplicationsController(PortalDbContext db) : ControllerBase
     private bool CanSeeCredentials(Application a, string ownerEmail) =>
         IsAdmin || string.Equals(ownerEmail, CurrentEmail, StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// ขอบเขตข้อมูลของผู้ใช้ที่กำลังเรียก — Management เห็นทั้งหมด, Manager เห็นทีมตัวเอง,
+    /// Employee เห็นเฉพาะของตัวเอง (ปรับเฉพาะรายได้ผ่าน DataScopeOverride)
+    /// </summary>
+    private async Task<DataBoundary> CurrentBoundaryAsync()
+    {
+        var me = await db.Users.AsNoTracking().FirstAsync(u => u.Id == CurrentUserId);
+        return await boundaries.ResolveAsync(me, IsAdmin);
+    }
+
+    /// <param name="catalog">
+    /// true = ดึง "แคตตาล็อกสาธารณะ" คือ Application ที่เผยแพร่แล้ว (Active) ซึ่งพนักงานทุกคนเห็นได้
+    /// โดยตั้งใจ — ใช้กับหน้า MGT Ecosystem เท่านั้น
+    /// ค่าเริ่มต้นคือ false เพื่อให้ "กรองตามสิทธิ์" เป็นพฤติกรรมปกติ (deny by default)
+    /// </param>
     [HttpGet]
-    public async Task<ActionResult<List<AppSummaryDto>>> GetAll([FromQuery] string? status)
+    public async Task<ActionResult<List<AppSummaryDto>>> GetAll([FromQuery] string? status, [FromQuery] bool catalog = false)
     {
         var query = db.Applications.Include(a => a.Owner).AsQueryable();
-        if (!string.IsNullOrWhiteSpace(status)) query = query.Where(a => a.Status == status);
+
+        if (catalog)
+        {
+            // แคตตาล็อกเผยแพร่: บังคับเฉพาะ Active เสมอ ไม่ให้ใช้ flag นี้ดึง draft ของคนอื่น
+            query = query.Where(a => a.Status == AppStatus.Active);
+        }
+        else
+        {
+            if (!string.IsNullOrWhiteSpace(status)) query = query.Where(a => a.Status == status);
+            query = query.WithinBoundary(await CurrentBoundaryAsync());
+        }
+
         var apps = await query.OrderByDescending(a => a.UpdatedAt).ToListAsync();
         return apps.Select(a => ToSummary(a, a.Owner.Email)).ToList();
     }
@@ -53,6 +79,12 @@ public class ApplicationsController(PortalDbContext db) : ControllerBase
             .Include(x => x.Votes).ThenInclude(v => v.CommitteeMember)
             .FirstOrDefaultAsync(x => x.Id == id);
         if (a is null) return NotFound();
+
+        // Application ที่เผยแพร่แล้วเปิดให้พนักงานทุกคนดูได้ (เป็นแคตตาล็อกของบริษัท)
+        // ส่วนที่ยังไม่เผยแพร่ ต้องอยู่ในขอบเขตข้อมูลของผู้เรียกเท่านั้น
+        // คืน 404 แทน 403 เพื่อไม่ให้ไล่เดา id แล้วรู้ว่ามีรายการนี้อยู่จริง
+        if (a.Status != AppStatus.Active && !(await CurrentBoundaryAsync()).Allows(a.OwnerUserId))
+            return NotFound();
 
         var summary = ToSummary(a, a.Owner.Email);
         var screenshots = a.Screenshots.OrderBy(s => s.SortOrder).Select(s => s.ImageData).ToList();

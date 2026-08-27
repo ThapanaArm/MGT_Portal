@@ -1,12 +1,23 @@
 export type RoleKey = "admin" | "sales" | "purchase" | "finance" | "hr";
 
+/** ระดับในองค์กร — กำหนดขอบเขตการเห็นข้อมูลเริ่มต้น */
+export type OrgLevel = "employee" | "manager" | "management";
+
+/** ขอบเขตข้อมูลระดับแถว — คนละชั้นกับ scopes ซึ่งคุมว่าเรียก endpoint ไหนได้ */
+export type DataScope = "self" | "team" | "all";
+
 export interface UserDto {
   id: number;
   email: string;
   displayName: string;
   roleKey: RoleKey;
   roleName: string;
+  /** เรียก endpoint ไหนได้ */
   scopes: string[];
+  level: OrgLevel;
+  /** เห็นข้อมูลของใครได้ */
+  dataScope: DataScope;
+  teamName: string | null;
 }
 
 export interface CategoryDto {
@@ -109,6 +120,19 @@ export interface UserBriefDto {
   displayName: string;
   roleKey: RoleKey;
   roleName: string;
+  level: OrgLevel;
+  teamId: number | null;
+  teamName: string | null;
+  /** ตั้งไว้เมื่อบางตำแหน่งต้องเห็นกว้างกว่าระดับปกติ — null = ใช้ตามระดับ */
+  dataScopeOverride: DataScope | null;
+  effectiveDataScope: DataScope;
+}
+
+export interface TeamDto {
+  id: number;
+  key: string;
+  name: string;
+  memberCount: number;
 }
 
 export interface AccessGrantDto {

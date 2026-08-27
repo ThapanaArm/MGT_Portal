@@ -265,4 +265,71 @@ public static class DbSeeder
 
         db.SaveChanges();
     }
+
+    /// <summary>
+    /// จัดโครงสร้างทีมและระดับองค์กรให้ผู้ใช้ — แยกจาก Seed() เพราะต้องรันได้กับฐานข้อมูลที่มีข้อมูลอยู่แล้ว
+    /// เขียนแบบ idempotent: ข้ามทุกอย่างที่มีอยู่แล้ว จึงเรียกซ้ำได้อย่างปลอดภัย
+    /// </summary>
+    public static void SeedOrgStructure(PortalDbContext db)
+    {
+        if (db.Teams.Any()) return;
+
+        var teams = new[]
+        {
+            new Team { Key = "sales", Name = "ทีมขาย" },
+            new Team { Key = "purchase", Name = "ทีมจัดซื้อ" },
+            new Team { Key = "finance", Name = "ทีมการเงิน" },
+            new Team { Key = "hr", Name = "ทีมบุคคล" },
+            new Team { Key = "it", Name = "ทีมไอที" },
+        };
+        db.Teams.AddRange(teams);
+        db.SaveChanges();
+
+        Team TeamOf(string key) => teams.First(t => t.Key == key);
+        int RoleId(string key) => db.Roles.First(r => r.Key == key).Id;
+
+        // จัดผู้ใช้เดิมเข้าทีม — ค่าเริ่มต้นทุกคนคือ Employee (เห็นเฉพาะของตัวเอง)
+        var assignments = new (string Email, string TeamKey, string Level)[]
+        {
+            ("it-digital@megachem.co.th", "it", OrgLevel.Management),
+            ("sales.staff@megachem.co.th", "sales", OrgLevel.Employee),
+            ("purchase.staff@megachem.co.th", "purchase", OrgLevel.Employee),
+            ("finance.staff@megachem.co.th", "finance", OrgLevel.Employee),
+            ("hr.staff@megachem.co.th", "hr", OrgLevel.Employee),
+        };
+        foreach (var (email, teamKey, level) in assignments)
+        {
+            var u = db.Users.FirstOrDefault(x => x.Email == email);
+            if (u is null) continue;
+            u.TeamId = TeamOf(teamKey).Id;
+            u.Level = level;
+        }
+
+        string Hash(string pw) => BCrypt.Net.BCrypt.HashPassword(pw);
+
+        // ผู้ใช้ตัวอย่างเพิ่มเติม เพื่อให้เห็นผลของแต่ละระดับได้จริง
+        var extras = new[]
+        {
+            // Manager — เห็นข้อมูลของทุกคนใน "ทีมขาย"
+            new User { Email = "sales.manager@megachem.co.th", DisplayName = "หัวหน้าทีมขาย", PasswordHash = Hash("Sales@123"),
+                       RoleId = RoleId("sales"), TeamId = TeamOf("sales").Id, Level = OrgLevel.Manager },
+
+            // Employee คนที่สองในทีมขาย — ไว้พิสูจน์ว่าหัวหน้าเห็นของลูกทีมได้ แต่เพื่อนร่วมทีมเห็นกันไม่ได้
+            new User { Email = "sales.staff2@megachem.co.th", DisplayName = "พนักงานขาย 2", PasswordHash = Hash("Sales@123"),
+                       RoleId = RoleId("sales"), TeamId = TeamOf("sales").Id, Level = OrgLevel.Employee },
+
+            // Management ที่ไม่ใช่ admin — พิสูจน์ว่าระดับองค์กรทำงานเองได้ ไม่ได้อาศัยสิทธิ์ admin
+            new User { Email = "director@megachem.co.th", DisplayName = "ผู้บริหาร", PasswordHash = Hash("Director@123"),
+                       RoleId = RoleId("finance"), TeamId = TeamOf("finance").Id, Level = OrgLevel.Management },
+
+            // กรณี "บางตำแหน่งต้องเห็นทั้งหมด" — ระดับ Employee แต่ตั้ง override ให้เห็นทุกอย่าง
+            new User { Email = "audit@megachem.co.th", DisplayName = "ผู้ตรวจสอบภายใน", PasswordHash = Hash("Audit@123"),
+                       RoleId = RoleId("finance"), TeamId = TeamOf("it").Id, Level = OrgLevel.Employee,
+                       DataScopeOverride = DataScope.All },
+        };
+        foreach (var u in extras)
+            if (!db.Users.Any(x => x.Email == u.Email)) db.Users.Add(u);
+
+        db.SaveChanges();
+    }
 }

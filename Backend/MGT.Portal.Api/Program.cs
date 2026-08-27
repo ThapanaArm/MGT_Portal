@@ -18,6 +18,7 @@ builder.Services.AddDbContext<PortalDbContext>(opt =>
     opt.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 
 builder.Services.AddScoped<JwtService>();
+builder.Services.AddScoped<DataBoundaryResolver>();
 
 var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is not configured. Run 'dotnet user-secrets set Jwt:Key <value>'.");
 
@@ -57,6 +58,7 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<PortalDbContext>();
     db.Database.Migrate();
     DbSeeder.Seed(db);
+    DbSeeder.SeedOrgStructure(db);
 }
 
 if (app.Environment.IsDevelopment())
