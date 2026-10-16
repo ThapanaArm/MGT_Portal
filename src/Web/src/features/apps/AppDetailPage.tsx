@@ -7,15 +7,8 @@ import { Btn, Panel, ScopeTag, StatusDot, EnvChip } from "@/shared/components/ui
 import { AppAvatar } from "@/shared/components/MediaPickers";
 import { ShotsGallery } from "@/shared/components/MediaPickers";
 import AppForm, { AppFormValues } from "@/features/apps/AppForm";
+import { AUDIENCE_LABEL, TIERS, TIER_DESC, TIER_LABEL, TIER_NAME, tierCanUseApis } from "@/shared/lib/tiers";
 import type { AppDetailDto, AppType, CategoryDto } from "@/shared/lib/types";
-
-const APP_TYPES: AppType[] = ["registered", "verify", "official"];
-const TYPE_LABEL: Record<AppType, string> = { registered: "Registered", verify: "Verify", official: "Official" };
-const TYPE_DESC: Record<AppType, string> = {
-  registered: "ลงทะเบียนแล้ว ยังไม่ผ่านการตรวจสอบ",
-  verify: "ผ่านการยืนยันตัวตนและตรวจสอบเบื้องต้นแล้ว",
-  official: "ได้รับการรับรองอย่างเป็นทางการ ใช้งาน Production เต็มรูปแบบ",
-};
 const ACTION_LABEL: Record<string, string> = { create: "Create New", review: "Send Review", update: "Updated", publish: "Publish", unpublish: "Unpublish" };
 const ACTION_DOT: Record<string, string> = { create: "bg-teal", review: "bg-put", update: "bg-ink-faint", publish: "bg-post", unpublish: "bg-danger" };
 
@@ -90,14 +83,16 @@ export default function AppDetailPage() {
   const [detail, setDetail] = useState<AppDetailDto | null>(null);
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [editing, setEditing] = useState(false);
-  const [reviewTarget, setReviewTarget] = useState<AppType>("registered");
+  const [reviewTarget, setReviewTarget] = useState<AppType>("tier1");
 
   const isAdmin = user?.roleKey === "admin";
 
   const load = useCallback(() => {
     api.get<AppDetailDto>(`/api/applications/${id}`).then((d) => {
       setDetail(d);
-      setReviewTarget(d.summary.type);
+      // App ที่เลือก API ไว้ขอ Tier 1 ไม่ได้ จึงตั้งค่าเริ่มต้นเป็น Tier 2
+      const s = d.summary;
+      setReviewTarget(s.products.length > 0 && !tierCanUseApis(s.type) ? "tier2" : s.type);
     });
     api.get<CategoryDto[]>("/api/categories").then(setCategories);
   }, [id]);
@@ -108,21 +103,26 @@ export default function AppDetailPage() {
   const a = detail.summary;
   const categoryName = (key: string) => categories.find((c) => c.key === key)?.name ?? key;
 
-  const sendReview = async () => {
-    await api.post(`/api/applications/${id}/send-review`, { targetType: reviewTarget });
-    toast("ส่ง Application เข้าสู่กระบวนการตรวจสอบโดยคณะกรรมการแล้ว");
+  /** เรียก API แล้วแสดงผล — ถ้า backend ปฏิเสธ (เช่น Tier 1 ขอ API) ให้แสดงข้อความจาก backend */
+  const run = async (call: () => Promise<unknown>, okMessage: string) => {
+    try {
+      await call();
+      toast(okMessage);
+    } catch (err) {
+      toast(err instanceof ApiError ? err.message : "ทำรายการไม่สำเร็จ");
+    }
     load();
   };
-  const publish = async () => {
-    await api.post(`/api/applications/${id}/publish`);
-    toast("เผยแพร่ Application แล้ว");
-    load();
-  };
-  const unpublish = async () => {
-    await api.post(`/api/applications/${id}/unpublish`);
-    toast("ยกเลิกการเผยแพร่ Application แล้ว");
-    load();
-  };
+
+  const sendReview = () =>
+    run(
+      () => api.post(`/api/applications/${id}/send-review`, { targetType: reviewTarget }),
+      tierCanUseApis(reviewTarget)
+        ? "ส่งให้คณะกรรมการและ IT พิจารณาแล้ว"
+        : "อนุมัติอัตโนมัติแล้ว (Tier 1)",
+    );
+  const publish = () => run(() => api.post(`/api/applications/${id}/publish`), "เปิดใช้งาน Application อีกครั้งแล้ว");
+  const unpublish = () => run(() => api.post(`/api/applications/${id}/unpublish`), "ระงับ Application และปิด credential แล้ว");
 
   const saveEdit = async (values: AppFormValues) => {
     try {
@@ -135,7 +135,16 @@ export default function AppDetailPage() {
     }
   };
 
-  const curIdx = APP_TYPES.indexOf(a.type);
+  const approved = a.status === "active" || a.status === "suspended";
+  const curIdx = approved ? TIERS.indexOf(a.type) : -1;
+  const approvedVotes = detail.votes.filter((v) => v.approved).length;
+  const codeReviewText = detail.codeReview ? (detail.codeReview.approved ? "ผ่าน" : "ไม่ผ่าน") : "ยังไม่รีวิว";
+  // ออก/เพิกถอน credential ได้เฉพาะ App Tier 2/3 ที่ Active (backend ตรวจซ้ำ)
+  const canManageCreds = isAdmin && a.status === "active" && tierCanUseApis(a.type);
+  const credentialNote =
+    approved && !tierCanUseApis(a.type)
+      ? "App Tier 1 ไม่ต่อ API จึงไม่มี credential"
+      : "จะออก credential ให้อัตโนมัติเมื่อได้รับอนุมัติ Tier 2/3";
   const credOf = (env: "sandbox" | "production") => detail.credentials.find((c) => c.env === env);
 
   return (
@@ -168,8 +177,10 @@ export default function AppDetailPage() {
                 onChange={(e) => setReviewTarget(e.target.value as AppType)}
                 className="border border-line-strong bg-paper rounded-lg px-2.5 py-1.5 text-[14.5px]"
               >
-                {APP_TYPES.map((t) => (
-                  <option key={t} value={t}>{TYPE_LABEL[t]}</option>
+                {TIERS.map((t) => (
+                  <option key={t} value={t} disabled={!tierCanUseApis(t) && a.products.length > 0}>
+                    {TIER_LABEL[t]} · {TIER_NAME[t]}
+                  </option>
                 ))}
               </select>
               <Btn size="sm" onClick={sendReview}>ส่งตรวจสอบ (Send Review)</Btn>
@@ -177,8 +188,8 @@ export default function AppDetailPage() {
           )}
           {a.status === "pending" && (
             <span className="text-[14.5px] text-ink-dim font-semibold">
-              รอผลการตรวจสอบจากคณะกรรมการ — ขอระดับ {TYPE_LABEL[a.reviewTarget ?? a.type]} (
-              {detail.votes.filter((v) => v.approved).length}/3 เสียงที่ต้องการ)
+              รอผลการพิจารณา — ขอระดับ {TIER_LABEL[a.reviewTarget ?? a.type]} · กรรมการ {approvedVotes}/{detail.requiredVotes} เสียง
+              {detail.requiresCodeReview && <> · IT รีวิวโค้ด: {codeReviewText}</>}
             </span>
           )}
           {a.status === "active" && <Btn size="sm" danger onClick={unpublish}>ยกเลิกเผยแพร่ (Unpublish)</Btn>}
@@ -189,13 +200,13 @@ export default function AppDetailPage() {
       {!editing && (
         <Panel title="API Credentials" hint="ใช้ Token ID และ Token Secret คู่นี้เพื่อขอ Access Token ผ่าน OAuth2 Client Credentials Flow — เก็บ Token Secret เป็นความลับ อย่าฝังในโค้ดฝั่ง Client">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <CredentialBlock appId={a.id} env="sandbox" cred={credOf("sandbox")} isAdmin={isAdmin} onChanged={load} />
+            <CredentialBlock appId={a.id} env="sandbox" cred={credOf("sandbox")} isAdmin={canManageCreds} emptyNote={credentialNote} onChanged={load} />
             <CredentialBlock
               appId={a.id}
               env="production"
               cred={credOf("production")}
-              isAdmin={isAdmin}
-              emptyNote={a.status === "active" ? undefined : "จะออก Production Credential ให้อัตโนมัติเมื่อ Application ผ่านการอนุมัติจากคณะกรรมการและมีสถานะ Active"}
+              isAdmin={canManageCreds}
+              emptyNote={credentialNote}
               onChanged={load}
             />
           </div>
@@ -210,7 +221,7 @@ export default function AppDetailPage() {
             <AppForm
               title="แก้ไขข้อมูล Application"
               hint=""
-              initial={{ name: a.name, description: a.description, subdomain: a.subdomain, github: a.github, products: a.products, image: a.image, icon: a.icon, screenshots: detail.screenshots }}
+              initial={{ name: a.name, description: a.description, subdomain: a.subdomain, github: a.github, products: a.products, image: a.image, icon: a.icon, screenshots: detail.screenshots, audience: a.audience }}
               categories={categories}
               submitLabel="บันทึกการแก้ไข"
               onSubmit={saveEdit}
@@ -223,6 +234,9 @@ export default function AppDetailPage() {
                 <div className="font-mono text-[15px] bg-surface border border-line rounded-lg px-3 py-2">
                   <code className="text-teal-strong">https://{a.subdomain}.megachem.co.th</code>
                 </div>
+              </Panel>
+              <Panel title="ใครใช้ App ได้">
+                <div className="text-[15px] text-ink-dim">{AUDIENCE_LABEL[a.audience] ?? a.audience}</div>
               </Panel>
               <Panel title="Link Github">
                 <a href={`https://${a.github}`} target="_blank" rel="noopener" className="font-mono text-[15px] text-teal-strong">
@@ -241,9 +255,9 @@ export default function AppDetailPage() {
         </div>
 
         <div>
-          <Panel title="Application Type" hint={TYPE_DESC[a.type]}>
+          <Panel title="Tier" hint={approved ? TIER_DESC[a.type] : "ยังไม่ได้รับอนุมัติ — เลือก Tier ตอนส่งตรวจสอบ"}>
             <div className="flex items-center mt-1.5">
-              {APP_TYPES.map((t, i) => (
+              {TIERS.map((t, i) => (
                 <div key={t} className="flex items-center flex-1">
                   <div className="flex flex-col items-center gap-1.5 flex-1 text-center">
                     <span
@@ -251,9 +265,9 @@ export default function AppDetailPage() {
                         i < curIdx ? "bg-teal-soft border-teal" : i === curIdx ? "bg-teal border-teal" : "border-line-strong bg-surface"
                       }`}
                     />
-                    <span className={`text-[13px] font-semibold ${i === curIdx ? "text-teal-strong" : "text-ink-faint"}`}>{TYPE_LABEL[t]}</span>
+                    <span className={`text-[13px] font-semibold ${i === curIdx ? "text-teal-strong" : "text-ink-faint"}`}>{TIER_LABEL[t]}</span>
                   </div>
-                  {i < APP_TYPES.length - 1 && <span className="w-6 h-0.5 bg-line-strong -mt-4" />}
+                  {i < TIERS.length - 1 && <span className="w-6 h-0.5 bg-line-strong -mt-4" />}
                 </div>
               ))}
             </div>

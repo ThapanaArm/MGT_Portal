@@ -272,6 +272,41 @@ namespace MGT.Portal.Api.Migrations
                     b.ToTable("AppLogEntries");
                 });
 
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.AppCodeReview", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ApplicationId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Approved")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ReviewCycle")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ReviewedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReviewerEmail")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApplicationId", "ReviewCycle")
+                        .IsUnique();
+
+                    b.ToTable("AppCodeReviews");
+                });
+
             modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.AppScreenshot", b =>
                 {
                     b.Property<int>("Id")
@@ -334,6 +369,10 @@ namespace MGT.Portal.Api.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Audience")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -581,6 +620,17 @@ namespace MGT.Portal.Api.Migrations
                     b.Navigation("Application");
                 });
 
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.AppCodeReview", b =>
+                {
+                    b.HasOne("MGT.Portal.Api.Modules.Apps.Application", "Application")
+                        .WithMany("CodeReviews")
+                        .HasForeignKey("ApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Application");
+                });
+
             modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.AppScreenshot", b =>
                 {
                     b.HasOne("MGT.Portal.Api.Modules.Apps.Application", "Application")
@@ -647,6 +697,8 @@ namespace MGT.Portal.Api.Migrations
 
             modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.Application", b =>
                 {
+                    b.Navigation("CodeReviews");
+
                     b.Navigation("Credentials");
 
                     b.Navigation("Log");

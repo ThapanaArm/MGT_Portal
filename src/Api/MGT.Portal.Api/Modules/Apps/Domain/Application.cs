@@ -15,12 +15,17 @@ public class Application
     public string ProductsCsv { get; set; } = "";
 
     public string Status { get; set; } = AppStatus.Draft;
-    public string Type { get; set; } = AppType.Registered;
+    /// <summary>Tier ที่ได้รับอนุมัติแล้ว (tier1 / tier2 / tier3) — ดู AppTier</summary>
+    public string Type { get; set; } = AppTier.Tier1;
+    /// <summary>Tier ที่ขอในรอบรีวิวปัจจุบัน (null เมื่อไม่ได้อยู่ระหว่างรีวิว)</summary>
     public string? ReviewTarget { get; set; }
     public int ReviewCycle { get; set; } = 0;
 
     public string? Image { get; set; } // data URL or file path
     public string Icon { get; set; } = "📦";
+
+    /// <summary>ใครใช้ App ได้ (self / department / company) — ดู AppAudience</summary>
+    public string Audience { get; set; } = AppAudience.Self;
 
     public int OwnerUserId { get; set; }
     public User Owner { get; set; } = null!;
@@ -32,6 +37,7 @@ public class Application
     public ICollection<AppCredential> Credentials { get; set; } = new List<AppCredential>();
     public ICollection<AppVote> Votes { get; set; } = new List<AppVote>();
     public ICollection<AppLogEntry> Log { get; set; } = new List<AppLogEntry>();
+    public ICollection<AppCodeReview> CodeReviews { get; set; } = new List<AppCodeReview>();
 }
 
 public class AppScreenshot
@@ -76,4 +82,17 @@ public class AppLogEntry
     public DateTime OccurredAt { get; set; }
     public string Actor { get; set; } = "";
     public string? Note { get; set; }
+}
+
+/// <summary>ผล IT code review ของ App Tier 2/3 — หนึ่งรายการต่อรอบรีวิว (แยกจากการโหวตของกรรมการ)</summary>
+public class AppCodeReview
+{
+    public int Id { get; set; }
+    public int ApplicationId { get; set; }
+    public Application Application { get; set; } = null!;
+    public int ReviewCycle { get; set; }
+    public bool Approved { get; set; }
+    public string ReviewerEmail { get; set; } = "";
+    public string? Note { get; set; }
+    public DateTime ReviewedAt { get; set; }
 }

@@ -48,7 +48,10 @@ export interface EndpointDto {
   respFields: [field: string, type: string, description: string][];
 }
 
-export type AppType = "registered" | "verify" | "official";
+/** Tier ของ App — ดู shared/lib/tiers.ts */
+export type AppType = "tier1" | "tier2" | "tier3";
+/** ใครใช้ App ได้ */
+export type AppAudience = "self" | "department" | "company";
 export type AppStatus = "draft" | "pending" | "active" | "suspended";
 export type CredEnv = "sandbox" | "production";
 
@@ -67,6 +70,7 @@ export interface AppSummaryDto {
   ownerEmail: string;
   createdAt: string;
   updatedAt: string;
+  audience: AppAudience;
 }
 
 export interface CredentialDto {
@@ -97,6 +101,18 @@ export interface AppDetailDto {
   log: LogEntryDto[];
   votes: VoteDto[];
   reviewCycle: number;
+  /** ผล IT code review ของรอบปัจจุบัน (null = ยังไม่รีวิว) */
+  codeReview: CodeReviewDto | null;
+  /** จำนวนเสียงที่ต้องได้สำหรับ Tier ที่ขอ */
+  requiredVotes: number;
+  requiresCodeReview: boolean;
+}
+
+export interface CodeReviewDto {
+  approved: boolean;
+  reviewerEmail: string;
+  note: string | null;
+  reviewedAt: string;
 }
 
 export interface CommitteeMemberDto {

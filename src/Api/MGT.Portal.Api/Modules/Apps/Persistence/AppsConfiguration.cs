@@ -60,3 +60,17 @@ internal sealed class AppVoteConfiguration : IEntityTypeConfiguration<AppVote>
         b.HasIndex(v => new { v.ApplicationId, v.CommitteeMemberId, v.ReviewCycle }).IsUnique();
     }
 }
+
+internal sealed class AppCodeReviewConfiguration : IEntityTypeConfiguration<AppCodeReview>
+{
+    public void Configure(EntityTypeBuilder<AppCodeReview> b)
+    {
+        b.HasOne(r => r.Application)
+            .WithMany(a => a.CodeReviews)
+            .HasForeignKey(r => r.ApplicationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // IT รีวิวได้ครั้งเดียวต่อรอบ (รีวิวซ้ำในรอบเดิม = แก้ผลเดิม)
+        b.HasIndex(r => new { r.ApplicationId, r.ReviewCycle }).IsUnique();
+    }
+}

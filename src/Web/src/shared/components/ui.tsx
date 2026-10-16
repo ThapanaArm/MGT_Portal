@@ -45,13 +45,13 @@ export function MethodBadge({ method }: { method: string }) {
 }
 
 const TYPE_META: Record<AppType, { label: string; className: string }> = {
-  registered: { label: "Registered", className: "bg-surface-2 text-ink-dim" },
-  verify: { label: "Verify", className: "bg-put-soft text-put" },
-  official: { label: "Official", className: "bg-teal-soft text-teal-strong" },
+  tier1: { label: "Tier 1", className: "bg-surface-2 text-ink-dim" },
+  tier2: { label: "Tier 2", className: "bg-put-soft text-put" },
+  tier3: { label: "Tier 3", className: "bg-teal-soft text-teal-strong" },
 };
 
 export function TypeChip({ type }: { type: AppType }) {
-  const m = TYPE_META[type];
+  const m = TYPE_META[type] ?? { label: type, className: "bg-surface-2 text-ink-dim" };
   return <span className={`text-[13px] font-bold tracking-wide rounded-full px-2.5 py-0.5 whitespace-nowrap ${m.className}`}>{m.label}</span>;
 }
 

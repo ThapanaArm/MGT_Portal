@@ -7,7 +7,7 @@ import { AppAvatar } from "@/shared/components/MediaPickers";
 import AppForm, { AppFormValues } from "@/features/apps/AppForm";
 import type { AppSummaryDto, CategoryDto } from "@/shared/lib/types";
 
-const EMPTY: AppFormValues = { name: "", description: "", subdomain: "", github: "", products: [], image: null, icon: "📦", screenshots: [] };
+const EMPTY: AppFormValues = { name: "", description: "", subdomain: "", github: "", products: [], image: null, icon: "📦", screenshots: [], audience: "self" };
 
 export default function MyAppsPage() {
   const navigate = useNavigate();
@@ -62,7 +62,7 @@ export default function MyAppsPage() {
       {showForm ? (
         <AppForm
           title="ลงทะเบียน Application ใหม่"
-          hint="กรอกข้อมูล Application ของคุณ — สถานะเริ่มต้นจะเป็น Draft และ Type เป็น Registered จนกว่าจะผ่านการตรวจสอบ"
+          hint="กรอกข้อมูล Application ของคุณ — สถานะเริ่มต้นเป็น Draft แล้วค่อยเลือก Tier ตอนส่งตรวจสอบ"
           initial={EMPTY}
           categories={categories}
           submitLabel="ส่งลงทะเบียน"

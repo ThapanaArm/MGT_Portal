@@ -29,6 +29,7 @@ public class PortalDbContext(DbContextOptions<PortalDbContext> options) : DbCont
     public DbSet<AppLogEntry> AppLogEntries => Set<AppLogEntry>();
     public DbSet<CommitteeMember> CommitteeMembers => Set<CommitteeMember>();
     public DbSet<AppVote> AppVotes => Set<AppVote>();
+    public DbSet<AppCodeReview> AppCodeReviews => Set<AppCodeReview>();
 
     // Access
     public DbSet<AccessGrant> AccessGrants => Set<AccessGrant>();

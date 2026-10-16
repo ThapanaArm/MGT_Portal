@@ -184,7 +184,7 @@ public static class DbSeeder
             Name = "Sales Mobile App",
             Description = "แอปพลิเคชันสำหรับทีมขายภาคสนาม ใช้เช็คสต๊อกสินค้าและสร้างคำสั่งขายผ่านมือถือแบบเรียลไทม์",
             Subdomain = "sales-mobile", Github = "github.com/megachem/sales-mobile-app",
-            ProductsCsv = "sales,inventory", Status = AppStatus.Active, Type = AppType.Official,
+            ProductsCsv = "sales,inventory", Status = AppStatus.Active, Type = AppTier.Tier3,
             OwnerUserId = salesUser.Id, Icon = "📱",
             CreatedAt = new DateTime(2026, 3, 14), UpdatedAt = new DateTime(2026, 8, 5),
         };
@@ -193,7 +193,7 @@ public static class DbSeeder
             Name = "PO Approval Bot",
             Description = "บอทแจ้งเตือนและอนุมัติใบสั่งซื้อผ่าน Line Notify สำหรับผู้บริหารฝ่ายจัดซื้อ",
             Subdomain = "po-approval-bot", Github = "github.com/megachem/po-approval-bot",
-            ProductsCsv = "purchase", Status = AppStatus.Pending, Type = AppType.Registered, ReviewTarget = AppType.Verify, ReviewCycle = 1,
+            ProductsCsv = "purchase", Status = AppStatus.Pending, Type = AppTier.Tier1, ReviewTarget = AppTier.Tier2, ReviewCycle = 1,
             OwnerUserId = purchaseUser.Id, Icon = "🤖",
             CreatedAt = new DateTime(2026, 6, 2), UpdatedAt = new DateTime(2026, 8, 10),
         };
@@ -202,7 +202,7 @@ public static class DbSeeder
             Name = "Finance Insight Dashboard",
             Description = "แดชบอร์ดสรุปรายรับ-รายจ่ายและสถานะใบแจ้งหนี้แบบเรียลไทม์สำหรับทีมการเงิน",
             Subdomain = "finance-insight", Github = "github.com/megachem/finance-insight",
-            ProductsCsv = "finance,sales", Status = AppStatus.Draft, Type = AppType.Registered,
+            ProductsCsv = "finance,sales", Status = AppStatus.Draft, Type = AppTier.Tier1,
             OwnerUserId = financeUser.Id, Icon = "📊",
             CreatedAt = new DateTime(2026, 7, 30), UpdatedAt = new DateTime(2026, 7, 30),
         };
@@ -211,7 +211,7 @@ public static class DbSeeder
             Name = "Warehouse Scanner",
             Description = "แอปสแกนบาร์โค้ดสำหรับเช็คสต๊อกและรับ-โอนสินค้าระหว่างคลังผ่านมือถือ",
             Subdomain = "warehouse-scanner", Github = "github.com/megachem/warehouse-scanner",
-            ProductsCsv = "inventory", Status = AppStatus.Active, Type = AppType.Verify,
+            ProductsCsv = "inventory", Status = AppStatus.Active, Type = AppTier.Tier2,
             OwnerUserId = purchaseUser.Id, Icon = "📦",
             CreatedAt = new DateTime(2026, 5, 10), UpdatedAt = new DateTime(2026, 7, 2),
         };
@@ -220,7 +220,7 @@ public static class DbSeeder
             Name = "HR Leave Portal",
             Description = "ระบบยื่นคำขอลาและตรวจสอบวันลาคงเหลือสำหรับพนักงานทุกแผนก",
             Subdomain = "hr-leave", Github = "github.com/megachem/hr-leave-portal",
-            ProductsCsv = "hr", Status = AppStatus.Active, Type = AppType.Official,
+            ProductsCsv = "hr", Status = AppStatus.Active, Type = AppTier.Tier3,
             OwnerUserId = hrUser.Id, Icon = "🗓️",
             CreatedAt = new DateTime(2026, 2, 1), UpdatedAt = new DateTime(2026, 6, 20),
         };
@@ -236,8 +236,6 @@ public static class DbSeeder
 
         db.AppCredentials.AddRange(
             Cred(app1, CredEnv.Sandbox), Cred(app1, CredEnv.Production),
-            Cred(app2, CredEnv.Sandbox),
-            Cred(app3, CredEnv.Sandbox),
             Cred(app4, CredEnv.Sandbox), Cred(app4, CredEnv.Production),
             Cred(app5, CredEnv.Sandbox), Cred(app5, CredEnv.Production)
         );
@@ -245,22 +243,22 @@ public static class DbSeeder
         db.AppLogEntries.AddRange(
             new AppLogEntry { ApplicationId = app1.Id, ActionType = LogActionType.Create, OccurredAt = new DateTime(2026, 3, 14), Actor = salesUser.Email },
             new AppLogEntry { ApplicationId = app1.Id, ActionType = LogActionType.Review, OccurredAt = new DateTime(2026, 3, 20), Actor = salesUser.Email },
-            new AppLogEntry { ApplicationId = app1.Id, ActionType = LogActionType.Publish, OccurredAt = new DateTime(2026, 4, 2), Actor = "it-digital@megachem.co.th", Note = "คณะกรรมการอนุมัติระดับ Official (3/3 เสียง)" },
+            new AppLogEntry { ApplicationId = app1.Id, ActionType = LogActionType.Publish, OccurredAt = new DateTime(2026, 4, 2), Actor = "it-digital@megachem.co.th", Note = "คณะกรรมการอนุมัติระดับ Tier 3 (3/3 เสียง)" },
             new AppLogEntry { ApplicationId = app1.Id, ActionType = LogActionType.Update, OccurredAt = new DateTime(2026, 8, 5), Actor = salesUser.Email, Note = "เพิ่มสิทธิ์ Inventory API" },
 
             new AppLogEntry { ApplicationId = app2.Id, ActionType = LogActionType.Create, OccurredAt = new DateTime(2026, 6, 2), Actor = purchaseUser.Email },
             new AppLogEntry { ApplicationId = app2.Id, ActionType = LogActionType.Update, OccurredAt = new DateTime(2026, 7, 15), Actor = purchaseUser.Email, Note = "แก้ไข GitHub repository" },
-            new AppLogEntry { ApplicationId = app2.Id, ActionType = LogActionType.Review, OccurredAt = new DateTime(2026, 8, 10), Actor = purchaseUser.Email, Note = "ขอตรวจสอบระดับ Verify" },
+            new AppLogEntry { ApplicationId = app2.Id, ActionType = LogActionType.Review, OccurredAt = new DateTime(2026, 8, 10), Actor = purchaseUser.Email, Note = "ขอตรวจสอบระดับ Tier 2" },
 
             new AppLogEntry { ApplicationId = app3.Id, ActionType = LogActionType.Create, OccurredAt = new DateTime(2026, 7, 30), Actor = financeUser.Email },
 
             new AppLogEntry { ApplicationId = app4.Id, ActionType = LogActionType.Create, OccurredAt = new DateTime(2026, 5, 10), Actor = purchaseUser.Email },
-            new AppLogEntry { ApplicationId = app4.Id, ActionType = LogActionType.Review, OccurredAt = new DateTime(2026, 5, 18), Actor = purchaseUser.Email, Note = "ขอตรวจสอบระดับ Verify" },
-            new AppLogEntry { ApplicationId = app4.Id, ActionType = LogActionType.Publish, OccurredAt = new DateTime(2026, 5, 25), Actor = "it-digital@megachem.co.th", Note = "คณะกรรมการอนุมัติระดับ Verify (2/3 เสียง)" },
+            new AppLogEntry { ApplicationId = app4.Id, ActionType = LogActionType.Review, OccurredAt = new DateTime(2026, 5, 18), Actor = purchaseUser.Email, Note = "ขอตรวจสอบระดับ Tier 2" },
+            new AppLogEntry { ApplicationId = app4.Id, ActionType = LogActionType.Publish, OccurredAt = new DateTime(2026, 5, 25), Actor = "it-digital@megachem.co.th", Note = "คณะกรรมการอนุมัติระดับ Tier 2 (2/3 เสียง)" },
 
             new AppLogEntry { ApplicationId = app5.Id, ActionType = LogActionType.Create, OccurredAt = new DateTime(2026, 2, 1), Actor = hrUser.Email },
-            new AppLogEntry { ApplicationId = app5.Id, ActionType = LogActionType.Review, OccurredAt = new DateTime(2026, 2, 10), Actor = hrUser.Email, Note = "ขอตรวจสอบระดับ Official" },
-            new AppLogEntry { ApplicationId = app5.Id, ActionType = LogActionType.Publish, OccurredAt = new DateTime(2026, 2, 20), Actor = "it-digital@megachem.co.th", Note = "คณะกรรมการอนุมัติระดับ Official (3/3 เสียง)" }
+            new AppLogEntry { ApplicationId = app5.Id, ActionType = LogActionType.Review, OccurredAt = new DateTime(2026, 2, 10), Actor = hrUser.Email, Note = "ขอตรวจสอบระดับ Tier 3" },
+            new AppLogEntry { ApplicationId = app5.Id, ActionType = LogActionType.Publish, OccurredAt = new DateTime(2026, 2, 20), Actor = "it-digital@megachem.co.th", Note = "คณะกรรมการอนุมัติระดับ Tier 3 (3/3 เสียง)" }
         );
 
         var c1 = committee[0];

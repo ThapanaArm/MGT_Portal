@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MGT.Portal.Api.Infrastructure.Persistence;
 using MGT.Portal.Api.Modules.Access;
+using MGT.Portal.Api.Modules.Apps;
 using MGT.Portal.Api.Modules.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,7 +25,9 @@ builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<DataBoundaryResolver>();
 // Access — เพิ่ม scope จาก AccessGrant ให้ Identity ตอนสร้างข้อมูลผู้ใช้
 builder.Services.AddScoped<IUserScopeProvider, GrantedScopeProvider>();
-// Catalog, Apps — ตอนนี้มีแค่ controller ไม่มี service ที่ต้องลงทะเบียน
+// Apps — กติกาการอนุมัติตาม Tier
+builder.Services.AddScoped<ApplicationWorkflow>();
+// Catalog — ตอนนี้มีแค่ controller ไม่มี service ที่ต้องลงทะเบียน
 
 var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is not configured. Run 'dotnet user-secrets set Jwt:Key <value>'.");
 

@@ -24,8 +24,8 @@ export default function EcosystemPage() {
   const categoryName = (key: string) => categories.find((c) => c.key === key)?.name ?? key;
 
   const highlight = useMemo(() => {
-    const officials = apps.filter((a) => a.type === "official");
-    const rest = apps.filter((a) => a.type !== "official");
+    const officials = apps.filter((a) => a.type === "tier3");
+    const rest = apps.filter((a) => a.type !== "tier3");
     return [...officials, ...rest].slice(0, 4);
   }, [apps]);
 

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { ImageIconPicker, ShotsPicker } from "@/shared/components/MediaPickers";
 import { Btn, Panel } from "@/shared/components/ui";
-import type { CategoryDto } from "@/shared/lib/types";
+import { AUDIENCES, AUDIENCE_LABEL } from "@/shared/lib/tiers";
+import type { AppAudience, CategoryDto } from "@/shared/lib/types";
 
 export interface AppFormValues {
   name: string;
@@ -12,6 +13,7 @@ export interface AppFormValues {
   image: string | null;
   icon: string;
   screenshots: string[];
+  audience: AppAudience;
 }
 
 export default function AppForm({
@@ -103,7 +105,23 @@ export default function AppForm({
           />
         </div>
 
-        <label className="text-[15px] text-ink-dim font-semibold block mb-1.5">API Products ที่ต้องการใช้งาน</label>
+        <div className="flex flex-col gap-1.5 mb-3.5">
+          <label className="text-[15px] text-ink-dim font-semibold">ใครใช้ App นี้ได้</label>
+          <div className="flex gap-2 flex-wrap">
+            {AUDIENCES.map((aud) => (
+              <label key={aud} className="flex items-center gap-2 border border-line-strong rounded-lg px-2.5 py-2 text-[15px] cursor-pointer">
+                <input type="radio" name="audience" checked={values.audience === aud} onChange={() => set("audience", aud)} className="accent-teal" />
+                {AUDIENCE_LABEL[aud]}
+              </label>
+            ))}
+          </div>
+          <span className="text-[13.5px] text-ink-faint">ทีม IT จะตั้งสิทธิ์ login ของ App ตามที่เลือก</span>
+        </div>
+
+        <label className="text-[15px] text-ink-dim font-semibold block mb-1">API Products ที่ต้องการใช้งาน</label>
+        <p className="text-[13.5px] text-ink-faint mb-1.5">
+          เลือกเฉพาะเมื่อจะขอ Tier 2/3 — App ที่เลือก API ต้องผ่านกรรมการ 3 เสียงและ IT รีวิวโค้ด ถ้าไม่เลือกเลยจะขอ Tier 1 ได้ (อนุมัติอัตโนมัติ)
+        </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3.5">
           {categories.map((c) => (
             <label key={c.key} className="flex items-center gap-2 border border-line-strong rounded-lg px-2.5 py-2 text-[15px] cursor-pointer">

@@ -1,9 +1,13 @@
 namespace MGT.Portal.Api.Modules.Apps;
 
+/// <param name="Type">Tier ที่ได้รับอนุมัติแล้ว (tier1 / tier2 / tier3)</param>
+/// <param name="ReviewTarget">Tier ที่ขอในรอบรีวิวปัจจุบัน</param>
+/// <param name="Audience">ใครใช้ App ได้ (self / department / company)</param>
 public record AppSummaryDto(
     int Id, string Name, string Description, string Subdomain, string Github,
     string[] Products, string Status, string Type, string? ReviewTarget,
-    string? Image, string Icon, string OwnerEmail, DateTime CreatedAt, DateTime UpdatedAt);
+    string? Image, string Icon, string OwnerEmail, DateTime CreatedAt, DateTime UpdatedAt,
+    string Audience);
 
 public record CredentialDto(string Env, string TokenId, string TokenSecret, DateTime CreatedAt);
 
@@ -11,17 +15,28 @@ public record LogEntryDto(string ActionType, DateTime OccurredAt, string Actor, 
 
 public record VoteDto(int CommitteeMemberId, string MemberName, string MemberRoleTitle, bool Approved);
 
+/// <summary>ผล IT code review ของรอบรีวิวปัจจุบัน</summary>
+public record CodeReviewDto(bool Approved, string ReviewerEmail, string? Note, DateTime ReviewedAt);
+
+/// <param name="RequiredVotes">จำนวนเสียงที่ต้องได้สำหรับ Tier ที่ขอ</param>
+/// <param name="RequiresCodeReview">Tier ที่ขอต้องผ่าน IT code review หรือไม่</param>
 public record AppDetailDto(AppSummaryDto Summary, List<string> Screenshots, List<CredentialDto> Credentials,
-    List<LogEntryDto> Log, List<VoteDto> Votes, int ReviewCycle);
+    List<LogEntryDto> Log, List<VoteDto> Votes, int ReviewCycle,
+    CodeReviewDto? CodeReview, int RequiredVotes, bool RequiresCodeReview);
 
 public record CreateAppRequest(
     string Name, string Description, string Subdomain, string Github, string[] Products,
-    string? Image, string? Icon, List<string>? Screenshots);
+    string? Image, string? Icon, List<string>? Screenshots, string? Audience);
 
 public record UpdateAppRequest(
     string Name, string Description, string Subdomain, string Github, string[] Products,
-    string? Image, string? Icon, List<string>? Screenshots);
+    string? Image, string? Icon, List<string>? Screenshots, string? Audience);
 
+/// <param name="TargetType">Tier ที่ขอ (tier1 / tier2 / tier3)</param>
 public record SendReviewRequest(string TargetType);
+
+public record VoteRequest(int CommitteeMemberId);
+
+public record CodeReviewRequest(bool Approved, string? Note);
 
 public record CommitteeMemberDto(int Id, string Name, string RoleTitle);

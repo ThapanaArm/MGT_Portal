@@ -32,7 +32,9 @@ Mgt_Portal/
 │           ├── features/                ← หน้าเว็บแยกตามเรื่อง (apps, catalog, admin, ...)
 │           ├── shared/                  ← component และ lib ที่ใช้ทุกหน้า (api, auth, i18n, ui)
 │           └── styles/
-├── tests/MGT.Portal.ArchitectureTests/  ← test ที่บังคับกติกาของ module
+├── tests/
+│   ├── MGT.Portal.ArchitectureTests/    ← test ที่บังคับกติกาของ module
+│   └── MGT.Portal.UnitTests/            ← test กติกาการอนุมัติตาม Tier
 └── docs/
     ├── database.md                      ← โครงสร้างฐานข้อมูล + ER diagram
     └── prototype/index.html             ← ต้นแบบ HTML เดิม (ไม่ได้ใช้ตอนรัน)

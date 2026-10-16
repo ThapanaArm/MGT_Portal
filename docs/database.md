@@ -1,9 +1,9 @@
 # โครงสร้างฐานข้อมูล MGT Portal
 
-สรุปจากโค้ดใน `src/Api/MGT.Portal.Api` (entity + `PortalDbContext` + migration ล่าสุด `20260827032726_AddOrgLevelAndTeams`)
-ฐานข้อมูลเป็น SQL Server มี 13 ตาราง อยู่ใน schema `dbo` ทั้งหมด และมี `__EFMigrationsHistory` ของ EF Core อีก 1 ตาราง
+สรุปจากโค้ดใน `src/Api/MGT.Portal.Api` (entity + `PortalDbContext` + migration ล่าสุด `20261016150000_TiersCodeReviewAudience`)
+ฐานข้อมูลเป็น SQL Server มี 14 ตาราง อยู่ใน schema `dbo` ทั้งหมด และมี `__EFMigrationsHistory` ของ EF Core อีก 1 ตาราง
 
-> การปรับโครงสร้างเป็น module รอบนี้ **ไม่เปลี่ยน schema** ตารางและข้อมูลเดิมใช้ต่อได้ทันที
+> migration `TiersCodeReviewAudience` เพิ่มตาราง `AppCodeReviews`, คอลัมน์ `Applications.Audience` และแปลงค่าระดับเดิม (registered / verify / official) เป็น tier1 / tier2 / tier3 ให้อัตโนมัติตอนแอปเริ่ม
 
 ## ตารางแบ่งตาม module
 
@@ -19,6 +19,7 @@
 | Apps | `AppCredentials` | 〃 | Token ID / Secret ของ App แยก sandbox / production |
 | Apps | `AppLogEntries` | 〃 | ประวัติการเปลี่ยนแปลงของ App |
 | Apps | `AppVotes` | 〃 | คะแนนโหวตของกรรมการต่อรอบการรีวิว |
+| Apps | `AppCodeReviews` | 〃 | ผล IT code review ต่อรอบการรีวิว (Tier 2/3) |
 | Apps | `CommitteeMembers` | `Modules/Apps/Domain/CommitteeMember.cs` | รายชื่อคณะกรรมการ |
 | Access | `AccessGrants` | `Modules/Access/Domain/AccessGrant.cs` | สิทธิ์เพิ่มเติมที่ admin ให้ผู้ใช้รายคน มีวันหมดอายุ |
 | Access | `ApiTokens` | `Modules/Access/Domain/ApiToken.cs` | token ส่วนตัวที่ผู้ใช้สร้างจากหน้า "Token ของฉัน" |
@@ -39,6 +40,7 @@ erDiagram
     Applications ||--o{ AppCredentials : "Cascade"
     Applications ||--o{ AppLogEntries : "Cascade"
     Applications ||--o{ AppVotes : "Cascade"
+    Applications ||--o{ AppCodeReviews : "Cascade"
     CommitteeMembers ||--o{ AppVotes : "Restrict"
 
     Users ||--o{ AccessGrants : "UserId (Restrict)"
@@ -93,7 +95,8 @@ erDiagram
         nvarchar Github
         nvarchar ProductsCsv
         nvarchar Status "draft / pending / active / suspended"
-        nvarchar Type "registered / verify / official"
+        nvarchar Type "tier1 / tier2 / tier3"
+        nvarchar Audience "self / department / company"
         nvarchar ReviewTarget "nullable"
         int ReviewCycle
         nvarchar Image "base64, nullable"
@@ -116,6 +119,15 @@ erDiagram
         int ReviewCycle
         bit Approved
     }
+    AppCodeReviews {
+        int Id PK
+        int ApplicationId FK
+        int ReviewCycle
+        bit Approved
+        nvarchar ReviewerEmail
+        nvarchar Note "nullable"
+        datetime2 ReviewedAt
+    }
     AccessGrants {
         int Id PK
         int UserId FK
@@ -137,6 +149,8 @@ erDiagram
     }
 ```
 
+ภาพเดียวกันแบบความละเอียดสูง (ซูมได้ไม่แตก): [database-er.svg](database-er.svg)
+
 ตารางที่ไม่ได้แสดงคอลัมน์ในแผนภาพ: `AppScreenshots` (ImageData, SortOrder), `AppLogEntries` (ActionType, OccurredAt, Actor, Note), `CommitteeMembers` (Name, RoleTitle)
 
 ## Index และข้อบังคับ
@@ -149,6 +163,7 @@ erDiagram
 | `Teams` | `Key` | ✓ |
 | `ApiCategories` | `Key` | ✓ |
 | `AppVotes` | (`ApplicationId`, `CommitteeMemberId`, `ReviewCycle`) | ✓ กรรมการ 1 คนโหวตได้ 1 ครั้งต่อรอบ |
+| `AppCodeReviews` | (`ApplicationId`, `ReviewCycle`) | ✓ IT รีวิวได้ 1 ผลต่อรอบ |
 | `AccessGrants` | (`UserId`, `Revoked`) | |
 | ตารางลูกทุกตัว | คอลัมน์ FK | |
 
