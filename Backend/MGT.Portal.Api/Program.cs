@@ -59,6 +59,7 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
     DbSeeder.Seed(db);
     DbSeeder.SeedOrgStructure(db);
+    DbSeeder.BackfillUnassignedUsersToSeeAll(db);
 }
 
 if (app.Environment.IsDevelopment())

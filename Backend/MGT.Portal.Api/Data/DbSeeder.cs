@@ -332,4 +332,22 @@ public static class DbSeeder
 
         db.SaveChanges();
     }
+
+    /// <summary>
+    /// มาตรการชั่วคราว: ผู้ใช้ที่ยังไม่ถูกจัดเข้าทีม/ระดับองค์กร (สร้างก่อน feature นี้ หรือ IT ยังไม่ได้จัดให้)
+    /// จะถูก DataScope.FromLevel บีบให้เห็นเฉพาะของตัวเอง (Self) ทำให้ข้อมูลเก่าดูเหมือนหายไป
+    /// จึงให้เห็นข้อมูลทั้งหมดไปก่อนผ่าน DataScopeOverride จนกว่า IT จะจัดทีม/ระดับให้ถูกต้องผ่าน AccessController
+    /// รันได้ทุกครั้งที่ระบบเริ่มทำงาน (idempotent) — ข้ามผู้ใช้ที่ถูกจัดทีมหรือตั้ง override ไว้แล้ว
+    /// </summary>
+    public static void BackfillUnassignedUsersToSeeAll(PortalDbContext db)
+    {
+        var unassigned = db.Users
+            .Where(u => u.TeamId == null && u.DataScopeOverride != DataScope.All)
+            .ToList();
+
+        foreach (var u in unassigned)
+            u.DataScopeOverride = DataScope.All;
+
+        if (unassigned.Count > 0) db.SaveChanges();
+    }
 }
