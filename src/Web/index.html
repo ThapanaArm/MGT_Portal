@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="th" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MGT Hub</title>
+    <meta name="description" content="MGT Hub — API Portal ภายในสำหรับพนักงาน Megachem" />
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&family=Prompt:wght@300;400;500;600;700&display=swap"
+    />
+    <script>
+      // ตั้งธีมก่อน React โหลด เพื่อไม่ให้หน้าจอกระพริบจากสว่างเป็นมืด
+      (function () {
+        try {
+          var saved = localStorage.getItem("mgt_theme");
+          var theme =
+            saved === "light" || saved === "dark"
+              ? saved
+              : window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light";
+          document.documentElement.setAttribute("data-theme", theme);
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="min-h-full flex flex-col bg-paper text-ink antialiased">
+    <div id="root" class="min-h-full flex flex-col"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
