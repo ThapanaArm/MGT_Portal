@@ -26,7 +26,7 @@ Mgt_Portal/
 │   │   │       └── Persistence/         ← การตั้งค่าตาราง EF Core ของ module นี้
 │   │   ├── Infrastructure/Persistence/  ← PortalDbContext, migrations, ข้อมูลตัวอย่าง
 │   │   └── Shared/                      ← ของใช้ร่วมที่ไม่ผูกกับ module ใด
-│   └── Web/                             ← frontend (React + Vite)
+│   └── Web/                             ← frontend (React + Vite) + MGT.Portal.Web.esproj ให้ VS เห็นโปรเจกต์
 │       └── src/
 │           ├── app/                     ← routes.tsx, layout, ตัวกันหน้า admin
 │           ├── features/                ← หน้าเว็บแยกตามเรื่อง (apps, catalog, admin, ...)
@@ -76,6 +76,8 @@ dotnet run --project src/Api/MGT.Portal.Api
 # terminal 2 — หน้าเว็บที่ http://localhost:5173
 npm --prefix src/Web run dev
 ```
+
+**ใน Visual Studio:** คลิกขวาที่ Solution → Configure Startup Projects → เลือก Multiple startup projects แล้วตั้ง `MGT.Portal.Api` และ `MGT.Portal.Web` เป็น Start กด F5 ครั้งเดียวรันทั้งคู่
 
 เปิด http://localhost:5173 หน้าเว็บเรียก `/api/...` แล้ว Vite จะส่งต่อให้ backend เอง
 

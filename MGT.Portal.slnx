@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Api/MGT.Portal.Api/MGT.Portal.Api.csproj" />
+    <Project Path="src/Web/MGT.Portal.Web.esproj" Type="54a90642-561a-4bb1-a94e-469adee60c69" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/MGT.Portal.ArchitectureTests/MGT.Portal.ArchitectureTests.csproj" />

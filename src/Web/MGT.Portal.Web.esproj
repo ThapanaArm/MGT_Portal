@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/1.0.6887863">
+  <!--
+    ไฟล์นี้มีไว้ให้ Visual Studio แสดงโปรเจกต์หน้าเว็บใน Solution Explorer และกด F5 รัน Vite ได้
+    ไม่มีผลกับ npm / Vite — ใช้ npm run dev / npm run build ได้เหมือนเดิม
+  -->
+  <PropertyGroup>
+    <!-- คำสั่งที่รันเมื่อกด F5 / Start ที่โปรเจกต์นี้ -->
+    <StartupCommand>npm run dev</StartupCommand>
+    <!-- ไม่ให้ dotnet build ไปรัน npm run build ทุกครั้ง (build หน้าเว็บด้วย npm เองเมื่อจะ deploy) -->
+    <ShouldRunBuildScript>false</ShouldRunBuildScript>
+    <!-- ที่อยู่ไฟล์หน้าเว็บที่ build แล้ว (ตั้งไว้ใน vite.config.ts) -->
+    <BuildOutputFolder>$(MSBuildProjectDirectory)\..\Api\MGT.Portal.Api\wwwroot</BuildOutputFolder>
+  </PropertyGroup>
+</Project>
