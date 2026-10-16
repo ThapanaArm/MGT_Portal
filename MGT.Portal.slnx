@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Api/MGT.Portal.Api/MGT.Portal.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MGT.Portal.ArchitectureTests/MGT.Portal.ArchitectureTests.csproj" />
+  </Folder>
+</Solution>

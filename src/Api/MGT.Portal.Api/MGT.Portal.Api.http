@@ -1,0 +1,27 @@
+@host = http://localhost:5038
+
+### Login (บัญชีทดสอบจาก DbSeeder — ใช้ได้เฉพาะตอน Development)
+# @name login
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "it-digital@megachem.co.th", "password": "Admin@123" }
+
+###
+@token = {{login.response.body.token}}
+
+### ข้อมูลผู้ใช้ที่ login อยู่
+GET {{host}}/api/auth/me
+Authorization: Bearer {{token}}
+
+### หมวด API ทั้งหมด (Catalog)
+GET {{host}}/api/categories
+Authorization: Bearer {{token}}
+
+### Application ที่ฉันเห็นได้ (Apps)
+GET {{host}}/api/applications
+Authorization: Bearer {{token}}
+
+### Access grant ทั้งหมด (Access — admin เท่านั้น)
+GET {{host}}/api/access/grants
+Authorization: Bearer {{token}}

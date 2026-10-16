@@ -1,0 +1,30 @@
+## ---------- .NET ----------
+bin/
+obj/
+*.user
+TestResults/
+
+## Secrets — connection strings and JWT signing key live in `dotnet user-secrets`,
+## never in these files. Keep this rule even if one shows up empty/placeholder.
+**/appsettings.Development.json
+**/appsettings.*.local.json
+**/secrets.json
+*.pfx
+
+## หน้าเว็บที่ build แล้ว (สร้างจาก src/Web ด้วย npm run build)
+src/Api/MGT.Portal.Api/wwwroot/
+
+## ---------- Web (React + Vite) ----------
+node_modules/
+dist/
+*.tsbuildinfo
+.env*
+!.env.example
+npm-debug.log*
+
+## ---------- IDE / OS ----------
+.vs/
+.vscode/
+.idea/
+*.swp
+.DS_Store
