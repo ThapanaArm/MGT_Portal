@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using MGT.Portal.Api.Modules.Access;
 using MGT.Portal.Api.Modules.Apps;
 using MGT.Portal.Api.Modules.Catalog;
+using MGT.Portal.Api.Modules.Gateway;
 using MGT.Portal.Api.Modules.Identity;
 
 namespace MGT.Portal.Api.Infrastructure.Persistence;
@@ -34,6 +35,9 @@ public class PortalDbContext(DbContextOptions<PortalDbContext> options) : DbCont
     // Access
     public DbSet<AccessGrant> AccessGrants => Set<AccessGrant>();
     public DbSet<ApiToken> ApiTokens => Set<ApiToken>();
+
+    // Gateway (audit log + Idempotency-Key ของคำขอเขียน)
+    public DbSet<GatewayWriteRecord> GatewayWriteRecords => Set<GatewayWriteRecord>();
 
     protected override void OnModelCreating(ModelBuilder b)
         => b.ApplyConfigurationsFromAssembly(typeof(PortalDbContext).Assembly);

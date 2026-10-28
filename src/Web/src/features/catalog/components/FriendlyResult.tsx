@@ -1,7 +1,8 @@
 function formatValue(v: unknown): string {
   if (v === null || v === undefined) return "-";
-  if (typeof v === "number") return v.toLocaleString("th-TH");
-  if (typeof v === "boolean") return v ? "ใช่" : "ไม่ใช่";
+  // Show numbers exactly as the API returns them — no thousands separators (2025 must not read as 2,025).
+  if (typeof v === "number") return String(v);
+  if (typeof v === "boolean") return v ? "Yes" : "No";
   return String(v);
 }
 

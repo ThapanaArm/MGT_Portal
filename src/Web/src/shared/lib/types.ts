@@ -1,9 +1,9 @@
 export type RoleKey = "admin" | "sales" | "purchase" | "finance" | "hr";
 
-/** ระดับในองค์กร — กำหนดขอบเขตการเห็นข้อมูลเริ่มต้น */
+/** Organization level determines default data visibility. */
 export type OrgLevel = "employee" | "manager" | "management";
 
-/** ขอบเขตข้อมูลระดับแถว — คนละชั้นกับ scopes ซึ่งคุมว่าเรียก endpoint ไหนได้ */
+/** Row-level data visibility is independent of API scopes. */
 export type DataScope = "self" | "team" | "all";
 
 export interface UserDto {
@@ -12,10 +12,10 @@ export interface UserDto {
   displayName: string;
   roleKey: RoleKey;
   roleName: string;
-  /** เรียก endpoint ไหนได้ */
+  /** Allowed API scopes. */
   scopes: string[];
   level: OrgLevel;
-  /** เห็นข้อมูลของใครได้ */
+  /** Effective data visibility. */
   dataScope: DataScope;
   teamName: string | null;
 }
@@ -40,6 +40,7 @@ export interface EndpointDto {
   summary: string;
   description: string;
   scope: string;
+  sourcePlatform: string;
   icon: string;
   scenario: string;
   params: ParamRow[];
@@ -48,9 +49,9 @@ export interface EndpointDto {
   respFields: [field: string, type: string, description: string][];
 }
 
-/** Tier ของ App — ดู shared/lib/tiers.ts */
+/** Application tier; see shared/lib/tiers.ts. */
 export type AppType = "tier1" | "tier2" | "tier3";
-/** ใครใช้ App ได้ */
+/** Application audience */
 export type AppAudience = "self" | "department" | "company";
 export type AppStatus = "draft" | "pending" | "active" | "suspended";
 export type CredEnv = "sandbox" | "production";
@@ -71,10 +72,13 @@ export interface AppSummaryDto {
   createdAt: string;
   updatedAt: string;
   audience: AppAudience;
+  processStage?: string | null;
 }
 
 export interface CredentialDto {
   env: CredEnv;
+  /** API category key (e.g. sales) — one token per category per environment */
+  category: string;
   tokenId: string;
   tokenSecret: string;
   createdAt: string;
@@ -92,21 +96,28 @@ export interface VoteDto {
   memberName: string;
   memberRoleTitle: string;
   approved: boolean;
+  actorEmail: string | null;
+  decidedAt: string | null;
+  note: string | null;
 }
 
 export interface AppDetailDto {
+  development?: DevelopmentRequest | null;
   summary: AppSummaryDto;
   screenshots: string[];
   credentials: CredentialDto[];
   log: LogEntryDto[];
   votes: VoteDto[];
   reviewCycle: number;
-  /** ผล IT code review ของรอบปัจจุบัน (null = ยังไม่รีวิว) */
+  /** Current IT code review; null means not reviewed. */
   codeReview: CodeReviewDto | null;
-  /** จำนวนเสียงที่ต้องได้สำหรับ Tier ที่ขอ */
+  /** Required committee votes for the requested tier. */
   requiredVotes: number;
   requiresCodeReview: boolean;
 }
+
+export interface DeveloperPreparation { email: string; gitReady: boolean; apiReady: boolean }
+export interface DevelopmentRequest { stage: string; targetTier: AppType; developers: DeveloperPreparation[] | null; branch: string | null; commit: string | null }
 
 export interface CodeReviewDto {
   approved: boolean;
@@ -119,6 +130,8 @@ export interface CommitteeMemberDto {
   id: number;
   name: string;
   roleTitle: string;
+  userId: number | null;
+  email: string | null;
 }
 
 export interface TokenDto {
@@ -139,7 +152,7 @@ export interface UserBriefDto {
   level: OrgLevel;
   teamId: number | null;
   teamName: string | null;
-  /** ตั้งไว้เมื่อบางตำแหน่งต้องเห็นกว้างกว่าระดับปกติ — null = ใช้ตามระดับ */
+  /** Optional visibility override; null uses the organization default. */
   dataScopeOverride: DataScope | null;
   effectiveDataScope: DataScope;
 }

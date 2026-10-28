@@ -13,15 +13,15 @@ public class CategoriesController(PortalDbContext db) : ControllerBase
 {
     private static EndpointDto ToDto(ApiEndpoint e) => new(
         e.Id, e.CategoryId, e.Method, e.Path, e.Summary, e.Description, e.Scope, e.Icon, e.Scenario,
-        JsonHelpers.ParseRows(e.ParamsJson), e.ReqBody, e.RespExample, JsonHelpers.ParseRows(e.RespFieldsJson));
+        JsonHelpers.ParseRows(e.ParamsJson), e.ReqBody, e.RespExample, JsonHelpers.ParseRows(e.RespFieldsJson), e.SourcePlatform);
 
     private static string DefaultIcon(string method) => method switch
     {
-        "GET" => "🔍",
-        "POST" => "➕",
-        "PUT" or "PATCH" => "🔄",
-        "DELETE" => "🗑️",
-        _ => "📋",
+        "GET" => "fa:search",
+        "POST" => "fa:plus",
+        "PUT" or "PATCH" => "fa:rotate",
+        "DELETE" => "fa:trash",
+        _ => "fa:clipboard",
     };
 
     [HttpGet]
@@ -51,6 +51,7 @@ public class CategoriesController(PortalDbContext db) : ControllerBase
     [Authorize(Roles = "admin")]
     public async Task<ActionResult<EndpointDto>> CreateEndpoint(string key, UpsertEndpointRequest req)
     {
+        if (req.SourcePlatform?.Length > 100) return BadRequest(new { message = "Source platform must be 100 characters or fewer" });
         var cat = await db.ApiCategories.FirstOrDefaultAsync(c => c.Key == key);
         if (cat is null) return NotFound();
 
@@ -63,6 +64,7 @@ public class CategoriesController(PortalDbContext db) : ControllerBase
             Summary = req.Summary,
             Description = req.Description,
             Scope = req.Scope,
+            SourcePlatform = req.SourcePlatform?.Trim() ?? "",
             Icon = string.IsNullOrWhiteSpace(req.Icon) ? DefaultIcon(req.Method) : req.Icon,
             Scenario = req.Scenario ?? "",
             ParamsJson = "[]",
@@ -78,6 +80,7 @@ public class CategoriesController(PortalDbContext db) : ControllerBase
     [Authorize(Roles = "admin")]
     public async Task<ActionResult<EndpointDto>> UpdateEndpoint(int id, UpsertEndpointRequest req)
     {
+        if (req.SourcePlatform?.Length > 100) return BadRequest(new { message = "Source platform must be 100 characters or fewer" });
         var entity = await db.ApiEndpoints.FindAsync(id);
         if (entity is null) return NotFound();
 
@@ -86,6 +89,7 @@ public class CategoriesController(PortalDbContext db) : ControllerBase
         entity.Summary = req.Summary;
         entity.Description = req.Description;
         entity.Scope = req.Scope;
+        if (req.SourcePlatform is not null) entity.SourcePlatform = req.SourcePlatform.Trim();
         if (!string.IsNullOrWhiteSpace(req.Icon)) entity.Icon = req.Icon;
         if (req.Scenario is not null) entity.Scenario = req.Scenario;
         if (!string.IsNullOrWhiteSpace(req.RespExample)) entity.RespExample = req.RespExample;

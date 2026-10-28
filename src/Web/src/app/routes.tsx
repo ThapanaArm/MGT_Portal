@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router";
 import HomeRedirect from "@/app/HomeRedirect";
 import PortalLayout from "@/app/layout/PortalLayout";
@@ -11,35 +12,40 @@ import CategoryPage from "@/features/catalog/CategoryPage";
 import MyAppsPage from "@/features/apps/MyAppsPage";
 import AppDetailPage from "@/features/apps/AppDetailPage";
 import TokensPage from "@/features/tokens/TokensPage";
+import DesignSystemPage from "@/features/design-system/DesignSystemPage";
+const ExampleModule = lazy(() => import("@/features/example/ExampleModule"));
 import AdminApisPage from "@/features/admin/AdminApisPage";
 import AdminReviewPage from "@/features/admin/AdminReviewPage";
 import AdminAccessPage from "@/features/admin/AdminAccessPage";
+import DashboardPage from "@/features/dashboard/DashboardPage";
+import LoadingScreen from "@/shared/components/LoadingScreen";
 
-/**
- * แผนที่ URL ทั้งหมดของหน้าเว็บ — เพิ่มหน้าใหม่ที่นี่ที่เดียว
- * หมายเหตุ: ห้ามตั้ง path ขึ้นต้นด้วย /api เพราะเป็นของ backend
- */
+/** Central route map. Reserve /api paths for the backend. */
 export default function AppRoutes() {
   return (
     <Routes>
       <Route index element={<HomeRedirect />} />
       <Route path="login" element={<LoginPage />} />
+      <Route path="design-preview/*" element={<Suspense fallback={<LoadingScreen fullScreen delay={150} message="Loading examples" detail="Preparing the design preview..." />}><ExampleModule /></Suspense>} />
 
-      {/* หน้าหลังล็อกอิน */}
+      {/* Authenticated pages */}
       <Route element={<PortalLayout />}>
+        <Route path="dashboard" element={<DashboardPage />} />
         <Route path="ecosystem" element={<EcosystemPage />} />
         <Route path="ecosystem/:id" element={<EcosystemAppPage />} />
         <Route path="getting-started" element={<GettingStartedPage />} />
+        <Route path="design-system" element={<DesignSystemPage />} />
         <Route path="explore" element={<ExplorePage />} />
         <Route path="catalog/:category" element={<CategoryPage />} />
         <Route path="my-apps" element={<MyAppsPage />} />
         <Route path="my-apps/:id" element={<AppDetailPage />} />
         <Route path="tokens" element={<TokensPage />} />
+        <Route path="reviews" element={<AdminReviewPage />} />
 
-        {/* ผู้ดูแลระบบเท่านั้น */}
+        {/** Administrator-only pages */}
         <Route path="admin" element={<RequireAdmin />}>
           <Route path="apis" element={<AdminApisPage />} />
-          <Route path="review" element={<AdminReviewPage />} />
+          <Route path="review" element={<Navigate to="/reviews" replace />} />
           <Route path="access" element={<AdminAccessPage />} />
         </Route>
       </Route>

@@ -1,0 +1,13 @@
+export type Line = { product: string; qty: number; price: number };
+export type Order = { id: number; customer: string; email: string; date: string; status: string; note: string; lines: Line[] };
+const customers = ["Northstar Ltd.", "Blue Ocean Ltd.", "GreenFlow Ltd."];
+export const seed: Order[] = Array.from({ length: 12 }, (_, i) => ({ id: 1024+i, customer: customers[i%3], email: `purchasing${i+1}@example.com`, date: `2026-10-${String(19-i).padStart(2,"0")}`, status: ["Draft", "Pending confirmation", "Confirmed"][i%3], note: "Deliver during business hours", lines: [{product:"Industrial solution A",qty:10+i,price:1250},{product:"Packaging set",qty:2,price:450}] }));
+export const money = (value: number) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "THB" }).format(value);
+export const net = (order: Order) => order.lines.reduce((sum,line) => sum+line.qty*line.price,0);
+export const total = (order: Order) => net(order)*1.07;
+export const fresh = (): Order => ({id:0,customer:"",email:"",date:new Date().toISOString().slice(0,10),status:"Draft",note:"",lines:[{product:"",qty:1,price:0}]});
+export const number = (id: number) => `SO-${id}`;
+export type Employee={id:string;name:string;email:string;department:string;role:string;status:string};
+export type WorkRequest={id:string;title:string;type:string;requester:string;date:string;status:string;reason:string};
+export const employees:Employee[]=[{id:"EMP-001",name:"Nalin Somchai",email:"nalin@example.com",department:"Sales",role:"Team manager",status:"Active"},{id:"EMP-002",name:"Pim Kanya",email:"pim@example.com",department:"Human Resources",role:"Specialist",status:"Active"},{id:"EMP-003",name:"Arun Chai",email:"arun@example.com",department:"Technology",role:"Developer",status:"Active"},{id:"EMP-004",name:"Mali Suda",email:"mali@example.com",department:"Accounting",role:"Specialist",status:"Inactive"},{id:"EMP-005",name:"Tanakorn Dee",email:"tanakorn@example.com",department:"Human Resources",role:"Team manager",status:"Active"},{id:"EMP-006",name:"Kanda Siri",email:"kanda@example.com",department:"Sales",role:"Specialist",status:"Active"}];
+export const workRequests:WorkRequest[]=[{id:"REQ-001",title:"Annual leave request",type:"Leave",requester:"Pim Kanya",date:"2026-10-22",status:"Pending approval",reason:"Planned annual leave"},{id:"REQ-002",title:"Equipment for a new team member",type:"Equipment",requester:"Arun Chai",date:"2026-10-20",status:"Pending approval",reason:"Computer and equipment for a new team member"},{id:"REQ-003",title:"Remote work request",type:"Work arrangement",requester:"Nalin Somchai",date:"2026-10-21",status:"Approved",reason:"Customer meeting at a branch office"}];

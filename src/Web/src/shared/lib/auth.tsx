@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       store.setItem("mgt_token", res.token);
       store.setItem("mgt_user", JSON.stringify(res.user));
       setUser(res.user);
-      navigate("/ecosystem");
+      navigate("/dashboard");
     },
     [navigate]
   );

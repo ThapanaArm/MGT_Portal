@@ -1,123 +1,173 @@
 @import "tailwindcss";
 
-/* ฟอนต์โหลดจาก Google Fonts ใน index.html */
+/*
+ * MGT Design System — โทเคนชุดเดียวกับ 07_DESIGN_SYSTEM (mgt-design-system/tokens.scss)
+ * ฟอนต์โหลดจาก Google Fonts ใน index.html:
+ *   Nunito Sans = ตัวอักษรละติน, Prompt = ตัวอักษรไทย (เบราว์เซอร์สลับให้เองตามตัวอักษร)
+ */
 :root {
-  --font-prompt: "Prompt", ui-sans-serif, system-ui, sans-serif;
+  --font-ui: "Nunito Sans", "Prompt", ui-sans-serif, system-ui, sans-serif;
   --font-geist-mono: "Geist Mono", ui-monospace, monospace;
+
+  /* ขนาดและระยะ (เหมือน tokens.scss) */
+  --mgt-radius-sm: 8px;
+  --mgt-radius-md: 12px;
+  --mgt-radius-lg: 20px;
+  --mgt-space-1: 4px;
+  --mgt-space-2: 8px;
+  --mgt-space-3: 12px;
+  --mgt-space-4: 16px;
+  --mgt-space-6: 24px;
+  --mgt-space-8: 32px;
+  --mgt-font: var(--font-ui);
 }
 
+/*
+ * ชื่อโทเคนเดิมของ Portal (paper / surface / ink / teal / brand ...) ยังใช้ได้ทุกหน้า
+ * แต่ค่าเปลี่ยนเป็นสีของ MGT Design System:
+ *   teal / brand  → MGT Blue (สีหลักของปุ่ม ลิงก์ และสถานะที่เลือก)
+ *   green         → MGT Green (สีเน้นของแบรนด์ / สำเร็จ)
+ *   navy          → Deep Navy
+ */
 :root {
-  --paper: #f5f6f4;
-  --surface: #ffffff;
-  --surface-2: #edf0ee;
-  --surface-3: #e4e8e5;
-  --ink: #12181a;
-  --ink-dim: #4b5457;
-  --ink-faint: #7c8688;
-  --line: rgba(18, 24, 26, 0.10);
-  --line-strong: rgba(18, 24, 26, 0.20);
+  --mgt-blue: #2368c4;
+  --mgt-blue-dark: #164f9b;
+  --mgt-green: #78b83e;
+  --mgt-navy: #0b2038;
+  --mgt-canvas: #f6f9fd;
+  --mgt-surface: #ffffff;
+  --mgt-text: #12263f;
+  --mgt-muted: #64748b;
+  --mgt-border: #dce5ef;
+  --mgt-soft: #f1f6fb;
 
-  --teal: #0e6e66;
-  --teal-strong: #0a544e;
-  --teal-soft: #e3f1ee;
-  --amber: #b96a24;
-  --amber-soft: #f7e9da;
+  --paper: var(--mgt-canvas);
+  --surface: var(--mgt-surface);
+  --surface-2: var(--mgt-soft);
+  --surface-3: #e6eef6;
+  --ink: var(--mgt-text);
+  --ink-dim: var(--mgt-muted);
+  --ink-faint: #8798a9;
+  --line: var(--mgt-border);
+  --line-strong: #c9d7e5;
 
-  /* Brand fill — for large solid areas (hero banners, primary buttons). Kept
-     deliberately separate from --teal/--teal-strong, which brighten in dark
-     mode for text/icon legibility; a big fill needs to stay a rich, identity
-     color rather than flip pastel, or it reads as washed-out against a dark page. */
-  --brand: #0e6e66;
-  --brand-strong: #0a544e;
+  --teal: var(--mgt-blue);
+  --teal-strong: var(--mgt-blue-dark);
+  --teal-soft: #e6f2ff;
+  --amber: #97630f;
+  --amber-soft: #fff0c9;
+  --green: var(--mgt-green);
+  --green-strong: #4b861e;
+  --green-soft: #eff8e7;
+  --navy: var(--mgt-navy);
 
-  --get: #0e6e66;
-  --get-soft: #e3f1ee;
-  --post: #2f7d46;
-  --post-soft: #e4f2e7;
-  --put: #b96a24;
-  --put-soft: #f7e9da;
+  --brand: var(--mgt-blue);
+  --brand-strong: var(--mgt-blue-dark);
+
+  --get: #2364a9;
+  --get-soft: #e0efff;
+  --post: #276b38;
+  --post-soft: #e3f6e7;
+  --put: #97630f;
+  --put-soft: #fff0c9;
   --patch: #6f52b5;
   --patch-soft: #ece7f7;
-  --delete: #b2413a;
-  --delete-soft: #f6e4e2;
-  --danger: #b2413a;
-  --danger-soft: #f6e4e2;
+  --delete: #b42e3c;
+  --delete-soft: #ffe3e6;
+  --danger: #b42e3c;
+  --danger-soft: #ffe3e6;
+
+  --card-shadow: 0 14px 38px rgba(32, 70, 107, 0.065);
+  --page-glow: radial-gradient(circle at 88% -8%, rgba(49, 128, 225, 0.12), transparent 34rem),
+    radial-gradient(circle at 44% 22%, rgba(137, 198, 74, 0.07), transparent 26rem);
 }
 
-/* Dark palette lives in one place and is applied two ways:
-   - system preference, unless the user has explicitly chosen light (data-theme="light")
-   - explicit user choice (data-theme="dark"), regardless of system preference
-   Keep both blocks' values identical when editing. */
+/* Dark palette อยู่ที่เดียวแต่ใช้ 2 แบบ:
+   - ตามระบบ เว้นแต่ผู้ใช้เลือกโหมดสว่างเอง (data-theme="light")
+   - ผู้ใช้เลือกโหมดมืดเอง (data-theme="dark")
+   แก้ค่าให้เหมือนกันทั้ง 2 บล็อกเสมอ */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #0f1517;
-    --surface: #192326;
-    --surface-2: #1f2a2e;
-    --surface-3: #263237;
-    --ink: #e7ecec;
-    --ink-dim: #9caaac;
-    --ink-faint: #6e7b7d;
-    --line: rgba(231, 236, 235, 0.14);
-    --line-strong: rgba(231, 236, 235, 0.26);
+    --mgt-blue: #3378cf;
+    --mgt-blue-dark: #225fae;
+    --mgt-green: #89c64a;
+    --mgt-navy: #071522;
+    --mgt-canvas: #07111f;
+    --mgt-surface: #101f32;
+    --mgt-text: #f6f9fd;
+    --mgt-muted: #afbed0;
+    --mgt-border: #2a405a;
+    --mgt-soft: #172b43;
 
-    --teal: #4fbeb1;
-    --teal-strong: #79d2c7;
-    --teal-soft: rgba(79, 190, 177, 0.14);
-    --amber: #e0954b;
-    --amber-soft: rgba(224, 149, 75, 0.14);
+    --surface-3: #1e3550;
+    --ink-faint: #7f93a8;
+    --line-strong: #3a5370;
 
-    --brand: #16786f;
-    --brand-strong: #0f5a53;
+    --teal: #6aaaf1;
+    --teal-strong: #8dc2ff;
+    --teal-soft: rgba(51, 120, 207, 0.2);
+    --amber: #ffe09b;
+    --amber-soft: #513b12;
+    --green-strong: #aeda83;
+    --green-soft: rgba(137, 198, 74, 0.14);
 
-    --get: #4fbeb1;
-    --get-soft: rgba(79, 190, 177, 0.14);
-    --post: #68c486;
-    --post-soft: rgba(104, 196, 134, 0.14);
-    --put: #e0954b;
-    --put-soft: rgba(224, 149, 75, 0.14);
+    --get: #8dc2ff;
+    --get-soft: rgba(51, 120, 207, 0.2);
+    --post: #bce9c5;
+    --post-soft: #133b29;
+    --put: #ffe09b;
+    --put-soft: #513b12;
     --patch: #ad91ef;
     --patch-soft: rgba(173, 145, 239, 0.14);
-    --delete: #e58176;
-    --delete-soft: rgba(229, 129, 118, 0.14);
-    --danger: #e58176;
-    --danger-soft: rgba(229, 129, 118, 0.14);
+    --delete: #ffc5cb;
+    --delete-soft: #4d2028;
+    --danger: #ff9aa5;
+    --danger-soft: #4d2028;
+
+    --card-shadow: 0 14px 38px rgba(0, 0, 0, 0.22);
+    --page-glow: radial-gradient(circle at 84% 0, rgba(51, 120, 207, 0.2), transparent 34rem);
   }
 }
 
 :root[data-theme="dark"] {
-  --paper: #0f1517;
-  --surface: #192326;
-  --surface-2: #1f2a2e;
-  --surface-3: #263237;
-  --ink: #e7ecec;
-  --ink-dim: #9caaac;
-  --ink-faint: #6e7b7d;
-  --line: rgba(231, 236, 235, 0.14);
-  --line-strong: rgba(231, 236, 235, 0.26);
+  --mgt-blue: #3378cf;
+  --mgt-blue-dark: #225fae;
+  --mgt-green: #89c64a;
+  --mgt-navy: #071522;
+  --mgt-canvas: #07111f;
+  --mgt-surface: #101f32;
+  --mgt-text: #f6f9fd;
+  --mgt-muted: #afbed0;
+  --mgt-border: #2a405a;
+  --mgt-soft: #172b43;
 
-  --teal: #4fbeb1;
-  --teal-strong: #79d2c7;
-  --teal-soft: rgba(79, 190, 177, 0.14);
-  --amber: #e0954b;
-  --amber-soft: rgba(224, 149, 75, 0.14);
+  --surface-3: #1e3550;
+  --ink-faint: #7f93a8;
+  --line-strong: #3a5370;
 
-  /* Rich mid-tone teal (not pastel) so hero banners/buttons still read as a
-     deliberate brand fill against a near-black page instead of blowing out. */
-  --brand: #16786f;
-  --brand-strong: #0f5a53;
+  --teal: #6aaaf1;
+  --teal-strong: #8dc2ff;
+  --teal-soft: rgba(51, 120, 207, 0.2);
+  --amber: #ffe09b;
+  --amber-soft: #513b12;
+  --green-strong: #aeda83;
+  --green-soft: rgba(137, 198, 74, 0.14);
 
-  --get: #4fbeb1;
-  --get-soft: rgba(79, 190, 177, 0.14);
-  --post: #68c486;
-  --post-soft: rgba(104, 196, 134, 0.14);
-  --put: #e0954b;
-  --put-soft: rgba(224, 149, 75, 0.14);
+  --get: #8dc2ff;
+  --get-soft: rgba(51, 120, 207, 0.2);
+  --post: #bce9c5;
+  --post-soft: #133b29;
+  --put: #ffe09b;
+  --put-soft: #513b12;
   --patch: #ad91ef;
   --patch-soft: rgba(173, 145, 239, 0.14);
-  --delete: #e58176;
-  --delete-soft: rgba(229, 129, 118, 0.14);
-  --danger: #e58176;
-  --danger-soft: rgba(229, 129, 118, 0.14);
+  --delete: #ffc5cb;
+  --delete-soft: #4d2028;
+  --danger: #ff9aa5;
+  --danger-soft: #4d2028;
+
+  --card-shadow: 0 14px 38px rgba(0, 0, 0, 0.22);
+  --page-glow: radial-gradient(circle at 84% 0, rgba(51, 120, 207, 0.2), transparent 34rem);
 }
 
 @theme inline {
@@ -136,6 +186,10 @@
   --color-teal-soft: var(--teal-soft);
   --color-amber: var(--amber);
   --color-amber-soft: var(--amber-soft);
+  --color-green: var(--green);
+  --color-green-strong: var(--green-strong);
+  --color-green-soft: var(--green-soft);
+  --color-navy: var(--navy);
   --color-brand: var(--brand);
   --color-brand-strong: var(--brand-strong);
 
@@ -152,13 +206,28 @@
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
 
-  --font-sans: var(--font-prompt);
+  --shadow-card: var(--card-shadow);
+
+  --font-sans: var(--font-ui);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
-  background: var(--paper);
+  background: var(--page-glow), var(--paper);
+  background-attachment: fixed;
   color: var(--ink);
+}
+
+/* Tailwind preflight ตั้ง cursor ของปุ่มเป็น default — ระบบออกแบบใช้ pointer */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
+/* วงโฟกัสแบบเดียวกับ mgt-button */
+:where(button, a, input, select, textarea, summary):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--mgt-blue) 30%, transparent);
+  outline-offset: 2px;
 }
 
 .scrollbar-thin::-webkit-scrollbar {

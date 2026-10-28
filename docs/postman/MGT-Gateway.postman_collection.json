@@ -1,0 +1,222 @@
+{
+  "info": {
+    "name": "MGT Gateway",
+    "description": "เรียก Gateway ของ MGT Portal ด้วย Token ID/Secret ของแอปที่อนุมัติแล้ว",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5038"
+    },
+    {
+      "key": "tokenId",
+      "value": ""
+    },
+    {
+      "key": "tokenSecret",
+      "value": ""
+    },
+    {
+      "key": "salesOrder",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "SaleOrder ปี 2026",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Token-Id",
+            "value": "{{tokenId}}"
+          },
+          {
+            "key": "X-Token-Secret",
+            "value": "{{tokenSecret}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/sales/orders?year=2026&limit=10",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "sales",
+            "orders"
+          ],
+          "query": [
+            {
+              "key": "year",
+              "value": "2026"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            },
+            {
+              "key": "customer",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "productCode",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "category",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "offset",
+              "value": "0",
+              "disabled": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "สร้าง Sales Order (SAP)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 201) { pm.collectionVariables.set('salesOrder', pm.response.json().data.salesOrder); }"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Token-Id",
+            "value": "{{tokenId}}"
+          },
+          {
+            "key": "X-Token-Secret",
+            "value": "{{tokenSecret}}"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{$guid}}",
+            "description": "UUID ใหม่ทุกคำขอ — ถ้า retry คำขอเดิมให้ใช้ค่าเดิม"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/sales/orders",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "sales",
+            "orders"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"soldToParty\": \"1000123\",\n  \"customerPurchaseOrder\": \"PO-TEST-001\",\n  \"requestedDeliveryDate\": \"2026-11-15\",\n  \"items\": [\n    {\n      \"productCode\": \"CHM-010\",\n      \"quantity\": 1000,\n      \"unit\": \"KG\"\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "แก้ Sales Order (SAP)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "X-Token-Id",
+            "value": "{{tokenId}}"
+          },
+          {
+            "key": "X-Token-Secret",
+            "value": "{{tokenSecret}}"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{$guid}}",
+            "description": "UUID ใหม่ทุกคำขอ — ถ้า retry คำขอเดิมให้ใช้ค่าเดิม"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/sales/orders/{{salesOrder}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "sales",
+            "orders",
+            "{{salesOrder}}"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customerPurchaseOrder\": \"PO-TEST-001-REV1\",\n  \"items\": [\n    {\n      \"item\": \"10\",\n      \"quantity\": 1200\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "ยกเลิก Sales Order (SAP)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Token-Id",
+            "value": "{{tokenId}}"
+          },
+          {
+            "key": "X-Token-Secret",
+            "value": "{{tokenSecret}}"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{$guid}}",
+            "description": "UUID ใหม่ทุกคำขอ — ถ้า retry คำขอเดิมให้ใช้ค่าเดิม"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/sales/orders/{{salesOrder}}/cancel",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "sales",
+            "orders",
+            "{{salesOrder}}",
+            "cancel"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    }
+  ]
+}

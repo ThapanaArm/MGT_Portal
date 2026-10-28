@@ -41,20 +41,20 @@ public class UserAdminController(PortalDbContext db) : ControllerBase
     public async Task<ActionResult<UserBriefDto>> UpdateUserScope(int id, UpdateUserScopeRequest req)
     {
         if (req.Level is not (OrgLevel.Employee or OrgLevel.Manager or OrgLevel.Management))
-            return BadRequest(new { message = "ระดับองค์กรไม่ถูกต้อง" });
+            return BadRequest(new { message = "Invalid organization level" });
 
         if (req.DataScopeOverride is not null && !DataScope.IsValid(req.DataScopeOverride))
-            return BadRequest(new { message = "ขอบเขตข้อมูลไม่ถูกต้อง" });
+            return BadRequest(new { message = "Invalid data scope" });
 
         var user = await db.Users.Include(u => u.Role).Include(u => u.Team).FirstOrDefaultAsync(u => u.Id == id);
         if (user is null) return NotFound();
 
         if (req.TeamId is not null && !await db.Teams.AnyAsync(t => t.Id == req.TeamId))
-            return BadRequest(new { message = "ไม่พบทีมที่ระบุ" });
+            return BadRequest(new { message = "Team not found" });
 
         // Manager ที่ไม่มีทีม จะไม่มีขอบเขตให้ดูแล — กันไว้ตั้งแต่ตอนบันทึก
         if (req.Level == OrgLevel.Manager && req.TeamId is null)
-            return BadRequest(new { message = "ระดับ Manager ต้องระบุทีมที่ดูแล" });
+            return BadRequest(new { message = "Managers must have an assigned team" });
 
         user.Level = req.Level;
         user.TeamId = req.TeamId;

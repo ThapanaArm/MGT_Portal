@@ -12,20 +12,20 @@ export function buildRespTabs(e: EndpointDto): RespTab[] {
   tabs.push({
     code: 401,
     label: "Unauthorized",
-    body: '{\n  "error": "unauthorized",\n  "message": "Token ไม่ถูกต้อง หมดอายุ หรือไม่มีสิทธิ์เข้าถึง scope นี้"\n}',
+    body: '{\n  "error": "unauthorized",\n  "message": "The token is invalid, expired, or does not have the required scope"\n}',
   });
 
   if (e.path.includes("{id}")) {
     tabs.push({
       code: 404,
       label: "Not Found",
-      body: '{\n  "error": "not_found",\n  "message": "ไม่พบข้อมูลตาม id ที่ระบุ"\n}',
+      body: '{\n  "error": "not_found",\n  "message": "No record found for the specified ID"\n}',
     });
   } else if (e.params.some((p) => p[3] === "yes")) {
     tabs.push({
       code: 400,
       label: "Bad Request",
-      body: '{\n  "error": "validation_error",\n  "message": "ข้อมูลที่ส่งมาไม่ครบถ้วนหรือไม่ถูกต้อง"\n}',
+      body: '{\n  "error": "validation_error",\n  "message": "The submitted data is incomplete or invalid"\n}',
     });
   }
 
@@ -34,11 +34,11 @@ export function buildRespTabs(e: EndpointDto): RespTab[] {
 
 export function buildReqHeaders(method: string): [string, string, string, string][] {
   const rows: [string, string, string, string][] = [
-    ["Authorization", "Bearer <token>", "required", "โทเคนสำหรับยืนยันตัวตนและตรวจสอบสิทธิ์"],
+    ["Authorization", "Bearer <token>", "required", "Token for authentication and authorization"],
   ];
   if (["POST", "PUT", "PATCH"].includes(method)) {
-    rows.push(["Content-Type", "application/json", "required", "รูปแบบข้อมูลของ request body"]);
+    rows.push(["Content-Type", "application/json", "required", "Request body format"]);
   }
-  rows.push(["Accept", "application/json", "optional", "รูปแบบข้อมูลที่ต้องการรับกลับ"]);
+  rows.push(["Accept", "application/json", "optional", "Preferred response format"]);
   return rows;
 }

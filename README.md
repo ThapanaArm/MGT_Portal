@@ -75,13 +75,13 @@ npm --prefix src/Web install
 # terminal 1 — backend ที่ http://localhost:5038
 dotnet run --project src/Api/MGT.Portal.Api
 
-# terminal 2 — หน้าเว็บที่ http://localhost:5173
+# terminal 2 — หน้าเว็บที่ http://localhost:5174
 npm --prefix src/Web run dev
 ```
 
 **ใน Visual Studio:** คลิกขวาที่ Solution → Configure Startup Projects → เลือก Multiple startup projects แล้วตั้ง `MGT.Portal.Api` และ `MGT.Portal.Web` เป็น Start กด F5 ครั้งเดียวรันทั้งคู่
 
-เปิด http://localhost:5173 หน้าเว็บเรียก `/api/...` แล้ว Vite จะส่งต่อให้ backend เอง
+เปิด http://localhost:5174 หน้าเว็บเรียก `/api/...` แล้ว Vite จะส่งต่อให้ backend เอง
 
 ตอนเริ่ม backend จะ migrate ฐานข้อมูลให้อัตโนมัติ และ**ใส่ข้อมูลตัวอย่างเฉพาะ environment Development**
 บัญชีทดสอบ: `it-digital@megachem.co.th` / `Admin@123` (บัญชีอื่นดูที่ `Infrastructure/Persistence/DbSeeder.cs`)

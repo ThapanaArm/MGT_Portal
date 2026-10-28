@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using MGT.Portal.Api.Infrastructure.Persistence;
 using MGT.Portal.Api.Modules.Apps;
 using MGT.Portal.Api.Shared;
@@ -19,9 +19,9 @@ public class ApplicationWorkflowTests
             .Options;
         var db = new PortalDbContext(options);
         db.CommitteeMembers.AddRange(
-            new CommitteeMember { Name = "A", RoleTitle = "IT Security" },
-            new CommitteeMember { Name = "B", RoleTitle = "Business Owner" },
-            new CommitteeMember { Name = "C", RoleTitle = "Compliance" });
+            new CommitteeMember { Name = "A", RoleTitle = "IT Security", User = new() { Email = "a@megachem.co.th" } },
+            new CommitteeMember { Name = "B", RoleTitle = "Business Owner", User = new() { Email = "b@megachem.co.th" } },
+            new CommitteeMember { Name = "C", RoleTitle = "Compliance", User = new() { Email = "c@megachem.co.th" } });
         db.SaveChanges();
         return db;
     }
@@ -48,7 +48,13 @@ public class ApplicationWorkflowTests
     private static async Task VoteAllAsync(PortalDbContext db, ApplicationWorkflow wf, Application a)
     {
         foreach (var id in await db.CommitteeMembers.Select(m => m.Id).ToListAsync())
-            Assert.True((await wf.ToggleVoteAsync(a, id, Actor)).Ok);
+            Assert.True((await VoteAsync(db, wf, a, id)).Ok);
+    }
+
+    private static async Task<WorkflowResult> VoteAsync(PortalDbContext db, ApplicationWorkflow wf, Application a, int id)
+    {
+        var member = await db.CommitteeMembers.Include(m => m.User).SingleAsync(m => m.Id == id);
+        return await wf.RecordVoteAsync(a, member.UserId!.Value, true, null, member.User!.Email);
     }
 
     [Fact]
@@ -64,6 +70,78 @@ public class ApplicationWorkflowTests
         Assert.Equal(AppStatus.Active, a.Status);
         Assert.Equal(AppTier.Tier1, a.Type);
         Assert.Equal(0, await ActiveCredentialCount(db, a));
+    }
+
+    [Fact]
+    public async Task Unassigned_account_cannot_vote_even_with_an_admin_email()
+    {
+        await using var db = NewDb();
+        var wf = new ApplicationWorkflow(db);
+        var app = await NewDraftAsync(db, "hr");
+        await wf.SendForReviewAsync(app, AppTier.Tier2, Actor);
+        var result = await wf.RecordVoteAsync(app, 999, true, null, Actor);
+        Assert.False(result.Ok);
+        Assert.Empty(await db.AppVotes.ToListAsync());
+    }
+
+    [Fact]
+    public async Task Account_identity_must_match_the_assigned_committee_user()
+    {
+        await using var db = NewDb();
+        var wf = new ApplicationWorkflow(db);
+        var app = await NewDraftAsync(db, "hr");
+        await wf.SendForReviewAsync(app, AppTier.Tier2, Actor);
+        var member = await db.CommitteeMembers.FirstAsync();
+        Assert.False((await wf.RecordVoteAsync(app, member.UserId!.Value, true, null, "someone-else@example.com")).Ok);
+        Assert.Empty(await db.AppVotes.ToListAsync());
+    }
+
+    [Fact]
+    public async Task Repeated_approval_is_idempotent_and_records_the_actor_and_time()
+    {
+        await using var db = NewDb();
+        var wf = new ApplicationWorkflow(db);
+        var app = await NewDraftAsync(db, "hr");
+        await wf.SendForReviewAsync(app, AppTier.Tier2, Actor);
+        var id = await db.CommitteeMembers.Select(m => m.Id).FirstAsync();
+        await VoteAsync(db, wf, app, id);
+        await VoteAsync(db, wf, app, id);
+        var vote = Assert.Single(await db.AppVotes.ToListAsync());
+        Assert.True(vote.Approved);
+        Assert.Equal("a@megachem.co.th", vote.ActorEmail);
+        Assert.NotNull(vote.DecidedAt);
+        Assert.Equal(AppStatus.Pending, app.Status);
+    }
+
+    [Fact]
+    public async Task Legacy_unattributed_votes_do_not_complete_a_review()
+    {
+        await using var db = NewDb();
+        var wf = new ApplicationWorkflow(db);
+        var app = await NewDraftAsync(db, "hr");
+        await wf.SendForReviewAsync(app, AppTier.Tier2, Actor);
+        foreach (var member in await db.CommitteeMembers.ToListAsync())
+            db.AppVotes.Add(new() { ApplicationId = app.Id, CommitteeMemberId = member.Id, ReviewCycle = app.ReviewCycle, Approved = true });
+        await db.SaveChangesAsync();
+        await wf.RecordCodeReviewAsync(app, true, null, Actor);
+        Assert.Equal(AppStatus.Pending, app.Status);
+    }
+
+    [Fact]
+    public async Task Requesting_changes_requires_a_note_and_returns_the_draft_to_its_owner()
+    {
+        await using var db = NewDb();
+        var wf = new ApplicationWorkflow(db);
+        var app = await NewDraftAsync(db, "hr");
+        await wf.SendForReviewAsync(app, AppTier.Tier2, Actor);
+        var member = await db.CommitteeMembers.Include(m => m.User).FirstAsync();
+        Assert.False((await wf.RecordVoteAsync(app, member.UserId!.Value, false, null, member.User!.Email)).Ok);
+        Assert.True((await wf.RecordVoteAsync(app, member.UserId.Value, false, "Explain the business purpose", member.User.Email)).Ok);
+        Assert.Equal(AppStatus.Draft, app.Status);
+        Assert.False(Assert.Single(await db.AppVotes.ToListAsync()).Approved);
+        await wf.SendForReviewAsync(app, AppTier.Tier2, Actor);
+        Assert.Equal(2, app.ReviewCycle);
+        Assert.Equal(AppStatus.Pending, app.Status);
     }
 
     [Fact]
@@ -102,8 +180,8 @@ public class ApplicationWorkflowTests
         Assert.True((await wf.SendForReviewAsync(a, AppTier.Tier2, Actor)).Ok);
 
         var ids = await db.CommitteeMembers.Select(m => m.Id).ToListAsync();
-        await wf.ToggleVoteAsync(a, ids[0], Actor);
-        await wf.ToggleVoteAsync(a, ids[1], Actor);
+        await VoteAsync(db, wf, a, ids[0]);
+        await VoteAsync(db, wf, a, ids[1]);
         await wf.RecordCodeReviewAsync(a, approved: true, note: null, Actor);
 
         Assert.Equal(AppStatus.Pending, a.Status);
@@ -155,6 +233,70 @@ public class ApplicationWorkflowTests
 
         Assert.Equal(AppStatus.Suspended, a.Status);
         Assert.Equal(0, await ActiveCredentialCount(db, a));
+    }
+
+    [Fact]
+    public async Task Each_requested_api_gets_its_own_token_per_environment()
+    {
+        await using var db = NewDb();
+        var wf = new ApplicationWorkflow(db);
+        var a = await NewDraftAsync(db, productsCsv: "purchase,inventory");
+        await wf.SendForReviewAsync(a, AppTier.Tier2, Actor);
+        await VoteAllAsync(db, wf, a);
+        await wf.RecordCodeReviewAsync(a, approved: true, note: null, Actor);
+
+        var creds = await db.AppCredentials.Where(c => c.ApplicationId == a.Id && !c.Revoked).ToListAsync();
+        Assert.Equal(4, creds.Count);
+        foreach (var env in new[] { CredEnv.Sandbox, CredEnv.Production })
+            Assert.Equal(["inventory", "purchase"], creds.Where(c => c.Env == env).Select(c => c.Category).Order().ToArray());
+        Assert.Equal(4, creds.Select(c => c.TokenId).Distinct().Count());
+    }
+
+    [Fact]
+    public async Task Sync_issues_missing_category_tokens_and_revokes_removed_ones()
+    {
+        await using var db = NewDb();
+        var wf = new ApplicationWorkflow(db);
+        var a = await NewDraftAsync(db, productsCsv: "sales");
+        await wf.SendForReviewAsync(a, AppTier.Tier2, Actor);
+        await VoteAllAsync(db, wf, a);
+        await wf.RecordCodeReviewAsync(a, approved: true, note: null, Actor);
+        var salesSandbox = await db.AppCredentials.SingleAsync(c => c.Env == CredEnv.Sandbox && c.Category == "sales");
+
+        // ระงับ → เปลี่ยน API เป็น purchase + inventory → เปิดใหม่
+        await wf.UnpublishAsync(a, Actor);
+        a.ProductsCsv = "purchase,inventory";
+        Assert.True((await wf.RepublishAsync(a, Actor)).Ok);
+
+        var active = await db.AppCredentials.Where(c => c.ApplicationId == a.Id && !c.Revoked).ToListAsync();
+        Assert.DoesNotContain(active, c => c.Category == "sales");
+        Assert.Equal(4, active.Count);
+        Assert.True((await db.AppCredentials.FindAsync(salesSandbox.Id))!.Revoked);
+    }
+
+    [Fact]
+    public async Task Sync_adds_tokens_for_apps_that_had_a_single_shared_token()
+    {
+        await using var db = NewDb();
+        var wf = new ApplicationWorkflow(db);
+        var a = await NewDraftAsync(db, productsCsv: "sales,inventory");
+        a.Status = AppStatus.Active; a.Type = AppTier.Tier2;
+        // แบบเก่า: token เดียวต่อ env ผูกกับหมวดแรก (ผลจาก migration)
+        foreach (var env in new[] { CredEnv.Sandbox, CredEnv.Production })
+        {
+            var old = CredentialGenerator.NewAppCredential(env, "sales");
+            old.ApplicationId = a.Id;
+            db.AppCredentials.Add(old);
+        }
+        await db.SaveChangesAsync();
+
+        Assert.Equal(2, await wf.SyncCredentialsAsync(a, "system"));
+        await db.SaveChangesAsync();
+        Assert.Equal(0, await wf.SyncCredentialsAsync(a, "system")); // รันซ้ำไม่ออกเพิ่ม
+
+        var active = await db.AppCredentials.Where(c => c.ApplicationId == a.Id && !c.Revoked).ToListAsync();
+        Assert.Equal(4, active.Count);
+        Assert.Equal(2, active.Count(c => c.Category == "sales"));
     }
 
     [Fact]

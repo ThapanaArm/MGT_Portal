@@ -1,0 +1,28 @@
+import DevelopmentFlowPage from "./pages/DevelopmentFlowPage";
+import FiltersPage from "./pages/FiltersPage";
+import ChartsPage from "./pages/ChartsPage";
+import ApplicationRequestsPage from "./pages/ApplicationRequestsPage";
+import OrganizationPage from "./pages/OrganizationPage";
+import { Navigate, Route, Routes } from "react-router";
+import { ExampleContext } from "./example-context";
+import { useExampleModel } from "./useExampleModel";
+import ExampleLayout from "./components/ExampleLayout";
+import LandingPage from "./pages/LandingPage";
+import LoginPage from "./pages/LoginPage";
+import DashboardPage from "./pages/DashboardPage";
+import OrdersPage from "./pages/OrdersPage";
+import OrderFormPage from "./pages/OrderFormPage";
+import OrderDetailPage from "./pages/OrderDetailPage";
+import SettingsPage from "./pages/SettingsPage";
+import VerifyPage from "./pages/VerifyPage";
+import ContactPage from "./pages/ContactPage";
+import SolutionsPage from "./pages/SolutionsPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import PeoplePage from "./pages/PeoplePage";
+import RequestsPage from "./pages/RequestsPage";
+import HelpPage from "./pages/HelpPage";
+import NotFoundPage from "./pages/NotFoundPage";
+import LoadingPage from "./pages/LoadingPage";
+import "./example.css";
+import "@/features/auth/auth.css";
+export default function ExampleModule(){const model=useExampleModel();return <ExampleContext.Provider value={model}><Routes><Route element={<ExampleLayout/>}><Route index element={<Navigate to="login?start=1" replace/>}/><Route path="welcome" element={<LandingPage/>}/><Route path="login" element={<LoginPage/>}/><Route path="main" element={<DashboardPage/>}/><Route path="development-flow" element={<DevelopmentFlowPage/>}/><Route path="charts" element={<ChartsPage/>}/><Route path="filters" element={<FiltersPage/>}/><Route path="organization" element={<OrganizationPage/>}/><Route path="people" element={<PeoplePage/>}/><Route path="application-requests" element={<ApplicationRequestsPage/>}/><Route path="requests" element={<RequestsPage/>}/><Route path="orders" element={<OrdersPage/>}/><Route path="orders/new" element={<OrderFormPage/>}/><Route path="orders/:id/edit" element={<OrderFormPage/>}/><Route path="orders/:id" element={<OrderDetailPage/>}/><Route path="settings" element={<SettingsPage/>}/><Route path="verify" element={<VerifyPage/>}/><Route path="contact" element={<ContactPage/>}/><Route path="solutions" element={<SolutionsPage/>}/><Route path="forgot-password" element={<ForgotPasswordPage/>}/><Route path="help" element={<HelpPage/>}/><Route path="loading" element={<LoadingPage/>}/><Route path="*" element={<NotFoundPage/>}/></Route></Routes></ExampleContext.Provider>;}

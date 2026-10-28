@@ -1,5 +1,5 @@
-// ค่าเริ่มต้นคือ "" = เรียก /api บน origin เดียวกัน
-// ตอนพัฒนา Vite จะ proxy /api ไปที่ backend (ดู vite.config.ts) ตอน production Portal.Api เสิร์ฟหน้าเว็บเอง
+// Empty base URL uses /api on the current origin.
+// Vite proxies requests during development; the API serves production assets.
 const API_URL = import.meta.env.VITE_API_URL ?? "";
 
 export class ApiError extends Error {

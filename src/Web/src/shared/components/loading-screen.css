@@ -1,0 +1,23 @@
+/* MGT Design System — loading screen (see LoadingScreen.tsx) */
+.mgt-loading{display:grid;justify-items:center;align-content:center;gap:10px;min-height:240px;padding:32px 20px;text-align:center;color:var(--ink)}
+.mgt-loading-screen{position:fixed;inset:0;z-index:60;min-height:100dvh;background:var(--page-glow,none),var(--paper)}
+.mgt-loading-hidden{pointer-events:none}
+.mgt-loading-emblem{position:relative;width:120px;height:120px;display:grid;place-items:center;margin-bottom:10px}
+.mgt-loading-ring{position:absolute;inset:0;width:100%;height:100%;animation:mgt-loading-spin 1.1s linear infinite}
+.mgt-loading-track,.mgt-loading-arc{fill:none;stroke-width:5}
+.mgt-loading-track{stroke:var(--line)}
+.mgt-loading-arc{stroke:var(--mgt-blue);stroke-linecap:round;stroke-dasharray:28 72}
+.mgt-loading-mark{width:64px;height:64px;border-radius:15px;box-shadow:0 14px 34px rgba(11,32,56,.22)}
+.mgt-loading-dot{transform-box:fill-box;transform-origin:center;animation:mgt-loading-pulse 1.6s ease-in-out infinite}
+.mgt-loading-message{font-size:18px;font-weight:800;letter-spacing:-.01em}
+.mgt-loading-detail{max-width:42ch;font-size:14px;line-height:1.6;color:var(--ink-dim)}
+.mgt-loading-steps{display:grid;gap:8px;margin:14px 0 0;padding:0;list-style:none;text-align:left}
+.mgt-loading-steps li{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--ink-faint)}
+.mgt-loading-steps li>span{width:20px;height:20px;display:grid;place-items:center;flex-shrink:0;border:2px solid var(--line-strong);border-radius:50%;font-size:11px;font-weight:900}
+.mgt-loading-steps li.done{color:var(--ink-dim)}
+.mgt-loading-steps li.done>span{color:#fff;border-color:var(--mgt-green);background:var(--mgt-green)}
+.mgt-loading-steps li.current{color:var(--ink);font-weight:700}
+.mgt-loading-steps li.current>span{border-color:var(--mgt-blue);border-right-color:transparent;animation:mgt-loading-spin .8s linear infinite}
+@keyframes mgt-loading-spin{to{transform:rotate(360deg)}}
+@keyframes mgt-loading-pulse{0%,100%{transform:scale(1)}50%{transform:scale(.84)}}
+@media(prefers-reduced-motion:reduce){.mgt-loading-ring,.mgt-loading-dot,.mgt-loading-steps li.current>span{animation:none}.mgt-loading-arc{stroke-dasharray:100 0}}

@@ -1,129 +1,105 @@
+import { SidebarFrame, SidebarItem as NavItem, SidebarGroup as NavGroup, SidebarCount as NavCount } from "@/shared/components/Sidebar";
+import { AppIcon } from "@/shared/components/IconPicker";
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router";
+import { useLocation } from "react-router";
 import { useAuth } from "@/shared/lib/auth";
 import { useLocale } from "@/shared/lib/locale-context";
 import { api } from "@/shared/lib/api";
-import type { CategoryDto } from "@/shared/lib/types";
+import type { CategoryDto, CommitteeMemberDto } from "@/shared/lib/types";
 
 const CATEGORY_ICONS: Record<string, string> = {
-  sales: "📈",
-  purchase: "🛍️",
-  inventory: "📦",
-  finance: "💰",
-  hr: "👥",
+  sales: "fa:chart-line",
+  purchase: "fa:credit-card",
+  inventory: "fa:box",
+  finance: "fa:receipt",
+  hr: "fa:users",
 };
 
-function NavItem({ href, active, children }: { href: string; active: boolean; children: React.ReactNode }) {
-  return (
-    <Link
-      to={href}
-      className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[15.5px] w-full ${
-        active ? "bg-teal-soft text-teal-strong font-semibold" : "text-ink hover:bg-surface-2"
-      }`}
-    >
-      {children}
-    </Link>
-  );
-}
-
-export default function Sidebar() {
+export default function Sidebar({ collapsed = false, onToggle }: { collapsed?: boolean; onToggle?: () => void }) {
   const { user } = useAuth();
   const { t } = useLocale();
   const { pathname } = useLocation();
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
   const [appCount, setAppCount] = useState(0);
+  const [committee, setCommittee] = useState(false);
 
   useEffect(() => {
     api.get<CategoryDto[]>("/api/categories").then(setCategories).catch(() => {});
   }, []);
 
+  useEffect(() => { api.get<CommitteeMemberDto[]>("/api/committee/members").then(members => setCommittee(members.some(member => member.userId === user?.id))).catch(() => setCommittee(false)); }, [user?.id, pathname]);
+
   useEffect(() => {
     api.get<{ id: number }[]>("/api/applications").then((apps) => setAppCount(apps.length)).catch(() => {});
-    if (user?.roleKey === "admin") {
+    if (user?.roleKey === "admin" || committee) {
       api
-        .get<{ status: string }[]>("/api/applications?status=pending")
+        .get<{ status: string }[]>("/api/applications/review-queue")
         .then((apps) => setPendingCount(apps.length))
         .catch(() => {});
     }
-  }, [user, pathname]);
+  }, [user, pathname, committee]);
 
   return (
-    <aside className="bg-surface border-r border-line px-3.5 py-4.5 flex flex-col gap-5 sticky top-0 h-screen overflow-y-auto w-[272px] flex-shrink-0">
-      <div className="px-1.5">
-        <div className="bg-surface rounded-lg px-3 py-3 flex flex-col items-center justify-center gap-1.5 border border-line">
-          <img src="/mgt-logo.png" alt="MGT — Do It Right" className="w-full h-auto max-h-[30px] object-contain" />
-          <div className="text-[19px] text-teal-strong font-bold tracking-[0.08em] uppercase">{t("nav.brandCaption")}</div>
-        </div>
-      </div>
+    <SidebarFrame collapsed={collapsed} onToggle={onToggle} caption={t("nav.brandCaption")}>
+      <NavItem label="Dashboard" href="/dashboard" active={pathname === "/dashboard"}><AppIcon value="fa:chart-column" /> Dashboard</NavItem>
+
 
       <div className="flex flex-col gap-0.5">
-        <NavItem href="/ecosystem" active={pathname === "/ecosystem" || pathname.startsWith("/ecosystem/")}>
-          ✨ {t("nav.ecosystem")}
+        <NavItem label={t("nav.ecosystem")} href="/ecosystem" active={pathname === "/ecosystem" || pathname.startsWith("/ecosystem/")}>
+          <AppIcon value="fa:globe" /> {t("nav.ecosystem")}
         </NavItem>
       </div>
 
       <div className="flex flex-col gap-0.5">
-        <div className="text-[13px] uppercase tracking-wide text-ink-faint px-2.5 mb-1.5 font-bold">{t("nav.developerSection")}</div>
-        <NavItem href="/getting-started" active={pathname === "/getting-started"}>
-          {"</>"} {t("nav.gettingStarted")}
+        <NavItem label={t("nav.myApp")} href="/my-apps" active={pathname === "/my-apps" || pathname.startsWith("/my-apps/")}>
+          <AppIcon value="fa:clipboard" />
+          <span className="flex-1">{t("nav.myApp")}</span>
+          <NavCount>{appCount}</NavCount>
         </NavItem>
       </div>
 
+      <NavGroup label={t("nav.developerSection")} active={pathname === "/getting-started" || pathname === "/design-system"} collapsed={collapsed}>
+        <NavItem label={t("nav.gettingStarted")} href="/getting-started" active={pathname === "/getting-started"}>
+          <AppIcon value="fa:code" /> {t("nav.gettingStarted")}
+        </NavItem>
+        <NavItem label={t("nav.designSystem")} href="/design-system" active={pathname === "/design-system"}>
+          <AppIcon value="fa:tools" /> {t("nav.designSystem")}
+        </NavItem>
+      </NavGroup>
+
       <div className="flex flex-col gap-0.5">
-        <NavItem href="/explore" active={pathname === "/explore"}>
-          🔍 {t("nav.exploreData")}
+        <NavItem label={t("nav.exploreData")} href="/explore" active={pathname === "/explore"}>
+          <AppIcon value="fa:search" /> {t("nav.exploreData")}
         </NavItem>
       </div>
 
-      <div className="flex flex-col gap-0.5">
-        <div className="text-[13px] uppercase tracking-wide text-ink-faint px-2.5 mb-1.5 font-bold">{t("nav.apiCategories")}</div>
+      <NavGroup label={t("nav.apiCategories")} active={pathname.startsWith("/catalog/")} collapsed={collapsed}>
         {categories.map((c) => (
-          <NavItem key={c.key} href={`/catalog/${c.key}`} active={pathname === `/catalog/${c.key}`}>
-            <span>{CATEGORY_ICONS[c.key] ?? "📁"}</span>
+          <NavItem label={c.name} key={c.key} href={`/catalog/${c.key}`} active={pathname === `/catalog/${c.key}`}>
+            <AppIcon value={CATEGORY_ICONS[c.key] ?? "fa:box"} />
             <span className="flex-1">{c.name}</span>
-            <span className="text-[13px] font-mono text-ink-faint bg-surface-2 rounded-full px-1.5">
-              {c.endpointCount}
-            </span>
+            <NavCount>{c.endpointCount}</NavCount>
           </NavItem>
         ))}
-      </div>
+      </NavGroup>
 
-      <div className="flex flex-col gap-0.5">
-        <div className="text-[13px] uppercase tracking-wide text-ink-faint px-2.5 mb-1.5 font-bold">{t("nav.myApp")}</div>
-        <NavItem href="/my-apps" active={pathname === "/my-apps" || pathname.startsWith("/my-apps/")}>
-          <span>🗂️</span>
-          <span className="flex-1">{t("nav.myApp")}</span>
-          <span className="text-[13px] font-mono text-ink-faint bg-surface-2 rounded-full px-1.5">{appCount}</span>
-        </NavItem>
-      </div>
 
+
+      {(user?.roleKey === "admin" || committee) && <NavItem label="Requests and reviews" href="/reviews" active={pathname === "/reviews"}><AppIcon value="fa:check" /><span className="flex-1">Requests and reviews</span>{pendingCount > 0 && <NavCount highlight>{pendingCount}</NavCount>}</NavItem>}
       {user?.roleKey === "admin" && (
-        <div className="flex flex-col gap-0.5">
-          <div className="text-[13px] uppercase tracking-wide text-ink-faint px-2.5 mb-1.5 font-bold">{t("nav.adminSection")}</div>
-          <NavItem href="/admin/apis" active={pathname === "/admin/apis"}>
-            ⚙️ {t("nav.manageApis")}
+        <NavGroup label={t("nav.adminSection")} active={pathname.startsWith("/admin/")} collapsed={collapsed}>
+          <NavItem label={t("nav.manageApis")} href="/admin/apis" active={pathname === "/admin/apis"}>
+            <AppIcon value="fa:gear" /> {t("nav.manageApis")}
           </NavItem>
-          <NavItem href="/admin/review" active={pathname === "/admin/review"}>
-            <span>🛡️</span>
-            <span className="flex-1">{t("nav.reviewApplications")}</span>
-            {pendingCount > 0 && (
-              <span className="text-[13px] font-mono text-teal-strong bg-surface rounded-full px-1.5">{pendingCount}</span>
-            )}
+          <NavItem label={t("nav.accessControl")} href="/admin/access" active={pathname === "/admin/access"}>
+            <AppIcon value="fa:users" /> {t("nav.accessControl")}
           </NavItem>
-          <NavItem href="/admin/access" active={pathname === "/admin/access"}>
-            🔐 {t("nav.accessControl")}
-          </NavItem>
-        </div>
+        </NavGroup>
       )}
 
-      <div className="flex flex-col gap-0.5">
-        <div className="text-[13px] uppercase tracking-wide text-ink-faint px-2.5 mb-1.5 font-bold">{t("nav.myAccount")}</div>
-        <NavItem href="/tokens" active={pathname === "/tokens"}>
-          🔑 {t("nav.myTokens")}
-        </NavItem>
-      </div>
 
-    </aside>
+
+    </SidebarFrame>
   );
 }

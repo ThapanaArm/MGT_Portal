@@ -10,7 +10,8 @@ namespace MGT.Portal.ArchitectureTests;
 /// ทิศทางที่อนุญาต (ลูกศร = "ใช้ได้"):
 ///   Apps   → Identity
 ///   Access → Identity, Catalog
-///   Identity และ Catalog ไม่พึ่งใคร
+///   Gateway → Apps (ตรวจ Token ID/Secret ของแอปที่อนุมัติแล้ว)
+///   Identity และ Catalog ไม่พึ่งใคร และไม่มี module ไหนอ้างถึง Gateway
 /// ถ้า Identity ต้องการข้อมูลจาก module อื่น ให้ประกาศ interface ไว้ใน Identity แล้วให้ module นั้น implement
 /// (ดูตัวอย่าง IUserScopeProvider ที่ Access เป็นผู้ implement)
 /// </summary>
@@ -23,11 +24,12 @@ public class ModuleBoundaryTests
 
     public static TheoryData<string, string[]> Rules => new()
     {
-        { Modules + "Identity", new[] { Modules + "Catalog", Modules + "Apps", Modules + "Access" } },
-        { Modules + "Catalog",  new[] { Modules + "Identity", Modules + "Apps", Modules + "Access" } },
-        { Modules + "Apps",     new[] { Modules + "Access" } },
-        { Modules + "Access",   new[] { Modules + "Apps" } },
-        { Shared,               new[] { Modules + "Identity", Modules + "Catalog", Modules + "Apps", Modules + "Access" } },
+        { Modules + "Identity", new[] { Modules + "Catalog", Modules + "Apps", Modules + "Access", Modules + "Gateway" } },
+        { Modules + "Catalog",  new[] { Modules + "Identity", Modules + "Apps", Modules + "Access", Modules + "Gateway" } },
+        { Modules + "Apps",     new[] { Modules + "Access", Modules + "Gateway" } },
+        { Modules + "Access",   new[] { Modules + "Apps", Modules + "Gateway" } },
+        { Modules + "Gateway",  new[] { Modules + "Identity", Modules + "Access" } },
+        { Shared,               new[] { Modules + "Identity", Modules + "Catalog", Modules + "Apps", Modules + "Access", Modules + "Gateway" } },
     };
 
     [Theory]

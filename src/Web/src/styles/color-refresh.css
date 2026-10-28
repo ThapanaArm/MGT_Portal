@@ -1,0 +1,39 @@
+/* MGT liquid glass: original brand palette, restrained translucent gradients. */
+:root {
+  --glass-face:linear-gradient(125deg,color-mix(in srgb,var(--surface) 88%,transparent),color-mix(in srgb,var(--surface) 68%,transparent));
+  --glass-edge:color-mix(in srgb,var(--line) 60%,var(--surface));
+  --glass-highlight:color-mix(in srgb,var(--surface) 75%,#fff);
+  --glass-shadow:inset 0 1px 0 var(--glass-highlight),inset 0 -1px 0 color-mix(in srgb,var(--surface) 45%,transparent),0 8px 28px color-mix(in srgb,var(--navy) 5%,transparent);
+  --glass-accent:linear-gradient(115deg,color-mix(in srgb,var(--mgt-blue) 12%,transparent),transparent 56%,color-mix(in srgb,var(--mgt-green) 9%,transparent));
+  --page-glow:radial-gradient(ellipse at 10% 0%,color-mix(in srgb,var(--mgt-blue) 11%,transparent),transparent 48rem),radial-gradient(ellipse at 95% 18%,color-mix(in srgb,var(--mgt-green) 6%,transparent),transparent 38rem);
+}
+/* Navigation retains the original glass rules in portal.css. */
+.portal-nav-item[aria-current="page"] { color:var(--teal-strong); background:linear-gradient(110deg,color-mix(in srgb,var(--mgt-blue) 12%,transparent),color-mix(in srgb,var(--mgt-blue) 5%,transparent)); box-shadow:inset 0 1px 0 color-mix(in srgb,var(--surface) 60%,transparent); border-color:color-mix(in srgb,var(--brand) 8%,transparent); }
+.portal-nav-item[aria-current="page"]::before { width:3px; background:linear-gradient(var(--mgt-blue),var(--mgt-green)); }
+.example-site .example-dashboard-hero,.category-hero { background:var(--glass-accent),var(--glass-face); border:1px solid var(--glass-edge); box-shadow:var(--glass-shadow); backdrop-filter:blur(24px) saturate(135%); -webkit-backdrop-filter:blur(24px) saturate(135%); }
+.example-site .example-dashboard-hero h2,.category-hero h1 { color:var(--ink); }.example-site .example-dashboard-hero p,.category-hero-copy > p,.category-hero-tags > span,.category-hero-count span { color:var(--ink-dim); }
+.example-site .example-dashboard-hero .workspace-kicker,.category-hero .category-eyebrow,.category-hero-tags > span:first-child { color:var(--teal-strong); }
+.category-hero-icon { color:var(--teal-strong); background:linear-gradient(135deg,color-mix(in srgb,var(--teal-soft) 70%,transparent),color-mix(in srgb,var(--surface) 70%,transparent)); border-color:var(--glass-edge); box-shadow:inset 0 1px 0 var(--glass-highlight); }.category-hero-count { border-color:var(--line); }.category-hero-count strong { color:var(--teal-strong); }
+.example-site .example-dashboard-highlight { background:var(--glass-face); border:1px solid var(--glass-edge); box-shadow:var(--glass-shadow); }.example-site .example-dashboard-highlight strong { color:var(--teal-strong); }.example-site .example-dashboard-highlight span,.example-site .example-dashboard-highlight small { color:var(--ink-dim); }
+.portal-panel,.portal-content .ds .panel,.portal-content .ds .component-card,.portal-content .ds .pattern-card { background:var(--glass-face); border-color:var(--glass-edge); box-shadow:var(--glass-shadow); backdrop-filter:blur(16px) saturate(115%); -webkit-backdrop-filter:blur(16px) saturate(115%); }
+.example-site .example-dashboard-stats > button { border:1px solid var(--glass-edge); background:linear-gradient(145deg,color-mix(in srgb,var(--mgt-blue) 5%,transparent),transparent 58%),var(--glass-face); box-shadow:var(--glass-shadow); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); }
+.example-site .example-dashboard-stats > button:nth-child(even) { background:linear-gradient(145deg,color-mix(in srgb,var(--mgt-green) 6%,transparent),transparent 58%),var(--glass-face); }
+.example-site .example-dashboard-stat-icon { color:var(--teal-strong); background:linear-gradient(135deg,var(--teal-soft),color-mix(in srgb,var(--surface) 75%,transparent)); box-shadow:inset 0 1px 0 var(--glass-highlight); }.example-site .example-dashboard-stats > button:nth-child(even) .example-dashboard-stat-icon { color:var(--green-strong); background:linear-gradient(135deg,var(--green-soft),color-mix(in srgb,var(--surface) 75%,transparent)); }.example-site .example-dashboard-stats strong { color:var(--ink); }
+.portal-dashboard-metrics > .portal-panel { border:1px solid var(--glass-edge); }
+.example-site .example-dashboard-shortcuts button { background:var(--glass-face); border-color:var(--glass-edge); box-shadow:inset 0 1px 0 var(--glass-highlight); }.example-site .example-dashboard-shortcuts button > svg:first-child { box-sizing:content-box; padding:10px; border-radius:12px; color:var(--teal-strong); background:linear-gradient(135deg,var(--teal-soft),color-mix(in srgb,var(--surface) 70%,transparent)); }
+.portal-content .mgt-table-frame thead,.catalog-service-table thead { background:linear-gradient(110deg,color-mix(in srgb,var(--mgt-blue) 8%,var(--surface)),color-mix(in srgb,var(--mgt-blue) 3%,var(--surface))); color:var(--ink-dim); }
+.portal-content .mgt-tabs button[aria-selected="true"] { color:var(--teal-strong); background:linear-gradient(110deg,var(--teal-soft),color-mix(in srgb,var(--surface) 40%,transparent)); border-radius:10px 10px 0 0; padding-inline:16px; }
+.portal-content select.mgt-input { border-radius:12px; }.portal-content .mgt-input:focus-visible { border-color:var(--brand); outline-color:var(--brand); }
+@supports not (backdrop-filter:blur(1px)) { .example-site .example-dashboard-hero,.category-hero,.portal-panel,.portal-content .ds .panel,.portal-content .ds .component-card,.portal-content .ds .pattern-card,.example-site .example-dashboard-stats > button { background:var(--surface); } }
+@supports(appearance:base-select) { .portal-content select.mgt-input,.portal-content select.mgt-input::picker(select) { appearance:base-select; }.portal-content select.mgt-input::picker(select) { padding:6px; margin-top:6px; border-radius:14px; border:1px solid var(--line); background:var(--surface); color:var(--ink); box-shadow:0 12px 30px #17396320; }.portal-content select.mgt-input option { padding:10px 12px; border-radius:9px; gap:10px; }.portal-content select.mgt-input option:hover,.portal-content select.mgt-input option:checked { background:var(--teal-soft); color:var(--teal-strong); } }
+/* Shared modal sizing: medium by default, compact confirmations, wider dense forms. */
+.mgt-dialog[data-size="sm"]:not(.mgt-drawer) { width:min(420px,calc(100vw - 32px)); }
+.mgt-dialog[data-size="md"]:not(.mgt-drawer) { width:min(640px,calc(100vw - 32px)); }
+.mgt-dialog[data-size="lg"]:not(.mgt-drawer) { width:min(880px,calc(100vw - 32px)); }
+.mgt-dialog[open]:not(.mgt-confirmation) { display:flex; flex-direction:column; overflow:hidden; background:linear-gradient(140deg,color-mix(in srgb,var(--surface) 97%,transparent),color-mix(in srgb,var(--surface) 93%,transparent)); border-color:var(--glass-edge,var(--line)); box-shadow:inset 0 1px 0 var(--glass-highlight,var(--surface)),0 24px 80px #0b20382e; backdrop-filter:blur(24px) saturate(125%); -webkit-backdrop-filter:blur(24px) saturate(125%); }
+.mgt-dialog:not(.mgt-confirmation) > header { flex-shrink:0; padding-bottom:18px; border-bottom:1px solid var(--line); }
+.mgt-dialog:not(.mgt-confirmation) > .mgt-dialog-content { min-height:0; overflow:auto; overscroll-behavior:contain; padding:2px 4px; }
+.mgt-dialog:not(.mgt-confirmation) > footer { flex-shrink:0; }
+@media(max-width:600px) { .mgt-dialog:not(.mgt-confirmation):not(.mgt-drawer) { padding:20px; border-radius:18px; max-height:calc(100dvh - 32px); }.mgt-dialog > footer { flex-wrap:wrap; } }
+.example-filter-variants { grid-template-columns:repeat(3,minmax(0,1fr)); }
+@media(max-width:600px) { .example-filter-variants { grid-template-columns:repeat(2,minmax(0,1fr)); } }

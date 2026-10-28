@@ -1,53 +1,17 @@
 import { useNavigate } from "react-router";
 import { Panel, Btn } from "@/shared/components/ui";
-import { useLocale } from "@/shared/lib/locale-context";
+import { AppIcon } from "@/shared/components/Icon";
+import { TIERS, TIER_NAME } from "@/shared/lib/tiers";
 
-const STEPS = [
-  { title: "Explore API Products", descKey: "gettingStarted.stepExploreDesc" },
-  { title: "Register Your App", descKey: "gettingStarted.stepRegisterDesc" },
-  { title: "Request API Access", descKey: "gettingStarted.stepRequestDesc" },
-  { title: "Get Sandbox Credentials", descKey: "gettingStarted.stepSandboxDesc" },
-  { title: "Develop & Test", descKey: "gettingStarted.stepDevelopDesc" },
-  { title: "Submit for Review", descKey: "gettingStarted.stepSubmitDesc" },
-  { title: "Get Production Access", descKey: "gettingStarted.stepProductionDesc" },
-  { title: "Publish Your App", descKey: "gettingStarted.stepPublishDesc" },
+const steps = [
+  ["Discover relevant services", "Browse the API Catalog by source platform and business category. A personal Tier 1 application does not connect to company services."],
+  ["Prepare your application draft", "Describe the business purpose, requested company subdomain, repository, and application owner."],
+  ["Choose an audience and tier", "Select who may use the application. Tier 1 is personal, Tier 2 is an internal business application, and Tier 3 is an official IT application."],
+  ["Review and submit the request", "Check the summary before submitting. Tier 1 is approved automatically. Tier 2 and Tier 3 enter the review queue."],
+  ["Track the independent review gates", "Tier 2 and Tier 3 need three committee members to approve with their own accounts, plus a separate IT code review. If changes are requested, revise and resubmit."],
+  ["Approval and IT handoff", "The request ends at approval. IT handles repository setup, domain configuration, and deployment outside the Portal. Approved does not mean deployed."],
 ];
-
 export default function GettingStartedPage() {
   const navigate = useNavigate();
-  const { t } = useLocale();
-
-  return (
-    <div>
-      <div className="mb-4.5">
-        <div className="flex items-center gap-2 text-[13.5px] uppercase tracking-wide text-ink-faint font-bold mb-1.5">
-          <span className="w-2 h-2 rounded-sm bg-teal" /> {t("nav.developerSection")}
-        </div>
-        <h1 className="text-[26px] font-bold">{t("gettingStarted.heading")}</h1>
-        <p className="text-ink-dim text-[16px] mt-1.5 max-w-[62ch] leading-relaxed">{t("gettingStarted.desc")}</p>
-      </div>
-
-      <Panel title="Get Started" hint={t("gettingStarted.panelHint")}>
-        <div className="flex flex-col mb-4">
-          {STEPS.map((s, i) => (
-            <div key={s.title} className="flex gap-4">
-              <div className="flex flex-col items-center flex-shrink-0">
-                <span className="w-8.5 h-8.5 rounded-full bg-teal-soft text-teal-strong font-mono text-[14.5px] font-bold flex items-center justify-center border border-line flex-shrink-0">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                {i < STEPS.length - 1 && <span className="w-px flex-1 min-h-5 bg-line-strong my-1" />}
-              </div>
-              <div className="pb-5.5 pt-1">
-                <h3 className="text-[16px] font-bold">{s.title}</h3>
-                <p className="text-[15px] text-ink-dim mt-1 leading-relaxed max-w-[52ch]">{t(s.descKey)}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-        <Btn variant="primary" onClick={() => navigate("/my-apps?new=1")}>
-          {t("gettingStarted.startBtn")}
-        </Btn>
-      </Panel>
-    </div>
-  );
+  return <div><div className="portal-page-heading"><span className="workspace-kicker">Request guide</span><h1>From idea to approved request</h1><p className="review-note">Understand the decisions and responsibilities before creating your application request.</p></div><Panel title="Choose the right tier"><div className="tier-choice-grid">{TIERS.map(tier => <div className="guide-tier" key={tier}><strong>{TIER_NAME[tier]}</strong><p className="review-note">{tier === "tier1" ? "Business user · No company API connections · Automatic approval · No IT code review" : `${tier === "tier3" ? "IT team" : "Business user"} · Company services as requested · Three committee approvals · IT code review required`}</p></div>)}</div></Panel><Panel title="The request process">{steps.map(([title, description], index) => <div className="guide-step" key={title}><span>{String(index + 1).padStart(2, "0")}</span><div><h3>{title}</h3><p>{description}</p></div></div>)}<div className="flex gap-3 flex-wrap mt-6"><Btn variant="primary" startIcon={<AppIcon value="fa:plus" />} onClick={() => navigate("/my-apps?new=1")}>Create application request</Btn><Btn onClick={() => navigate("/explore")}>Browse API Catalog</Btn></div></Panel></div>;
 }

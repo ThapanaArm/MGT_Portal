@@ -12,9 +12,10 @@ public class ApiEndpoint
     public string Summary { get; set; } = "";
     public string Description { get; set; } = "";
     public string Scope { get; set; } = "";
+    public string SourcePlatform { get; set; } = "";
 
-    /// <summary>Emoji shown in the plain-language card headline (business audience view).</summary>
-    public string Icon { get; set; } = "📋";
+    /// <summary>Font Awesome icon key (fa:search, fa:plus …) shown in the card headline.</summary>
+    public string Icon { get; set; } = "fa:clipboard";
     /// <summary>Real-world "when would I use this" one-liner for non-technical users.</summary>
     public string Scenario { get; set; } = "";
 

@@ -1,0 +1,5 @@
+import { useState } from "react";
+import { Field, Input, Alert } from "@/shared/components/design-system";
+import { Btn, Panel } from "@/shared/components/ui";
+import { useExample } from "../example-context";
+export default function ForgotPasswordPage(){const {go}=useExample();const [sent,setSent]=useState(false);return <main className="example-verify portal-content"><Panel title={sent?"Review account recovery":"Forgot your password?"} hint="We will help you regain access to your workspace."><form onSubmit={e=>{e.preventDefault();setSent(true);}}>{sent?<><Alert tone="success">Recovery request received</Alert><p className="example-muted">If this email is registered, you will receive instructions to reset your password.</p><Btn type="button" variant="primary" onClick={()=>go("login")}>Back to sign in</Btn></>:<><p className="example-muted">Enter the email address associated with your account.</p><Field>Email<Input required type="email" placeholder="name@company.com"/></Field><div className="example-form-footer"><Btn type="button" onClick={()=>go("login")}>Back</Btn><Btn variant="primary">Send recovery request</Btn></div></>}</form></Panel></main>}

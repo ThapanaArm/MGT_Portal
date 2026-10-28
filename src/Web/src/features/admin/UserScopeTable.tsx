@@ -1,3 +1,4 @@
+import { Select } from "@/shared/components/design-system";
 import { useEffect, useState } from "react";
 import { api } from "@/shared/lib/api";
 import { useToast } from "@/shared/lib/toast";
@@ -5,15 +6,15 @@ import { Btn } from "@/shared/components/ui";
 import type { DataScope, OrgLevel, TeamDto, UserBriefDto } from "@/shared/lib/types";
 
 const LEVELS: { value: OrgLevel; label: string; hint: string }[] = [
-  { value: "employee", label: "Employee", hint: "เห็นเฉพาะของตัวเอง" },
-  { value: "manager", label: "Manager", hint: "เห็นเฉพาะของทีมตัวเอง" },
-  { value: "management", label: "Management", hint: "เห็นทั้งหมด" },
+  { value: "employee", label: "Employee", hint: "Own data only" },
+  { value: "manager", label: "Manager", hint: "Team data only" },
+  { value: "management", label: "Management", hint: "All data" },
 ];
 
 const SCOPE_META: Record<DataScope, { label: string; className: string }> = {
-  self: { label: "เฉพาะตัวเอง", className: "bg-surface-2 text-ink-dim" },
-  team: { label: "ทั้งทีม", className: "bg-put-soft text-put" },
-  all: { label: "ทั้งหมด", className: "bg-teal-soft text-teal-strong" },
+  self: { label: "Own data", className: "bg-surface-2 text-ink-dim" },
+  team: { label: "Team data", className: "bg-put-soft text-put" },
+  all: { label: "All", className: "bg-teal-soft text-teal-strong" },
 };
 
 function ScopeChip({ scope }: { scope: DataScope }) {
@@ -69,7 +70,7 @@ export default function UserScopeTable() {
   const save = async (u: UserBriefDto) => {
     const d = drafts[u.id];
     if (d.level === "manager" && !d.teamId) {
-      toast("ระดับ Manager ต้องระบุทีมที่ดูแล");
+      toast({ tone: "warning", message: "Managers must have an assigned team" });
       return;
     }
     setSavingId(u.id);
@@ -81,7 +82,7 @@ export default function UserScopeTable() {
       });
       setUsers((prev) => prev.map((x) => (x.id === u.id ? updated : x)));
       setDrafts((prev) => ({ ...prev, [u.id]: toDraft(updated) }));
-      toast(`อัปเดตขอบเขตข้อมูลของ ${u.displayName} แล้ว`);
+      toast(`Updated data scope for ${u.displayName} successfully`);
     } finally {
       setSavingId(null);
     }
@@ -94,7 +95,7 @@ export default function UserScopeTable() {
       <table className="w-full border-collapse text-[13.5px]">
         <thead>
           <tr>
-            {["ผู้ใช้งาน", "ระดับองค์กร", "ทีม", "เห็นทั้งหมด (เฉพาะราย)", "ขอบเขตที่มีผล", ""].map((h) => (
+            {["User", "Organization level", "Team", "Individual visibility override", "Effective scope", ""].map((h) => (
               <th key={h} className="text-left text-ink-faint text-[11.5px] uppercase tracking-wide font-bold px-3.5 py-2.5 border-b border-line whitespace-nowrap">
                 {h}
               </th>
@@ -113,34 +114,34 @@ export default function UserScopeTable() {
                   <div className="text-ink-faint text-[12px]">{u.email}</div>
                 </td>
                 <td className="px-3.5 py-3 border-b border-line min-w-[150px]">
-                  <select value={d.level} onChange={(e) => patch(u.id, { level: e.target.value as OrgLevel })} className={selectCls}>
+                  <Select value={d.level} onChange={(e) => patch(u.id, { level: e.target.value as OrgLevel })} className={selectCls}>
                     {LEVELS.map((l) => (
                       <option key={l.value} value={l.value}>{l.label} — {l.hint}</option>
                     ))}
-                  </select>
+                  </Select>
                 </td>
                 <td className="px-3.5 py-3 border-b border-line min-w-[130px]">
-                  <select value={d.teamId} onChange={(e) => patch(u.id, { teamId: e.target.value })} className={selectCls}>
-                    <option value="">— ไม่ระบุ —</option>
+                  <Select value={d.teamId} onChange={(e) => patch(u.id, { teamId: e.target.value })} className={selectCls}>
+                    <option value="">— Not assigned —</option>
                     {teams.map((t) => (
                       <option key={t.id} value={t.id}>{t.name}</option>
                     ))}
-                  </select>
+                  </Select>
                 </td>
                 <td className="px-3.5 py-3 border-b border-line min-w-[130px]">
-                  <select value={d.override} onChange={(e) => patch(u.id, { override: e.target.value })} className={selectCls}>
-                    <option value="">ตามระดับ</option>
-                    <option value="all">บังคับ: เห็นทั้งหมด</option>
-                    <option value="team">บังคับ: ทั้งทีม</option>
-                    <option value="self">บังคับ: เฉพาะตัวเอง</option>
-                  </select>
+                  <Select value={d.override} onChange={(e) => patch(u.id, { override: e.target.value })} className={selectCls}>
+                    <option value="">Use organization level</option>
+                    <option value="all">Override: All data</option>
+                    <option value="team">Override: Team data</option>
+                    <option value="self">Override: Own data</option>
+                  </Select>
                 </td>
                 <td className="px-3.5 py-3 border-b border-line">
                   <ScopeChip scope={u.effectiveDataScope} />
                 </td>
                 <td className="px-3.5 py-3 border-b border-line">
                   <Btn size="sm" variant="primary" disabled={!dirty || savingId === u.id} onClick={() => save(u)}>
-                    {savingId === u.id ? "กำลังบันทึก..." : "บันทึก"}
+                    {savingId === u.id ? "Saving..." : "Save"}
                   </Btn>
                 </td>
               </tr>
@@ -148,7 +149,7 @@ export default function UserScopeTable() {
           })}
           {!users.length && (
             <tr>
-              <td colSpan={6} className="text-center text-ink-faint text-[13.5px] py-5">ยังไม่มีผู้ใช้งาน</td>
+              <td colSpan={6} className="text-center text-ink-faint text-[13.5px] py-5">No users found</td>
             </tr>
           )}
         </tbody>

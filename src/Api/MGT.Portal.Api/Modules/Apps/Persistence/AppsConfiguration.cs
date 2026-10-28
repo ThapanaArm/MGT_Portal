@@ -1,7 +1,16 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace MGT.Portal.Api.Modules.Apps;
+
+internal sealed class CommitteeMemberConfiguration : IEntityTypeConfiguration<CommitteeMember>
+{
+    public void Configure(EntityTypeBuilder<CommitteeMember> b)
+    {
+        b.HasOne(m => m.User).WithMany().HasForeignKey(m => m.UserId).OnDelete(DeleteBehavior.Restrict);
+        b.HasIndex(m => m.UserId).IsUnique().HasFilter("[UserId] IS NOT NULL");
+    }
+}
 
 internal sealed class ApplicationConfiguration : IEntityTypeConfiguration<Application>
 {
@@ -31,6 +40,8 @@ internal sealed class AppCredentialConfiguration : IEntityTypeConfiguration<AppC
         b.HasOne(c => c.Application)
             .WithMany(a => a.Credentials)
             .OnDelete(DeleteBehavior.Cascade);
+        b.Property(c => c.Category).HasMaxLength(50);
+        b.HasIndex(c => new { c.ApplicationId, c.Env, c.Category });
     }
 }
 

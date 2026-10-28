@@ -1,3 +1,5 @@
+import { Input, Select } from "@/shared/components/design-system";
+import { AppIcon } from "@/shared/components/IconPicker";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/shared/lib/api";
 import AudienceToggle from "@/features/catalog/components/AudienceToggle";
@@ -6,20 +8,21 @@ import { EmptyRow } from "@/shared/components/ui";
 import type { CategoryDto, EndpointDto } from "@/shared/lib/types";
 
 const CATEGORY_ICONS: Record<string, string> = {
-  sales: "📈",
-  purchase: "🛍️",
-  inventory: "📦",
-  finance: "💰",
-  hr: "👥",
+  sales: "fa:chart-line",
+  purchase: "fa:credit-card",
+  inventory: "fa:box",
+  finance: "fa:receipt",
+  hr: "fa:users",
 };
 
-const SUGGESTIONS = ["ยอดขาย", "ใบแจ้งหนี้", "สต๊อกสินค้า", "อนุมัติใบสั่งซื้อ", "ขอลา", "เงินเดือน", "ลูกค้า"];
+const SUGGESTIONS = ["Sales", "Invoices", "Stock", "Purchase order approval", "Leave requests", "Payroll", "Customers"];
 
 export default function ExplorePage() {
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [endpoints, setEndpoints] = useState<EndpointDto[]>([]);
   const [query, setQuery] = useState("");
   const [catFilter, setCatFilter] = useState<string>("all");
+  const [platform, setPlatform] = useState("all");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,32 +38,34 @@ export default function ExplorePage() {
   }, []);
 
   const catById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
+  const platforms = useMemo(() => [...new Set(endpoints.map(endpoint => endpoint.sourcePlatform?.trim()).filter((name): name is string => !!name))].sort(), [endpoints]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return endpoints.filter((e) => {
       const cat = catById.get(e.categoryId);
+      if (platform !== "all" && (e.sourcePlatform?.trim() || "unspecified") !== platform) return false;
       if (catFilter !== "all" && cat?.key !== catFilter) return false;
       if (!q) return true;
-      const haystack = `${e.summary} ${e.scenario} ${cat?.name ?? ""} ${cat?.description ?? ""}`.toLowerCase();
+      const haystack = `${e.summary} ${e.scenario} ${e.sourcePlatform ?? ""} ${cat?.name ?? ""} ${cat?.description ?? ""}`.toLowerCase();
       return haystack.includes(q);
     });
-  }, [endpoints, query, catFilter, catById]);
+  }, [endpoints, query, catFilter, catById, platform]);
 
-  if (loading) return <div className="text-ink-faint text-[15.5px]">กำลังโหลด...</div>;
+  if (loading) return <div className="text-ink-faint text-[15.5px]">Loading...</div>;
 
   return (
     <div>
-      <div className="text-center mb-6 mt-2">
-        <h1 className="text-[28px] font-bold text-balance">คุณต้องการนำข้อมูลอะไรไปใช้?</h1>
-        <p className="text-ink-dim text-[16px] mt-2">ค้นหาข้อมูลและบริการที่พร้อมนำไปพัฒนา Application</p>
+      <div className="explore-heading text-center mb-6 mt-2">
+        <h1 className="text-[28px] font-bold text-balance">What data would you like to use?</h1>
+        <p className="text-ink-dim text-[16px] mt-2">Explore data and services for your application.</p>
 
         <div className="max-w-[520px] mx-auto mt-5">
-          <input
+          <Input
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="เช่น ยอดขายลูกค้า, สต๊อกสินค้า, ใบแจ้งหนี้..."
+            placeholder="e.g. Customer sales, stock, invoices..."
             className="w-full border border-line-strong bg-surface rounded-xl px-4 py-3 text-[16.5px] shadow-sm"
           />
         </div>
@@ -81,6 +86,7 @@ export default function ExplorePage() {
       </div>
 
       <AudienceToggle />
+      <div className="workspace-filterbar"><label htmlFor="platform-filter" className="text-sm font-semibold">Source platform</label><Select id="platform-filter" value={platform} onChange={event => setPlatform(event.target.value)}><option value="all">All platforms</option>{platforms.map(name => <option key={name}>{name}</option>)}<option value="unspecified">Not specified</option></Select><span className="text-xs text-ink-dim">Platforms identify source systems; categories identify business areas.</span></div>
 
       <div className="flex items-center justify-center gap-1.5 flex-wrap mb-5">
         <button
@@ -89,7 +95,7 @@ export default function ExplorePage() {
             catFilter === "all" ? "bg-teal-soft border-teal text-teal-strong" : "border-line-strong bg-surface text-ink-dim hover:bg-surface-2"
           }`}
         >
-          ทั้งหมด
+          All
         </button>
         {categories.map((c) => (
           <button
@@ -99,19 +105,19 @@ export default function ExplorePage() {
               catFilter === c.key ? "bg-teal-soft border-teal text-teal-strong" : "border-line-strong bg-surface text-ink-dim hover:bg-surface-2"
             }`}
           >
-            {CATEGORY_ICONS[c.key] ?? "📁"} {c.name}
+            <span className="inline-flex items-center gap-2"><AppIcon value={CATEGORY_ICONS[c.key] ?? "fa:box"} /> {c.name}</span>
           </button>
         ))}
       </div>
 
-      <div className="text-[14px] text-ink-faint mb-2.5">พบ {filtered.length} รายการ</div>
+      <div className="text-[14px] text-ink-faint mb-2.5">Found {filtered.length} items</div>
 
       {filtered.map((e) => {
         const cat = catById.get(e.categoryId);
         if (!cat) return null;
         return <EndpointCard key={e.id} category={cat} endpoint={e} categoryLabel={cat.name} />;
       })}
-      {!filtered.length && <EmptyRow>ไม่พบข้อมูลที่ตรงกับคำค้นหา ลองใช้คำอื่น เช่น ชื่อสิ่งที่อยากทำ</EmptyRow>}
+      {!filtered.length && <EmptyRow>No results found. Try another keyword or describe what you want to do.</EmptyRow>}
     </div>
   );
 }

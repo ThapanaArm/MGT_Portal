@@ -67,6 +67,318 @@ namespace MGT.Portal.Api.Migrations
                     b.ToTable("AccessGrants");
                 });
 
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Access.ApiToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Env")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Expiry")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("Revoked")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ScopesCsv")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ApiTokens");
+                });
+
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.AppCodeReview", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ApplicationId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Approved")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ReviewCycle")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ReviewedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReviewerEmail")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApplicationId", "ReviewCycle")
+                        .IsUnique();
+
+                    b.ToTable("AppCodeReviews");
+                });
+
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.AppCredential", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ApplicationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Env")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("Revoked")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("TokenId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TokenSecret")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApplicationId", "Env", "Category");
+
+                    b.ToTable("AppCredentials");
+                });
+
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.AppLogEntry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ActionType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Actor")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ApplicationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApplicationId");
+
+                    b.ToTable("AppLogEntries");
+                });
+
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.AppScreenshot", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ApplicationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ImageData")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApplicationId");
+
+                    b.ToTable("AppScreenshots");
+                });
+
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.AppVote", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ActorEmail")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ApplicationId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Approved")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("CommitteeMemberId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DecidedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ReviewCycle")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CommitteeMemberId");
+
+                    b.HasIndex("ApplicationId", "CommitteeMemberId", "ReviewCycle")
+                        .IsUnique();
+
+                    b.ToTable("AppVotes");
+                });
+
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.Application", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Audience")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DevelopmentJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Github")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Icon")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Image")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("OwnerUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ProductsCsv")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ReviewCycle")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReviewTarget")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Subdomain")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerUserId");
+
+                    b.ToTable("Applications");
+                });
+
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.CommitteeMember", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RoleTitle")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasFilter("[UserId] IS NOT NULL");
+
+                    b.ToTable("CommitteeMembers");
+                });
+
             modelBuilder.Entity("MGT.Portal.Api.Modules.Catalog.ApiCategory", b =>
                 {
                     b.Property<int>("Id")
@@ -153,6 +465,10 @@ namespace MGT.Portal.Api.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("SourcePlatform")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Summary")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -164,292 +480,66 @@ namespace MGT.Portal.Api.Migrations
                     b.ToTable("ApiEndpoints");
                 });
 
-            modelBuilder.Entity("MGT.Portal.Api.Modules.Access.ApiToken", b =>
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Gateway.GatewayWriteRecord", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("ApplicationId")
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    b.Property<string>("ApplicationName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Env")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
-                    b.Property<string>("Expiry")
+                    b.Property<string>("IdempotencyKey")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.Property<bool>("Revoked")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("ScopesCsv")
+                    b.Property<string>("Operation")
                         .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("ResponseJson")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("UserId")
+                    b.Property<string>("SalesOrder")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<int>("StatusCode")
                         .HasColumnType("int");
-
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
-
-                    b.ToTable("ApiTokens");
-                });
-
-            modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.AppCredential", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ApplicationId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Env")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("Revoked")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("TokenId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TokenSecret")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ApplicationId");
-
-                    b.ToTable("AppCredentials");
-                });
-
-            modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.AppLogEntry", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ActionType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Actor")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ApplicationId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Note")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("OccurredAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ApplicationId");
-
-                    b.ToTable("AppLogEntries");
-                });
-
-            modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.AppCodeReview", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ApplicationId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("Approved")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Note")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ReviewCycle")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("ReviewedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ReviewerEmail")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ApplicationId", "ReviewCycle")
+                    b.HasIndex("ApplicationId", "Env", "IdempotencyKey")
                         .IsUnique();
 
-                    b.ToTable("AppCodeReviews");
-                });
+                    b.HasIndex("ApplicationId", "Env", "SalesOrder");
 
-            modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.AppScreenshot", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ApplicationId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ImageData")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ApplicationId");
-
-                    b.ToTable("AppScreenshots");
-                });
-
-            modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.AppVote", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ApplicationId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("Approved")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("CommitteeMemberId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ReviewCycle")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CommitteeMemberId");
-
-                    b.HasIndex("ApplicationId", "CommitteeMemberId", "ReviewCycle")
-                        .IsUnique();
-
-                    b.ToTable("AppVotes");
-                });
-
-            modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.Application", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Audience")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Github")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Icon")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Image")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("OwnerUserId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ProductsCsv")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ReviewCycle")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ReviewTarget")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Subdomain")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OwnerUserId");
-
-                    b.ToTable("Applications");
-                });
-
-            modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.CommitteeMember", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("RoleTitle")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("CommitteeMembers");
+                    b.ToTable("GatewayWriteRecords");
                 });
 
             modelBuilder.Entity("MGT.Portal.Api.Modules.Identity.Role", b =>
@@ -576,17 +666,6 @@ namespace MGT.Portal.Api.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("MGT.Portal.Api.Modules.Catalog.ApiEndpoint", b =>
-                {
-                    b.HasOne("MGT.Portal.Api.Modules.Catalog.ApiCategory", "Category")
-                        .WithMany("Endpoints")
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Category");
-                });
-
             modelBuilder.Entity("MGT.Portal.Api.Modules.Access.ApiToken", b =>
                 {
                     b.HasOne("MGT.Portal.Api.Modules.Identity.User", "User")
@@ -596,6 +675,17 @@ namespace MGT.Portal.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.AppCodeReview", b =>
+                {
+                    b.HasOne("MGT.Portal.Api.Modules.Apps.Application", "Application")
+                        .WithMany("CodeReviews")
+                        .HasForeignKey("ApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Application");
                 });
 
             modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.AppCredential", b =>
@@ -613,17 +703,6 @@ namespace MGT.Portal.Api.Migrations
                 {
                     b.HasOne("MGT.Portal.Api.Modules.Apps.Application", "Application")
                         .WithMany("Log")
-                        .HasForeignKey("ApplicationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Application");
-                });
-
-            modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.AppCodeReview", b =>
-                {
-                    b.HasOne("MGT.Portal.Api.Modules.Apps.Application", "Application")
-                        .WithMany("CodeReviews")
                         .HasForeignKey("ApplicationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -672,6 +751,27 @@ namespace MGT.Portal.Api.Migrations
                     b.Navigation("Owner");
                 });
 
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.CommitteeMember", b =>
+                {
+                    b.HasOne("MGT.Portal.Api.Modules.Identity.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Catalog.ApiEndpoint", b =>
+                {
+                    b.HasOne("MGT.Portal.Api.Modules.Catalog.ApiCategory", "Category")
+                        .WithMany("Endpoints")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+                });
+
             modelBuilder.Entity("MGT.Portal.Api.Modules.Identity.User", b =>
                 {
                     b.HasOne("MGT.Portal.Api.Modules.Identity.Role", "Role")
@@ -690,11 +790,6 @@ namespace MGT.Portal.Api.Migrations
                     b.Navigation("Team");
                 });
 
-            modelBuilder.Entity("MGT.Portal.Api.Modules.Catalog.ApiCategory", b =>
-                {
-                    b.Navigation("Endpoints");
-                });
-
             modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.Application", b =>
                 {
                     b.Navigation("CodeReviews");
@@ -711,6 +806,11 @@ namespace MGT.Portal.Api.Migrations
             modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.CommitteeMember", b =>
                 {
                     b.Navigation("Votes");
+                });
+
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Catalog.ApiCategory", b =>
+                {
+                    b.Navigation("Endpoints");
                 });
 
             modelBuilder.Entity("MGT.Portal.Api.Modules.Identity.Role", b =>

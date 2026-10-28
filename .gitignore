@@ -3,6 +3,7 @@ bin/
 obj/
 *.user
 TestResults/
+.tools/
 
 ## Secrets — connection strings and JWT signing key live in `dotnet user-secrets`,
 ## never in these files. Keep this rule even if one shows up empty/placeholder.
@@ -28,3 +29,6 @@ npm-debug.log*
 .idea/
 *.swp
 .DS_Store
+
+## ---------- ไฟล์ชั่วคราวจาก Claude (scratch / build check) ----------
+Claude outputs/

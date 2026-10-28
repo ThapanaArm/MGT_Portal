@@ -4,7 +4,7 @@ import { ToastProvider } from "@/shared/lib/toast";
 import { AuthProvider } from "@/shared/lib/auth";
 import AppRoutes from "@/app/routes";
 
-/** Provider ทั้งหมดของแอป — AuthProvider ต้องอยู่ใน BrowserRouter เพราะใช้ useNavigate */
+/** All application providers. AuthProvider requires BrowserRouter for navigation. */
 export default function App() {
   return (
     <ThemeProvider>

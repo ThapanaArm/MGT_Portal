@@ -1,0 +1,11 @@
+/* Shared interaction language for production and the component explorer. */
+:root{--control-shadow:0 1px 2px #0b203809;--panel-shadow:0 2px 8px #0b203804}
+.portal-panel,.portal-table-frame,.portal-content .ds .component-card,.portal-content .ds .pattern-card{box-shadow:var(--panel-shadow);border-color:var(--line)}
+.portal-content input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),.portal-content select,.portal-content textarea,.portal-content .ds .input{box-shadow:inset 0 1px 2px #0b203803;transition:border-color .16s,box-shadow .16s;background-color:var(--surface);color:var(--ink)}
+.portal-content input:hover:not(:disabled),.portal-content select:hover:not(:disabled),.portal-content textarea:hover:not(:disabled){border-color:var(--line-strong)}
+.portal-content input:focus,.portal-content select:focus,.portal-content textarea:focus{border-color:var(--brand);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 12%,transparent)}
+.portal-content input::placeholder,.portal-content textarea::placeholder{color:var(--ink-faint)}
+.portal-content table th{background:var(--surface-2);color:var(--ink-dim);font-weight:700;letter-spacing:.025em}.portal-content table tbody tr{transition:background .15s}.portal-content table tbody tr:hover{background:color-mix(in srgb,var(--brand) 3%,var(--surface))}.portal-content table td{vertical-align:middle}
+.portal-content button:disabled{cursor:not-allowed}
+@media(prefers-reduced-motion:reduce){}
+.portal-chip,.portal-scope,.portal-content .ds .chip{border-radius:6px;font-size:11px;line-height:1.6;letter-spacing:.01em;padding:4px 8px}.portal-method{font-size:11px;line-height:1.6;border-radius:6px;padding:5px 8px}.portal-status{padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface-2)}.portal-status>span:last-child{font-size:11px}.portal-status>span:first-child{width:6px;height:6px}.portal-content .ds :is(.alert,.card-samples article,.demo-menu,.ds-select-menu,.popover-card,.inline-toast){border-color:var(--line);box-shadow:var(--panel-shadow)}.portal-content .ds :is(.segmented,.tabs-demo,.pagination){font-size:13px}.portal-content :is(input[type=checkbox],input[type=radio]){accent-color:var(--brand)}

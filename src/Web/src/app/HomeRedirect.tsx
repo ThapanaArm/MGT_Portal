@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "@/shared/lib/auth";
+import LoadingScreen from "@/shared/components/LoadingScreen";
 
 export default function HomeRedirect() {
   const { user, loading } = useAuth();
@@ -8,8 +9,8 @@ export default function HomeRedirect() {
 
   useEffect(() => {
     if (loading) return;
-    navigate(user ? "/ecosystem" : "/login", { replace: true });
+    navigate(user ? "/dashboard" : "/login", { replace: true });
   }, [loading, user, navigate]);
 
-  return null;
+  return <LoadingScreen fullScreen delay={150} message="Loading MGT Hub" detail="Checking your sign-in..." />;
 }

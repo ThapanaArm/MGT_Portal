@@ -1,4 +1,4 @@
-using MGT.Portal.Api.Modules.Identity;
+﻿using MGT.Portal.Api.Modules.Identity;
 using MGT.Portal.Api.Shared;
 
 namespace MGT.Portal.Api.Modules.Apps;
@@ -10,6 +10,7 @@ public class Application
     public string Description { get; set; } = "";
     public string Subdomain { get; set; } = "";
     public string Github { get; set; } = "";
+    public string? DevelopmentJson { get; set; }
 
     /// <summary>Comma-separated ApiCategory keys this app consumes (e.g. "sales,inventory").</summary>
     public string ProductsCsv { get; set; } = "";
@@ -22,7 +23,7 @@ public class Application
     public int ReviewCycle { get; set; } = 0;
 
     public string? Image { get; set; } // data URL or file path
-    public string Icon { get; set; } = "📦";
+    public string Icon { get; set; } = "fa:box";
 
     /// <summary>ใครใช้ App ได้ (self / department / company) — ดู AppAudience</summary>
     public string Audience { get; set; } = AppAudience.Self;
@@ -55,6 +56,8 @@ public class AppCredential
     public int ApplicationId { get; set; }
     public Application Application { get; set; } = null!;
     public string Env { get; set; } = CredEnv.Sandbox;
+    /// <summary>หมวด API (key ของ ApiCategory เช่น sales, purchase) — 1 token ใช้ได้กับหมวดเดียว</summary>
+    public string Category { get; set; } = "";
     public string TokenId { get; set; } = "";
     public string TokenSecret { get; set; } = "";
     public DateTime CreatedAt { get; set; }
@@ -71,6 +74,9 @@ public class AppVote
     /// <summary>Which review cycle this vote belongs to — cleared/incremented each time the app is resubmitted.</summary>
     public int ReviewCycle { get; set; }
     public bool Approved { get; set; }
+    public string? ActorEmail { get; set; }
+    public DateTime? DecidedAt { get; set; }
+    public string? Note { get; set; }
 }
 
 public class AppLogEntry

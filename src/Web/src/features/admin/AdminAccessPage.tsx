@@ -1,3 +1,5 @@
+import { Input,Select } from "@/shared/components/design-system";
+import { AppIcon } from "@/shared/components/Icon";
 import { useEffect, useState } from "react";
 import { api } from "@/shared/lib/api";
 import { useToast } from "@/shared/lib/toast";
@@ -6,11 +8,11 @@ import UserScopeTable from "@/features/admin/UserScopeTable";
 import type { AccessGrantDto, CategoryDto, UserBriefDto } from "@/shared/lib/types";
 
 const DURATIONS = [
-  { label: "7 วัน", days: 7 },
-  { label: "30 วัน", days: 30 },
-  { label: "90 วัน", days: 90 },
-  { label: "180 วัน", days: 180 },
-  { label: "ไม่มีกำหนด", days: null as number | null },
+  { label: "7 days", days: 7 },
+  { label: "30 days", days: 30 },
+  { label: "90 days", days: 90 },
+  { label: "180 days", days: 180 },
+  { label: "No expiration", days: null as number | null },
 ];
 
 interface FormState {
@@ -24,13 +26,13 @@ interface FormState {
 const EMPTY_FORM: FormState = { userId: "", categoryId: "", level: "read", days: 30, note: "" };
 
 function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" });
+  return new Date(iso).toLocaleDateString("en-GB", { year: "numeric", month: "short", day: "numeric" });
 }
 
 function StatusPill({ g }: { g: AccessGrantDto }) {
-  if (g.revoked) return <span className="text-[13.5px] font-semibold text-ink-faint bg-surface-2 rounded-full px-2.5 py-0.5 whitespace-nowrap">ยกเลิกแล้ว</span>;
-  if (g.isExpired) return <span className="text-[13.5px] font-semibold text-amber bg-amber-soft rounded-full px-2.5 py-0.5 whitespace-nowrap">หมดอายุ</span>;
-  return <span className="text-[13.5px] font-semibold text-teal-strong bg-teal-soft rounded-full px-2.5 py-0.5 whitespace-nowrap">ใช้งานอยู่</span>;
+  if (g.revoked) return <span className="text-[13.5px] font-semibold text-ink-faint bg-surface-2 rounded-full px-2.5 py-0.5 whitespace-nowrap">Revoked</span>;
+  if (g.isExpired) return <span className="text-[13.5px] font-semibold text-amber bg-amber-soft rounded-full px-2.5 py-0.5 whitespace-nowrap">Expired</span>;
+  return <span className="text-[13.5px] font-semibold text-teal-strong bg-teal-soft rounded-full px-2.5 py-0.5 whitespace-nowrap">Active</span>;
 }
 
 export default function AdminAccessPage() {
@@ -61,7 +63,7 @@ export default function AdminAccessPage() {
   const save = async (ev: React.FormEvent) => {
     ev.preventDefault();
     if (!form.userId || !form.categoryId) {
-      toast("กรุณาเลือกผู้ใช้และหมวดหมู่ API");
+      toast({ tone: "warning", message: "Select a user and API category" });
       return;
     }
     const category = categories.find((c) => String(c.id) === form.categoryId);
@@ -76,7 +78,7 @@ export default function AdminAccessPage() {
         durationDays: form.days,
         note: form.note.trim() || null,
       });
-      toast("ให้สิทธิ์เข้าถึง API สำเร็จ");
+      toast({ tone: "success", message: "API access granted" });
       setShowForm(false);
       loadGrants();
     } finally {
@@ -86,63 +88,63 @@ export default function AdminAccessPage() {
 
   const revoke = async (id: number) => {
     await api.post(`/api/access/grants/${id}/revoke`);
-    toast("ยกเลิกสิทธิ์แล้ว");
+    toast({ tone: "success", message: "Access revoked" });
     loadGrants();
   };
 
   return (
     <div>
-      <div className="mb-3.5">
+      <div className="portal-page-heading mb-3.5">
         <div className="flex items-center gap-2 text-[13.5px] uppercase tracking-wide text-ink-faint font-bold mb-1.5">
           <span className="w-2 h-2 rounded-sm bg-teal" /> Admin
         </div>
-        <h1 className="text-[26px] font-bold">ควบคุมสิทธิ์ผู้ใช้งาน</h1>
+        <h1 className="text-[26px] font-bold">Access Control</h1>
         <p className="text-ink-dim text-[16px] mt-1.5 max-w-[68ch] leading-relaxed">
-          สิทธิ์แบ่งเป็นสองชั้นที่แยกจากกัน — <b>ขอบเขตข้อมูล</b> คุมว่าเห็นข้อมูล<u>ของใคร</u>ได้บ้าง
-          ส่วน <b>สิทธิ์ใช้งาน API</b> คุมว่าเรียก<u>หมวดหมู่ไหน</u>ได้ ทั้งสองอย่างต้องผ่านถึงจะเข้าถึงข้อมูลได้จริง
+          Access is controlled by two independent layers. <b>Data scope</b> determines whose data is visible.
+          <b>API access</b> determines which categories can be called. Both checks must pass to access data.
         </p>
       </div>
 
       <div className="mb-7">
-        <h2 className="text-[19px] font-bold mb-1">1. ขอบเขตการเห็นข้อมูล (Data Scope)</h2>
+        <h2 className="text-[19px] font-bold mb-1">1. Data visibility scope</h2>
         <p className="text-ink-dim text-[15px] mb-3.5 max-w-[68ch] leading-relaxed">
-          Management เห็นทั้งหมด · Manager เห็นเฉพาะทีมตัวเอง · Employee เห็นเฉพาะของตัวเอง —
-          หากบางตำแหน่งต้องเห็นกว้างกว่าระดับปกติ (เช่น ผู้ตรวจสอบภายใน) ให้ตั้งค่าที่ช่อง “เห็นทั้งหมด (เฉพาะราย)”
+          Management can view all data, managers can view their team's data, and employees can view their own data.
+          Use individual overrides for roles that need wider visibility, such as internal auditors.
         </p>
         <UserScopeTable />
       </div>
 
-      <h2 className="text-[19px] font-bold mb-1">2. สิทธิ์ใช้งาน API (Scope)</h2>
+      <h2 className="text-[19px] font-bold mb-1">2. API access (Scope)</h2>
       <p className="text-ink-dim text-[15px] mb-3.5 max-w-[68ch] leading-relaxed">
-        ให้สิทธิ์พนักงานรายบุคคลใช้งาน API หมวดหมู่ใดหมวดหมู่หนึ่งเพิ่มเติมนอกเหนือจากสิทธิ์ตามบทบาท (Role)
-        พร้อมกำหนดระยะเวลาหมดอายุ — เมื่อครบกำหนดหรือถูกยกเลิก สิทธิ์จะหมดผลทันทีในการเข้าสู่ระบบครั้งถัดไป
+        Grant individual employees access to additional API categories beyond their role permissions.
+        Set an expiration date. Expired or revoked permissions no longer apply on the next sign-in.
       </p>
 
       <Btn variant="primary" className="mb-3.5" onClick={() => (showForm ? setShowForm(false) : openCreate())}>
-        {showForm ? "ยกเลิก" : "+ ให้สิทธิ์ใหม่"}
+        <AppIcon value={showForm ? "fa:close" : "fa:plus"} /> {showForm ? "Cancel" : "Grant access"}
       </Btn>
 
       {showForm && (
-        <Panel title="ให้สิทธิ์เข้าถึง API" hint="เลือกผู้ใช้ หมวดหมู่ API ระดับสิทธิ์ และระยะเวลา">
+        <Panel title="Grant API access" hint="Choose a user, API category, permission level, and duration.">
           <form onSubmit={save} className="flex flex-col gap-2.5">
             <div>
-              <label className="text-[15px] text-ink-dim font-semibold block mb-1.5">ผู้ใช้งาน</label>
-              <select
+              <label className="text-[15px] text-ink-dim font-semibold block mb-1.5">User</label>
+              <Select
                 value={form.userId}
                 onChange={(e) => setForm({ ...form, userId: e.target.value })}
                 className="w-full border border-line-strong bg-paper rounded-lg px-3 py-2 text-[15.5px]"
               >
-                <option value="">-- เลือกผู้ใช้งาน --</option>
+                <option value="">-- Select user --</option>
                 {users.map((u) => (
                   <option key={u.id} value={u.id}>
                     {u.displayName} ({u.email}) — {u.roleName}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div>
-              <label className="text-[15px] text-ink-dim font-semibold block mb-1.5">หมวดหมู่ API</label>
-              <select
+              <label className="text-[15px] text-ink-dim font-semibold block mb-1.5">API category</label>
+              <Select
                 value={form.categoryId}
                 onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
                 className="w-full border border-line-strong bg-paper rounded-lg px-3 py-2 text-[15.5px]"
@@ -150,10 +152,10 @@ export default function AdminAccessPage() {
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div>
-              <label className="text-[15px] text-ink-dim font-semibold block mb-1.5">ระดับสิทธิ์</label>
+              <label className="text-[15px] text-ink-dim font-semibold block mb-1.5">Permission level</label>
               <div className="flex gap-1.5">
                 {(["read", "write"] as const).map((lv) => (
                   <button
@@ -164,13 +166,13 @@ export default function AdminAccessPage() {
                       form.level === lv ? "bg-teal-soft border-teal text-teal-strong" : "border-line-strong bg-surface text-ink-dim hover:bg-surface-2"
                     }`}
                   >
-                    {lv === "read" ? "อ่านข้อมูล (read)" : "แก้ไขข้อมูล (write)"}
+                    {lv === "read" ? "Read" : "Write"}
                   </button>
                 ))}
               </div>
             </div>
             <div>
-              <label className="text-[15px] text-ink-dim font-semibold block mb-1.5">ระยะเวลา</label>
+              <label className="text-[15px] text-ink-dim font-semibold block mb-1.5">Duration</label>
               <div className="flex flex-wrap gap-1.5">
                 {DURATIONS.map((d) => (
                   <button
@@ -187,27 +189,27 @@ export default function AdminAccessPage() {
               </div>
             </div>
             <div>
-              <label className="text-[15px] text-ink-dim font-semibold block mb-1.5">หมายเหตุ (ถ้ามี)</label>
-              <input
+              <label className="text-[15px] text-ink-dim font-semibold block mb-1.5">Notes (optional)</label>
+              <Input
                 value={form.note}
                 onChange={(e) => setForm({ ...form, note: e.target.value })}
-                placeholder="เช่น สนับสนุนโครงการร่วมกับทีมขายชั่วคราว"
+                placeholder="e.g. Temporary support for a sales team project"
                 className="w-full border border-line-strong bg-paper rounded-lg px-3 py-2 text-[15.5px]"
               />
             </div>
             <div className="flex gap-2 mt-1">
-              <Btn type="submit" variant="primary" disabled={saving}>บันทึก</Btn>
-              <Btn type="button" onClick={() => setShowForm(false)}>ยกเลิก</Btn>
+              <Btn type="submit" variant="primary" disabled={saving}>Save</Btn>
+              <Btn type="button" onClick={() => setShowForm(false)}>Cancel</Btn>
             </div>
           </form>
         </Panel>
       )}
 
-      <div className="border border-line rounded-[10px] bg-surface overflow-x-auto">
+      <div className="portal-table-frame">
         <table className="w-full border-collapse text-[15px]">
           <thead>
             <tr>
-              {["ผู้ใช้งาน", "API", "ให้สิทธิ์เมื่อ", "หมดอายุ", "สถานะ", "ให้สิทธิ์โดย", ""].map((h) => (
+              {["User", "API", "Granted", "Expired", "Status", "Granted by", ""].map((h) => (
                 <th key={h} className="text-left text-ink-faint text-[13px] uppercase tracking-wide font-bold px-3.5 py-2.5 border-b border-line">
                   {h}
                 </th>
@@ -226,19 +228,19 @@ export default function AdminAccessPage() {
                   <ScopeTag>{g.scope}</ScopeTag>
                 </td>
                 <td className="px-3.5 py-3 border-b border-line whitespace-nowrap">{fmtDate(g.grantedAt)}</td>
-                <td className="px-3.5 py-3 border-b border-line whitespace-nowrap">{g.expiresAt ? fmtDate(g.expiresAt) : "ไม่มีกำหนด"}</td>
+                <td className="px-3.5 py-3 border-b border-line whitespace-nowrap">{g.expiresAt ? fmtDate(g.expiresAt) : "No expiration"}</td>
                 <td className="px-3.5 py-3 border-b border-line"><StatusPill g={g} /></td>
                 <td className="px-3.5 py-3 border-b border-line text-ink-dim">{g.grantedByName}</td>
                 <td className="px-3.5 py-3 border-b border-line">
                   {!g.revoked && (
-                    <Btn size="sm" danger onClick={() => revoke(g.id)}>ยกเลิกสิทธิ์</Btn>
+                    <Btn size="sm" danger onClick={() => revoke(g.id)}>Revoke access</Btn>
                   )}
                 </td>
               </tr>
             ))}
             {!grants.length && (
               <tr>
-                <td colSpan={7} className="text-center text-ink-faint text-[15px] py-5">ยังไม่มีการให้สิทธิ์ผู้ใช้งานเพิ่มเติม</td>
+                <td colSpan={7} className="text-center text-ink-faint text-[15px] py-5">No additional access grants</td>
               </tr>
             )}
           </tbody>

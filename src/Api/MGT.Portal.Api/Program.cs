@@ -1,11 +1,15 @@
+﻿using System.Net.Http.Headers;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using MGT.Portal.Api.Infrastructure.OpenApi;
 using MGT.Portal.Api.Infrastructure.Persistence;
 using MGT.Portal.Api.Modules.Access;
 using MGT.Portal.Api.Modules.Apps;
+using MGT.Portal.Api.Modules.Gateway;
 using MGT.Portal.Api.Modules.Identity;
+using MGT.Portal.Api.Shared;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,7 +18,7 @@ builder.Services.AddControllers().AddJsonOptions(o =>
     o.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
 });
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddOpenApi();
+builder.Services.AddPortalOpenApi(); // /openapi/v1.json + /swagger — ดู Infrastructure/OpenApi/SwaggerSetup.cs
 
 builder.Services.AddDbContext<PortalDbContext>(opt =>
     opt.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
@@ -28,6 +32,56 @@ builder.Services.AddScoped<IUserScopeProvider, GrantedScopeProvider>();
 // Apps — กติกาการอนุมัติตาม Tier
 builder.Services.AddScoped<ApplicationWorkflow>();
 // Catalog — ตอนนี้มีแค่ controller ไม่มี service ที่ต้องลงทะเบียน
+// Gateway — แอปใช้ Token ID/Secret เรียกข้อมูลจริง (ตอนนี้: SaleOrder จาก Supabase)
+// Sandbox ใช้ Supabase:Url / Supabase:Key, Production ใช้ Supabase:Production:Url / Supabase:Production:Key
+builder.Services.AddScoped<GatewayAuth>();
+builder.Services.AddScoped<SupabaseSaleOrderClient>();
+foreach (var (env, section) in new[] { (CredEnv.Sandbox, "Supabase"), (CredEnv.Production, "Supabase:Production") })
+{
+    builder.Services.AddHttpClient(SupabaseSaleOrderClient.HttpClientName(env), http =>
+    {
+        var url = builder.Configuration[$"{section}:Url"];
+        var key = builder.Configuration[$"{section}:Key"];
+        if (string.IsNullOrWhiteSpace(url) || string.IsNullOrWhiteSpace(key)) return; // Gateway จะตอบ 503 ว่ายังไม่ได้ตั้งค่า
+        http.BaseAddress = new Uri(url.TrimEnd('/') + "/rest/v1/");
+        http.DefaultRequestHeaders.Add("apikey", key);
+        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", key);
+        http.Timeout = TimeSpan.FromSeconds(15);
+    });
+}
+
+// Gateway — เขียน Sales Order เข้า SAP (API_SALES_ORDER_SRV)
+// Sandbox → SAP DEV ตอนนี้ (ภายหลังย้ายเป็น UAT): Sap:Url / Sap:User / Sap:Password, Production → Sap:Production:Url / User / Password
+// ค่าองค์กรที่เติมให้ทุก SO: Sap[:Production]:SalesOrderType (ค่าเริ่มต้น OR), SalesOrganization, DistributionChannel, OrganizationDivision, RejectionReason
+builder.Services.AddScoped<GatewayIdempotency>();
+builder.Services.AddScoped<SapSalesOrderClient>();
+// SAP API_SALES_ORDER_SRV ครบทุก operation ที่ /api/v1/sales/sap/* (passthrough) ใช้ HttpClient / credential ชุดเดียวกัน
+// Gateway:Sap:EnableApprove = true เพื่อเปิด releaseApprovalRequest / rejectApprovalRequest (ค่าเริ่มต้นปิด)
+builder.Services.AddScoped<SapODataProxy>();
+
+// Gateway — Zoho CRM (Deals / Quotes / Sales_Orders) ที่ /api/v1/sales/zoho/*
+// Sandbox token → ZohoConfig:sandbox, Production token → ZohoConfig:prod (ClientId, ClientSecret, RefreshToken, AccountsUrl, ApiDomain)
+builder.Services.AddSingleton<ZohoTokenStore>();
+builder.Services.AddScoped<ZohoCrmClient>();
+builder.Services.AddHttpClient(ZohoCrmClient.HttpClientName, http => http.Timeout = TimeSpan.FromSeconds(30));
+foreach (var env in new[] { CredEnv.Sandbox, CredEnv.Production })
+{
+    var section = SapSalesOrderClient.ConfigSection(env);
+    builder.Services.AddHttpClient(SapSalesOrderClient.HttpClientName(env), http =>
+    {
+        var url = builder.Configuration[$"{section}:Url"];
+        var user = builder.Configuration[$"{section}:User"];
+        var password = builder.Configuration[$"{section}:Password"];
+        if (string.IsNullOrWhiteSpace(url) || string.IsNullOrWhiteSpace(user) || string.IsNullOrWhiteSpace(password)) return; // Gateway จะตอบ 503 ว่ายังไม่ได้ตั้งค่า
+        // รับได้ทั้ง host ของ tenant (https://myXXXXXX-api.s4hana.cloud.sap) และ URL เต็มของ service
+        var root = url.Trim().TrimEnd('/');
+        http.BaseAddress = new Uri(root.Contains("/sap/opu/odata/", StringComparison.OrdinalIgnoreCase) ? root + "/" : root + "/" + SapSalesOrderClient.ServicePath);
+        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{user}:{password}")));
+        http.Timeout = TimeSpan.FromSeconds(30);
+    })
+    // cookie ของ session SAP ต้องผูกกับ x-csrf-token ของคำขอนั้น จึงจัดการเองต่อคำขอ ไม่ใช้ cookie container ร่วม
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { UseCookies = false });
+}
 
 var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is not configured. Run 'dotnet user-secrets set Jwt:Key <value>'.");
 
@@ -48,12 +102,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 builder.Services.AddAuthorization();
 
-// ตอนพัฒนา หน้าเว็บ (Vite, พอร์ต 5173) เรียก /api ผ่าน proxy ของ Vite จึงเป็น origin เดียวกันอยู่แล้ว
+// ตอนพัฒนา หน้าเว็บ (Vite, พอร์ต 5174) เรียก /api ผ่าน proxy ของ Vite จึงเป็น origin เดียวกันอยู่แล้ว
 // CORS นี้เผื่อกรณีเปิดหน้าเว็บตรงจากพอร์ตอื่นเท่านั้น
 builder.Services.AddCors(opt =>
 {
     opt.AddPolicy("Frontend", policy =>
-        policy.WithOrigins("http://localhost:5173", "http://localhost:3000")
+        policy.WithOrigins("http://localhost:5174", "http://localhost:3000")
               .AllowAnyHeader()
               .AllowAnyMethod());
 });
@@ -76,11 +130,17 @@ using (var scope = app.Services.CreateScope())
         DbSeeder.SeedOrgStructure(db);
     }
     DbSeeder.BackfillUnassignedUsersToSeeAll(db);
+
+    // token แยกตามหมวด API — แอปที่เคยได้ token เดียวจะได้ token ของหมวดที่เหลือเพิ่ม (ตัวเดิมยังใช้ได้กับหมวดของมัน)
+    var workflow = scope.ServiceProvider.GetRequiredService<ApplicationWorkflow>();
+    foreach (var a in db.Applications.Where(x => x.ProductsCsv != "").ToList())
+        await workflow.SyncCredentialsAsync(a, "system");
+    db.SaveChanges();
 }
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.MapPortalSwagger(); // เปิด http://localhost:5038/swagger
 }
 
 app.UseCors("Frontend");

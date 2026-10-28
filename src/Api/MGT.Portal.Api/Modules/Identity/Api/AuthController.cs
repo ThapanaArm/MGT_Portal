@@ -15,7 +15,7 @@ public class AuthController(PortalDbContext db, JwtService jwt, IUserScopeProvid
             .FirstOrDefaultAsync(u => u.Email == req.Email);
 
         if (user is null || !BCrypt.Net.BCrypt.Verify(req.Password, user.PasswordHash))
-            return Unauthorized(new { message = "อีเมลหรือรหัสผ่านไม่ถูกต้อง" });
+            return Unauthorized(new { message = "Invalid email or password" });
 
         var token = jwt.CreateToken(user);
         return Ok(new LoginResponse(token, await ToDto(user)));

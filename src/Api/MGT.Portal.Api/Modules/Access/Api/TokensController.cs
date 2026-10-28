@@ -26,7 +26,7 @@ public class TokensController(PortalDbContext db) : ControllerBase
     [HttpPost]
     public async Task<ActionResult<TokenDto>> Create(CreateTokenRequest req)
     {
-        if (req.Scopes.Length == 0) return BadRequest(new { message = "กรุณาเลือกอย่างน้อย 1 ขอบเขตสิทธิ์" });
+        if (req.Scopes.Length == 0) return BadRequest(new { message = "Select at least one scope" });
 
         var token = new ApiToken
         {

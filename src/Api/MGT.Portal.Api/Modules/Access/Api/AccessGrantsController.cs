@@ -37,13 +37,13 @@ public class AccessGrantsController(PortalDbContext db) : ControllerBase
     public async Task<ActionResult<AccessGrantDto>> CreateGrant(CreateAccessGrantRequest req)
     {
         if (string.IsNullOrWhiteSpace(req.Scope))
-            return BadRequest(new { message = "กรุณาระบุ Scope" });
+            return BadRequest(new { message = "Specify a scope" });
 
         var user = await db.Users.FindAsync(req.UserId);
-        if (user is null) return BadRequest(new { message = "ไม่พบผู้ใช้งาน" });
+        if (user is null) return BadRequest(new { message = "User not found" });
 
         var category = await db.ApiCategories.FindAsync(req.CategoryId);
-        if (category is null) return BadRequest(new { message = "ไม่พบหมวดหมู่ API" });
+        if (category is null) return BadRequest(new { message = "API category not found" });
 
         var grant = new AccessGrant
         {

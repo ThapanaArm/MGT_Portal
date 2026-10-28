@@ -1,9 +1,8 @@
 import { useRef, useState } from "react";
+import IconPicker, { AppIcon } from "./IconPicker";
 
-const ICON_PALETTE = ["📱", "💳", "📦", "🤖", "📊", "🛠️", "🔔", "📈", "🧾", "🏭", "🚚", "💬", "🔒", "🌐", "🧪", "⚙️"];
 
-// รูปถูกเก็บเป็น data URL ซึ่ง base64 ทำให้ขนาดโตขึ้นราว 33% จึงจำกัดไว้ให้ต่ำกว่า
-// เพดานฝั่งเซิร์ฟเวอร์ (50 MB) พอสมควร เพื่อไม่ให้ผู้ใช้เจอ error ตอนกดบันทึก
+// Images use data URLs. Allow headroom for base64 overhead below the server upload limit.
 const MAX_LOGO_MB = 2;
 const MAX_SHOT_MB = 4;
 const MAX_SHOTS = 8;
@@ -17,11 +16,11 @@ function readAsDataUrl(file: File): Promise<string> {
   });
 }
 
-/** คืนข้อความ error ถ้าไฟล์ใช้ไม่ได้ — คืน null เมื่อผ่าน */
+/** Return an error for invalid files, otherwise null. */
 function validateImage(file: File, maxMb: number): string | null {
-  if (!file.type.startsWith("image/")) return `“${file.name}” ไม่ใช่ไฟล์รูปภาพ`;
+  if (!file.type.startsWith("image/")) return `“${file.name}” is not an image file`;
   const mb = file.size / 1024 / 1024;
-  if (mb > maxMb) return `“${file.name}” ขนาด ${mb.toFixed(1)} MB — ใหญ่เกิน ${maxMb} MB`;
+  if (mb > maxMb) return `“${file.name}” size ${mb.toFixed(1)} MB — exceeds the limit of ${maxMb} MB`;
   return null;
 }
 
@@ -38,21 +37,18 @@ export function AppAvatar({ image, icon, size = "md" }: { image: string | null; 
         image ? `bg-white ${pad}` : "bg-teal-soft text-teal-strong"
       }`}
     >
-      {image ? <img src={image} alt="" className="w-full h-full object-contain" /> : icon}
+      {image ? <img src={image} alt="" className="w-full h-full object-contain" /> : <AppIcon value={icon} />}
     </div>
   );
 }
 
 function UploadIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-      <path d="M7 9l5-5 5 5M12 4v12" />
-    </svg>
+    <AppIcon value="fa:upload" className="w-5 h-5"/>
   );
 }
 
-/** กรอบสำหรับลากไฟล์มาวาง — จัดการ state ตอนลากผ่านและ error ให้เอง */
+/** Drop zone with drag state and validation feedback. */
 function DropZone({
   onFiles,
   children,
@@ -115,7 +111,7 @@ export function ImageIconPicker({
 
   return (
     <div className="mb-3.5">
-      <label className="text-[15px] text-ink-dim font-semibold block mb-1.5">โลโก้ / Icon ของ Application</label>
+      <label className="text-[15px] text-ink-dim font-semibold block mb-1.5">Application logo or icon</label>
 
       <DropZone onFiles={accept} className="p-3.5">
         <div className="flex items-center gap-3.5 flex-wrap">
@@ -128,7 +124,7 @@ export function ImageIconPicker({
                 className="inline-flex items-center gap-2 border border-line-strong bg-surface rounded-lg px-3 py-1.5 text-[14.5px] font-semibold hover:bg-surface-2"
               >
                 <UploadIcon />
-                {image ? "เปลี่ยนรูป" : "เลือกไฟล์รูป"}
+                {image ? "Change image" : "Choose image"}
               </button>
               {image && (
                 <button
@@ -136,12 +132,12 @@ export function ImageIconPicker({
                   onClick={clear}
                   className="border border-line-strong rounded-lg px-3 py-1.5 text-[14.5px] text-danger hover:bg-danger-soft"
                 >
-                  ลบรูป
+                  Remove image
                 </button>
               )}
             </div>
             <div className="text-[13px] text-ink-faint mt-1.5">
-              ลากไฟล์มาวางตรงนี้ได้ · PNG, JPG, SVG · ไม่เกิน {MAX_LOGO_MB} MB
+              Drag images here · PNG, JPG, SVG · Maximum {MAX_LOGO_MB} MB
             </div>
           </div>
         </div>
@@ -156,21 +152,8 @@ export function ImageIconPicker({
 
       {error && <div className="text-[13.5px] text-danger bg-danger-soft rounded-lg px-3 py-2 mt-2">{error}</div>}
 
-      <div className="text-[14.5px] text-ink-dim mt-3 mb-2">หรือเลือก Icon (ใช้เมื่อไม่มีรูปอัปโหลด)</div>
-      <div className="flex flex-wrap gap-1.5">
-        {ICON_PALETTE.map((ic) => (
-          <button
-            key={ic}
-            type="button"
-            onClick={() => onIconChange(ic)}
-            className={`w-8.5 h-8.5 rounded-lg border text-base flex items-center justify-center ${
-              ic === icon ? "border-teal bg-teal-soft" : "border-line-strong bg-surface hover:bg-surface-2"
-            }`}
-          >
-            {ic}
-          </button>
-        ))}
-      </div>
+      <div className="text-[14.5px] text-ink-dim mt-3 mb-2">Or choose an icon (used when no image is uploaded)</div>
+      <IconPicker value={icon} onChange={onIconChange} />
     </div>
   );
 }
@@ -184,7 +167,7 @@ export function ShotsPicker({ shots, onChange }: { shots: string[]; onChange: (v
 
     const room = MAX_SHOTS - shots.length;
     if (room <= 0) {
-      setError(`เพิ่มได้สูงสุด ${MAX_SHOTS} รูป — ลบรูปเดิมออกก่อน`);
+      setError(`Maximum images: ${MAX_SHOTS} images. Remove an existing image first.`);
       return;
     }
 
@@ -197,7 +180,7 @@ export function ShotsPicker({ shots, onChange }: { shots: string[]; onChange: (v
     }
 
     const accepted = ok.slice(0, room);
-    if (ok.length > room) problems.push(`เพิ่มได้อีก ${room} รูปเท่านั้น (สูงสุด ${MAX_SHOTS} รูป)`);
+    if (ok.length > room) problems.push(`You can add ${room} more images (maximum ${MAX_SHOTS} images)`);
 
     setError(problems.length ? problems.join(" · ") : null);
     if (accepted.length) onChange([...shots, ...(await Promise.all(accepted.map(readAsDataUrl)))]);
@@ -218,10 +201,10 @@ export function ShotsPicker({ shots, onChange }: { shots: string[]; onChange: (v
               <button
                 type="button"
                 onClick={() => onChange(shots.filter((_, idx) => idx !== i))}
-                aria-label="ลบรูปนี้"
+                aria-label="Remove this image"
                 className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/55 text-white text-[15px] leading-none flex items-center justify-center hover:bg-black/75"
               >
-                ×
+                <AppIcon value="fa:close"/>
               </button>
             </div>
           ))}
@@ -233,13 +216,13 @@ export function ShotsPicker({ shots, onChange }: { shots: string[]; onChange: (v
               className="w-[84px] h-[84px] rounded-lg border border-dashed border-line-strong bg-surface hover:bg-surface-2 flex flex-col items-center justify-center gap-1 text-ink-dim flex-shrink-0"
             >
               <UploadIcon />
-              <span className="text-[12.5px] font-semibold">เพิ่มรูป</span>
+              <span className="text-[12.5px] font-semibold">Add image</span>
             </button>
           )}
         </div>
 
         <div className="text-[13px] text-ink-faint mt-2.5">
-          ลากไฟล์มาวางตรงนี้ได้ · เลือกพร้อมกันหลายรูปได้ · รูปละไม่เกิน {MAX_SHOT_MB} MB
+          Drag images here · Multiple selection supported · Maximum per image: {MAX_SHOT_MB} MB
         </div>
 
         <input
