@@ -1,4 +1,4 @@
-import { gatewayOrigin, isLiveEndpoint, GATEWAY_TOKEN_ID_HEADER, GATEWAY_TOKEN_SECRET_HEADER, CATEGORY_SPECS } from "@/features/catalog/gateway";
+import { gatewayOrigin, isLiveEndpoint, needsUserToken, GATEWAY_TOKEN_ID_HEADER, GATEWAY_TOKEN_SECRET_HEADER, GATEWAY_USER_TOKEN_HEADER, CATEGORY_SPECS } from "@/features/catalog/gateway";
 import type { CategoryDto, EndpointDto } from "@/shared/lib/types";
 
 /**
@@ -8,7 +8,7 @@ import type { CategoryDto, EndpointDto } from "@/shared/lib/types";
  */
 
 export const IDEMPOTENCY_HEADER = "Idempotency-Key";
-const GATEWAY_HEADERS = new Set([GATEWAY_TOKEN_ID_HEADER, GATEWAY_TOKEN_SECRET_HEADER, IDEMPOTENCY_HEADER].map((h) => h.toLowerCase()));
+const GATEWAY_HEADERS = new Set([GATEWAY_TOKEN_ID_HEADER, GATEWAY_TOKEN_SECRET_HEADER, GATEWAY_USER_TOKEN_HEADER, IDEMPOTENCY_HEADER].map((h) => h.toLowerCase()));
 
 export const isWrite = (method: string) => method.toUpperCase() !== "GET";
 
@@ -122,6 +122,7 @@ export function buildCurl(category: CategoryDto, endpoint: EndpointDto, module?:
   const lines = [`curl -X ${method} "${gatewayUrl(category, endpoint, true, module)}"`];
   lines.push(`  -H "${GATEWAY_TOKEN_ID_HEADER}: <token-id>"`);
   lines.push(`  -H "${GATEWAY_TOKEN_SECRET_HEADER}: <token-secret>"`);
+  if (needsUserToken(category.key, method, endpoint.path)) lines.push(`  -H "${GATEWAY_USER_TOKEN_HEADER}: <user-token>"`);
   if (isWrite(method)) lines.push(`  -H "${IDEMPOTENCY_HEADER}: <new-uuid>"`);
   const body = requestBody(endpoint, module);
   if (body) {
@@ -204,6 +205,7 @@ export function gatewayRules(category: CategoryDto): string[] {
     "Rules (MGT Gateway)",
     `- Base URL: ${gatewayOrigin()}${category.basePath} — call it from your app's backend; never call SAP, Zoho or Supabase directly.`,
     `- Every request needs headers ${GATEWAY_TOKEN_ID_HEADER} and ${GATEWAY_TOKEN_SECRET_HEADER} (the ${category.name} token from the app's page in MGT Portal). A Sandbox token reaches test systems (SAP DEV, Zoho sandbox); a Production token reaches live data.`,
+    `- Sales order reads (GET /orders) also need header ${GATEWAY_USER_TOKEN_HEADER}: the token of the person using the app (created under My tokens). The response contains only data that person may see: executives see everything, managers their department, sales managers their sale group, everyone else only their own.`,
     `- Every POST / PUT / PATCH needs header ${IDEMPOTENCY_HEADER}: a new UUID per request; send the same value again only when retrying after a network error.`,
     "- Errors always come back as JSON: {\"message\": \"...\"}.",
     "- Apps can change or cancel only records (sales orders, deals, quotes) they created through the Gateway in the same environment.",

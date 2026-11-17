@@ -10,7 +10,7 @@ const STEPS = ["Checking your sign-in", "Loading your workspace", "Preparing the
 type Mode = "normal" | "slow" | "error";
 
 /**
- * Full-screen loading example: the MGT Hub mark with a spinning ring, progress steps,
+ * Full-screen loading example: the MGT Portal mark with a spinning ring, progress steps,
  * a "taking longer than usual" hint, an error state with retry, and a ready state.
  * Try ?state=slow or ?state=error.
  */
@@ -55,7 +55,7 @@ export default function LoadingPage() {
           key={run}
           fullScreen
           message={STEPS[Math.min(step, STEPS.length - 1)]}
-          detail={elapsed >= 4 ? "This is taking longer than usual. Please keep this page open." : "MGT Hub is getting everything ready for you."}
+          detail={elapsed >= 4 ? "This is taking longer than usual. Please keep this page open." : "MGT Portal is getting everything ready for you."}
           steps={steps}
         />
       )}

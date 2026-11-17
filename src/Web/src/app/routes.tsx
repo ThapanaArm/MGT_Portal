@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router";
-import HomeRedirect from "@/app/HomeRedirect";
+import LandingPage from "@/features/landing/LandingPage";
 import PortalLayout from "@/app/layout/PortalLayout";
 import RequireAdmin from "@/app/layout/RequireAdmin";
 import LoginPage from "@/features/auth/LoginPage";
@@ -12,11 +12,12 @@ import CategoryPage from "@/features/catalog/CategoryPage";
 import MyAppsPage from "@/features/apps/MyAppsPage";
 import AppDetailPage from "@/features/apps/AppDetailPage";
 import TokensPage from "@/features/tokens/TokensPage";
-import DesignSystemPage from "@/features/design-system/DesignSystemPage";
 const ExampleModule = lazy(() => import("@/features/example/ExampleModule"));
 import AdminApisPage from "@/features/admin/AdminApisPage";
 import AdminReviewPage from "@/features/admin/AdminReviewPage";
 import AdminAccessPage from "@/features/admin/AdminAccessPage";
+import AdminAuditPage from "@/features/admin/AdminAuditPage";
+import AdminUsersPage from "@/features/admin/AdminUsersPage";
 import DashboardPage from "@/features/dashboard/DashboardPage";
 import LoadingScreen from "@/shared/components/LoadingScreen";
 
@@ -24,7 +25,7 @@ import LoadingScreen from "@/shared/components/LoadingScreen";
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route index element={<HomeRedirect />} />
+      <Route index element={<LandingPage />} />
       <Route path="login" element={<LoginPage />} />
       <Route path="design-preview/*" element={<Suspense fallback={<LoadingScreen fullScreen delay={150} message="Loading examples" detail="Preparing the design preview..." />}><ExampleModule /></Suspense>} />
 
@@ -34,7 +35,6 @@ export default function AppRoutes() {
         <Route path="ecosystem" element={<EcosystemPage />} />
         <Route path="ecosystem/:id" element={<EcosystemAppPage />} />
         <Route path="getting-started" element={<GettingStartedPage />} />
-        <Route path="design-system" element={<DesignSystemPage />} />
         <Route path="explore" element={<ExplorePage />} />
         <Route path="catalog/:category" element={<CategoryPage />} />
         <Route path="my-apps" element={<MyAppsPage />} />
@@ -47,6 +47,8 @@ export default function AppRoutes() {
           <Route path="apis" element={<AdminApisPage />} />
           <Route path="review" element={<Navigate to="/reviews" replace />} />
           <Route path="access" element={<AdminAccessPage />} />
+          <Route path="audit" element={<AdminAuditPage />} />
+          <Route path="users" element={<AdminUsersPage />} />
         </Route>
       </Route>
 

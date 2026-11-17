@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace MGT.Portal.Api.Migrations
+namespace MGT.Portal.Api.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(PortalDbContext))]
     partial class PortalDbContextModelSnapshot : ModelSnapshot
@@ -107,6 +107,40 @@ namespace MGT.Portal.Api.Migrations
                     b.ToTable("ApiTokens");
                 });
 
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Access.UserApiPermission", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ReadScope")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<string>("ResourceKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("WriteScope")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "ResourceKey")
+                        .IsUnique();
+
+                    b.ToTable("UserApiPermissions");
+                });
+
             modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.AppCodeReview", b =>
                 {
                     b.Property<int>("Id")
@@ -121,13 +155,27 @@ namespace MGT.Portal.Api.Migrations
                     b.Property<bool>("Approved")
                         .HasColumnType("bit");
 
+                    b.Property<string>("Links")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Note")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .IsConcurrencyToken()
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ResolvedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ResolvedInCycle")
+                        .HasColumnType("int");
 
                     b.Property<int>("ReviewCycle")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("ReviewedAt")
+                        .IsConcurrencyToken()
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ReviewerEmail")
@@ -215,6 +263,38 @@ namespace MGT.Portal.Api.Migrations
                     b.ToTable("AppLogEntries");
                 });
 
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.AppReviewer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ApplicationId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("AssignedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AssignedBy")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("ApplicationId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("AppReviewers");
+                });
+
             modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.AppScreenshot", b =>
                 {
                     b.Property<int>("Id")
@@ -257,9 +337,6 @@ namespace MGT.Portal.Api.Migrations
                     b.Property<bool>("Approved")
                         .HasColumnType("bit");
 
-                    b.Property<int>("CommitteeMemberId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime?>("DecidedAt")
                         .HasColumnType("datetime2");
 
@@ -269,11 +346,14 @@ namespace MGT.Portal.Api.Migrations
                     b.Property<int>("ReviewCycle")
                         .HasColumnType("int");
 
+                    b.Property<int>("ReviewerUserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("CommitteeMemberId");
+                    b.HasIndex("ReviewerUserId");
 
-                    b.HasIndex("ApplicationId", "CommitteeMemberId", "ReviewCycle")
+                    b.HasIndex("ApplicationId", "ReviewerUserId", "ReviewCycle")
                         .IsUnique();
 
                     b.ToTable("AppVotes");
@@ -290,6 +370,9 @@ namespace MGT.Portal.Api.Migrations
                     b.Property<string>("Audience")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("CommitteeSize")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -342,6 +425,7 @@ namespace MGT.Portal.Api.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("UpdatedAt")
+                        .IsConcurrencyToken()
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
@@ -351,32 +435,107 @@ namespace MGT.Portal.Api.Migrations
                     b.ToTable("Applications");
                 });
 
-            modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.CommitteeMember", b =>
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Audit.AuditLog", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("Actor")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("nvarchar(320)");
+
+                    b.Property<int?>("ActorUserId")
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    b.Property<string>("AfterJson")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Name")
+                    b.Property<int?>("ApplicationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ApplicationName")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("BatchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("BeforeJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ChangedFieldsJson")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("RoleTitle")
+                    b.Property<string>("CorrelationId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("EntityId")
+                        .HasMaxLength(320)
+                        .HasColumnType("nvarchar(320)");
+
+                    b.Property<string>("EntityKeyJson")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("UserId")
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("EventName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("NewStage")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PreviousStage")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("RequestMethod")
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<string>("RequestPath")
+                        .HasMaxLength(2048)
+                        .HasColumnType("nvarchar(2048)");
+
+                    b.Property<string>("Result")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<int?>("StatusCode")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId")
-                        .IsUnique()
-                        .HasFilter("[UserId] IS NOT NULL");
+                    b.HasIndex("OccurredAt");
 
-                    b.ToTable("CommitteeMembers");
+                    b.HasIndex("ActorUserId", "OccurredAt");
+
+                    b.HasIndex("ApplicationId", "OccurredAt");
+
+                    b.HasIndex("EventName", "OccurredAt");
+
+                    b.ToTable("AuditLogs");
                 });
 
             modelBuilder.Entity("MGT.Portal.Api.Modules.Catalog.ApiCategory", b =>
@@ -522,6 +681,9 @@ namespace MGT.Portal.Api.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
+                    b.Property<int?>("RequestUserId")
+                        .HasColumnType("int");
+
                     b.Property<string>("ResponseJson")
                         .HasColumnType("nvarchar(max)");
 
@@ -540,6 +702,46 @@ namespace MGT.Portal.Api.Migrations
                     b.HasIndex("ApplicationId", "Env", "SalesOrder");
 
                     b.ToTable("GatewayWriteRecords");
+                });
+
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Identity.DisplayNameOption", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("nvarchar(160)");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("nvarchar(160)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique();
+
+                    b.ToTable("DisplayNameOptions");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Sales Administrative",
+                            NormalizedName = "SALES ADMINISTRATIVE"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Human Resources Staff",
+                            NormalizedName = "HUMAN RESOURCES STAFF"
+                        });
                 });
 
             modelBuilder.Entity("MGT.Portal.Api.Modules.Identity.Role", b =>
@@ -568,6 +770,32 @@ namespace MGT.Portal.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("Roles");
+                });
+
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Identity.SaleGroup", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Key")
+                        .IsUnique();
+
+                    b.ToTable("SaleGroups");
                 });
 
             modelBuilder.Entity("MGT.Portal.Api.Modules.Identity.Team", b =>
@@ -621,11 +849,20 @@ namespace MGT.Portal.Api.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ReadDataScope")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("RoleId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SaleGroupId")
                         .HasColumnType("int");
 
                     b.Property<int?>("TeamId")
                         .HasColumnType("int");
+
+                    b.Property<string>("WriteDataScope")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -634,9 +871,121 @@ namespace MGT.Portal.Api.Migrations
 
                     b.HasIndex("RoleId");
 
+                    b.HasIndex("SaleGroupId");
+
                     b.HasIndex("TeamId");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Identity.UserPlatformId", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ExternalId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Platform")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("Platform", "ExternalId")
+                        .IsUnique();
+
+                    b.ToTable("UserPlatformIds");
+                });
+
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Identity.UserSyncLevelMapping", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Level")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("NormalizedSourceRole")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("SourceRole")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedSourceRole")
+                        .IsUnique();
+
+                    b.ToTable("UserSyncLevelMappings");
+                });
+
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Identity.UserToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LastUsedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Prefix")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserTokens");
                 });
 
             modelBuilder.Entity("MGT.Portal.Api.Modules.Access.AccessGrant", b =>
@@ -667,6 +1016,17 @@ namespace MGT.Portal.Api.Migrations
                 });
 
             modelBuilder.Entity("MGT.Portal.Api.Modules.Access.ApiToken", b =>
+                {
+                    b.HasOne("MGT.Portal.Api.Modules.Identity.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Access.UserApiPermission", b =>
                 {
                     b.HasOne("MGT.Portal.Api.Modules.Identity.User", "User")
                         .WithMany()
@@ -710,6 +1070,25 @@ namespace MGT.Portal.Api.Migrations
                     b.Navigation("Application");
                 });
 
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.AppReviewer", b =>
+                {
+                    b.HasOne("MGT.Portal.Api.Modules.Apps.Application", "Application")
+                        .WithMany("Reviewers")
+                        .HasForeignKey("ApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MGT.Portal.Api.Modules.Identity.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Application");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.AppScreenshot", b =>
                 {
                     b.HasOne("MGT.Portal.Api.Modules.Apps.Application", "Application")
@@ -729,15 +1108,15 @@ namespace MGT.Portal.Api.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("MGT.Portal.Api.Modules.Apps.CommitteeMember", "CommitteeMember")
-                        .WithMany("Votes")
-                        .HasForeignKey("CommitteeMemberId")
+                    b.HasOne("MGT.Portal.Api.Modules.Identity.User", "ReviewerUser")
+                        .WithMany()
+                        .HasForeignKey("ReviewerUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Application");
 
-                    b.Navigation("CommitteeMember");
+                    b.Navigation("ReviewerUser");
                 });
 
             modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.Application", b =>
@@ -751,14 +1130,14 @@ namespace MGT.Portal.Api.Migrations
                     b.Navigation("Owner");
                 });
 
-            modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.CommitteeMember", b =>
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Audit.AuditLog", b =>
                 {
-                    b.HasOne("MGT.Portal.Api.Modules.Identity.User", "User")
+                    b.HasOne("MGT.Portal.Api.Modules.Apps.Application", "Application")
                         .WithMany()
-                        .HasForeignKey("UserId")
+                        .HasForeignKey("ApplicationId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("User");
+                    b.Navigation("Application");
                 });
 
             modelBuilder.Entity("MGT.Portal.Api.Modules.Catalog.ApiEndpoint", b =>
@@ -780,6 +1159,11 @@ namespace MGT.Portal.Api.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("MGT.Portal.Api.Modules.Identity.SaleGroup", "SaleGroup")
+                        .WithMany("Members")
+                        .HasForeignKey("SaleGroupId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("MGT.Portal.Api.Modules.Identity.Team", "Team")
                         .WithMany("Members")
                         .HasForeignKey("TeamId")
@@ -787,7 +1171,31 @@ namespace MGT.Portal.Api.Migrations
 
                     b.Navigation("Role");
 
+                    b.Navigation("SaleGroup");
+
                     b.Navigation("Team");
+                });
+
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Identity.UserPlatformId", b =>
+                {
+                    b.HasOne("MGT.Portal.Api.Modules.Identity.User", "User")
+                        .WithMany("PlatformIds")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Identity.UserToken", b =>
+                {
+                    b.HasOne("MGT.Portal.Api.Modules.Identity.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.Application", b =>
@@ -798,13 +1206,10 @@ namespace MGT.Portal.Api.Migrations
 
                     b.Navigation("Log");
 
+                    b.Navigation("Reviewers");
+
                     b.Navigation("Screenshots");
 
-                    b.Navigation("Votes");
-                });
-
-            modelBuilder.Entity("MGT.Portal.Api.Modules.Apps.CommitteeMember", b =>
-                {
                     b.Navigation("Votes");
                 });
 
@@ -818,9 +1223,19 @@ namespace MGT.Portal.Api.Migrations
                     b.Navigation("Users");
                 });
 
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Identity.SaleGroup", b =>
+                {
+                    b.Navigation("Members");
+                });
+
             modelBuilder.Entity("MGT.Portal.Api.Modules.Identity.Team", b =>
                 {
                     b.Navigation("Members");
+                });
+
+            modelBuilder.Entity("MGT.Portal.Api.Modules.Identity.User", b =>
+                {
+                    b.Navigation("PlatformIds");
                 });
 #pragma warning restore 612, 618
         }

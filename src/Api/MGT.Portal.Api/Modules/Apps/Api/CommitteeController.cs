@@ -2,35 +2,25 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MGT.Portal.Api.Infrastructure.Persistence;
+using MGT.Portal.Api.Shared;
 
 namespace MGT.Portal.Api.Modules.Apps;
 
+/// <summary>
+/// สถานะกรรมการของผู้ใช้ที่ login อยู่ — กรรมการเป็นรายแอป (IT เลือกที่ PUT api/applications/{id}/reviewers)
+/// frontend ใช้ตัดสินว่าจะแสดงเมนู Requests and reviews หรือไม่
+/// </summary>
 [ApiController]
 [Route("api/committee")]
 [Authorize]
 public class CommitteeController(PortalDbContext db) : ControllerBase
 {
-    [HttpGet("members")]
-    public async Task<ActionResult<List<CommitteeMemberDto>>> GetMembers()
+    [HttpGet("me")]
+    public async Task<ActionResult<CommitteeStatusDto>> GetMine()
     {
-        var members = await db.CommitteeMembers.Include(m => m.User).ToListAsync();
-        return members.Select(m => new CommitteeMemberDto(m.Id, m.User?.DisplayName ?? m.Name, m.RoleTitle, m.UserId, m.User?.Email)).ToList();
-    }
-
-    [HttpPut("members/{id:int}/assignment")]
-    [Authorize(Roles = "admin")]
-    public async Task<IActionResult> Assign(int id, AssignCommitteeMemberRequest req)
-    {
-        var member = await db.CommitteeMembers.FindAsync(id);
-        if (member is null) return NotFound();
-        if (member.UserId != req.UserId && await db.AppVotes.AnyAsync(v => v.CommitteeMemberId == id && v.Application.Status == AppStatus.Pending && v.ReviewCycle == v.Application.ReviewCycle))
-            return BadRequest(new { message = "This seat has a decision in a pending review. Finish that review before changing its assignment" });
-        if (req.UserId is not null && !await db.Users.AnyAsync(u => u.Id == req.UserId))
-            return BadRequest(new { message = "User not found" });
-        if (req.UserId is not null && await db.CommitteeMembers.AnyAsync(m => m.Id != id && m.UserId == req.UserId))
-            return BadRequest(new { message = "This account is already assigned to another committee seat" });
-        member.UserId = req.UserId;
-        await db.SaveChangesAsync();
-        return NoContent();
+        var me = User.Id();
+        var assigned = await db.AppReviewers.Where(r => r.UserId == me)
+            .Select(r => r.Application.Status).ToListAsync();
+        return new CommitteeStatusDto(assigned.Count > 0, assigned.Count(s => s == AppStatus.Pending));
     }
 }

@@ -15,6 +15,7 @@ namespace MGT.Portal.Api.Modules.Gateway;
 [ApiController]
 [Route("api/v1/sales/orders")]
 [AllowAnonymous]
+[ServiceFilter(typeof(GatewayUserPermissionFilter))]
 public partial class SalesOrderWriteController(
     GatewayAuth auth, GatewayIdempotency idempotency, SapSalesOrderClient sap,
     ILogger<SalesOrderWriteController> log) : ControllerBase

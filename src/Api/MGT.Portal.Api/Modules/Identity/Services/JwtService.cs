@@ -7,6 +7,9 @@ namespace MGT.Portal.Api.Modules.Identity;
 
 public class JwtService(IConfiguration config)
 {
+    public static string CredentialStamp(string passwordHash, string signingKey) =>
+        Convert.ToHexString(System.Security.Cryptography.HMACSHA256.HashData(Encoding.UTF8.GetBytes(signingKey), Encoding.UTF8.GetBytes(passwordHash)));
+
     public string CreateToken(User user)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"]!));
@@ -16,8 +19,9 @@ public class JwtService(IConfiguration config)
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Email, user.Email),
-            new(ClaimTypes.Name, user.DisplayName),
+            new(ClaimTypes.Name, string.IsNullOrWhiteSpace(user.DisplayName) ? user.Email : user.DisplayName),
             new(ClaimTypes.Role, user.Role.Key),
+            new("credential_stamp", CredentialStamp(user.PasswordHash, config["Jwt:Key"]!)),
         };
 
         var token = new JwtSecurityToken(

@@ -9,7 +9,7 @@ import { api } from "@/shared/lib/api";
 import { MethodBadge, Btn } from "@/shared/components/ui";
 import LiveTryPanel from "@/features/catalog/components/LiveTryPanel";
 import AiCopyButton from "@/features/catalog/components/AiCopyButton";
-import { isLiveEndpoint, buildQuery, hasCatalogScope, GATEWAY_TOKEN_ID_HEADER, GATEWAY_TOKEN_SECRET_HEADER } from "@/features/catalog/gateway";
+import { isLiveEndpoint, buildQuery, hasCatalogScope, apiPermissionKey, GATEWAY_TOKEN_ID_HEADER, GATEWAY_TOKEN_SECRET_HEADER } from "@/features/catalog/gateway";
 import { buildCurl, buildEndpointMarkdown, gatewayUrl, isWrite, prettyJson, requestBody, resolvedScope, hasModuleChoice, IDEMPOTENCY_HEADER, ZOHO_MODULES, DEFAULT_ZOHO_MODULE, type ZohoModule } from "@/features/catalog/aiSpec";
 import { Segmented } from "@/shared/components/design-system";
 import { CopyButton } from "@/shared/components/CopyButton";
@@ -113,7 +113,10 @@ export default function EndpointCard({
   const moduleChoice = hasModuleChoice(endpoint);
   const chosenModule = moduleChoice ? zohoModule : undefined;
 
-  const allowed = hasCatalogScope(hasScope, endpoint.scope);
+  const customPermission = user?.apiPermissions?.[apiPermissionKey(category.key, endpoint.scope, endpoint.path, chosenModule)];
+  const allowed = customPermission
+    ? customPermission[endpoint.method.toUpperCase() === "GET" ? "readScope" : "writeScope"] !== "none"
+    : hasCatalogScope(hasScope, endpoint.scope);
   // Live endpoints are served by the real Gateway; anything else is documentation only.
   const live = isLiveEndpoint(category.key, endpoint.method, endpoint.path);
   // The in-page Try it sends real GET requests only, and only where no path value is needed.
@@ -152,7 +155,7 @@ export default function EndpointCard({
     </div>
   );
   const detailParams = endpoint.params.filter(
-    (p) => ![GATEWAY_TOKEN_ID_HEADER, GATEWAY_TOKEN_SECRET_HEADER, IDEMPOTENCY_HEADER].includes(p[0]),
+    (p) => ![GATEWAY_TOKEN_ID_HEADER, GATEWAY_TOKEN_SECRET_HEADER, "X-User-Token", IDEMPOTENCY_HEADER].includes(p[0]),
   );
 
   const requestUrlBar = (

@@ -3,12 +3,19 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace MGT.Portal.Api.Modules.Apps;
 
-internal sealed class CommitteeMemberConfiguration : IEntityTypeConfiguration<CommitteeMember>
+internal sealed class AppReviewerConfiguration : IEntityTypeConfiguration<AppReviewer>
 {
-    public void Configure(EntityTypeBuilder<CommitteeMember> b)
+    public void Configure(EntityTypeBuilder<AppReviewer> b)
     {
-        b.HasOne(m => m.User).WithMany().HasForeignKey(m => m.UserId).OnDelete(DeleteBehavior.Restrict);
-        b.HasIndex(m => m.UserId).IsUnique().HasFilter("[UserId] IS NOT NULL");
+        b.HasOne(r => r.Application)
+            .WithMany(a => a.Reviewers)
+            .HasForeignKey(r => r.ApplicationId)
+            .OnDelete(DeleteBehavior.Cascade);
+        b.HasOne(r => r.User).WithMany().HasForeignKey(r => r.UserId).OnDelete(DeleteBehavior.Restrict);
+        b.Property(r => r.AssignedBy).HasMaxLength(256);
+
+        // คนหนึ่งเป็นกรรมการของ App เดียวกันได้ครั้งเดียว
+        b.HasIndex(r => new { r.ApplicationId, r.UserId }).IsUnique();
     }
 }
 
@@ -16,6 +23,7 @@ internal sealed class ApplicationConfiguration : IEntityTypeConfiguration<Applic
 {
     public void Configure(EntityTypeBuilder<Application> b)
     {
+        b.Property(a => a.UpdatedAt).IsConcurrencyToken();
         b.HasOne(a => a.Owner)
             .WithMany()
             .HasForeignKey(a => a.OwnerUserId)
@@ -63,12 +71,13 @@ internal sealed class AppVoteConfiguration : IEntityTypeConfiguration<AppVote>
             .WithMany(a => a.Votes)
             .OnDelete(DeleteBehavior.Cascade);
 
-        b.HasOne(v => v.CommitteeMember)
-            .WithMany(m => m.Votes)
+        b.HasOne(v => v.ReviewerUser)
+            .WithMany()
+            .HasForeignKey(v => v.ReviewerUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // กรรมการหนึ่งคนโหวตได้ครั้งเดียวต่อรอบการรีวิว
-        b.HasIndex(v => new { v.ApplicationId, v.CommitteeMemberId, v.ReviewCycle }).IsUnique();
+        b.HasIndex(v => new { v.ApplicationId, v.ReviewerUserId, v.ReviewCycle }).IsUnique();
     }
 }
 
@@ -80,6 +89,9 @@ internal sealed class AppCodeReviewConfiguration : IEntityTypeConfiguration<AppC
             .WithMany(a => a.CodeReviews)
             .HasForeignKey(r => r.ApplicationId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        b.Property(r => r.ResolvedAt).IsConcurrencyToken();
+        b.Property(r => r.ReviewedAt).IsConcurrencyToken();
 
         // IT รีวิวได้ครั้งเดียวต่อรอบ (รีวิวซ้ำในรอบเดิม = แก้ผลเดิม)
         b.HasIndex(r => new { r.ApplicationId, r.ReviewCycle }).IsUnique();

@@ -22,6 +22,12 @@ public class Application
     public string? ReviewTarget { get; set; }
     public int ReviewCycle { get; set; } = 0;
 
+    /// <summary>
+    /// จำนวนกรรมการของคำขอนี้ — ต้องได้เสียงอนุมัติครบทุกคน (ดู AppTier.RequiredVotes)
+    /// คำขอใหม่ = AppTier.CommitteeSize (5) · คำขอที่มีอยู่ก่อน migration CommitteeSizePerApplication = 3
+    /// </summary>
+    public int CommitteeSize { get; set; } = AppTier.CommitteeSize;
+
     public string? Image { get; set; } // data URL or file path
     public string Icon { get; set; } = "fa:box";
 
@@ -37,6 +43,8 @@ public class Application
     public ICollection<AppScreenshot> Screenshots { get; set; } = new List<AppScreenshot>();
     public ICollection<AppCredential> Credentials { get; set; } = new List<AppCredential>();
     public ICollection<AppVote> Votes { get; set; } = new List<AppVote>();
+    /// <summary>กรรมการของ App นี้ ไม่เกิน CommitteeSize คน (IT เลือก/เปลี่ยนได้ทุกเมื่อ)</summary>
+    public ICollection<AppReviewer> Reviewers { get; set; } = new List<AppReviewer>();
     public ICollection<AppLogEntry> Log { get; set; } = new List<AppLogEntry>();
     public ICollection<AppCodeReview> CodeReviews { get; set; } = new List<AppCodeReview>();
 }
@@ -69,8 +77,9 @@ public class AppVote
     public int Id { get; set; }
     public int ApplicationId { get; set; }
     public Application Application { get; set; } = null!;
-    public int CommitteeMemberId { get; set; }
-    public CommitteeMember CommitteeMember { get; set; } = null!;
+    /// <summary>กรรมการ (บัญชีผู้ใช้) เจ้าของความเห็นนี้ — นับเฉพาะคนที่ยังเป็นกรรมการของ App อยู่</summary>
+    public int ReviewerUserId { get; set; }
+    public User ReviewerUser { get; set; } = null!;
     /// <summary>Which review cycle this vote belongs to — cleared/incremented each time the app is resubmitted.</summary>
     public int ReviewCycle { get; set; }
     public bool Approved { get; set; }
@@ -93,12 +102,17 @@ public class AppLogEntry
 /// <summary>ผล IT code review ของ App Tier 2/3 — หนึ่งรายการต่อรอบรีวิว (แยกจากการโหวตของกรรมการ)</summary>
 public class AppCodeReview
 {
+    public int? ResolvedInCycle { get; set; }
+    public string? ResolvedBy { get; set; }
+    public DateTime? ResolvedAt { get; set; }
     public int Id { get; set; }
     public int ApplicationId { get; set; }
     public Application Application { get; set; } = null!;
     public int ReviewCycle { get; set; }
     public bool Approved { get; set; }
     public string ReviewerEmail { get; set; } = "";
+    /// <summary>ลิงก์เอกสารประกอบ (เช่น SharePoint) คั่นด้วยบรรทัดใหม่ — Portal ไม่เก็บไฟล์เอง</summary>
+    public string? Links { get; set; }
     public string? Note { get; set; }
     public DateTime ReviewedAt { get; set; }
 }

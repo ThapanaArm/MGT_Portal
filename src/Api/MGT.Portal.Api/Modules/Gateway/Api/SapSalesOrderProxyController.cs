@@ -19,6 +19,7 @@ namespace MGT.Portal.Api.Modules.Gateway;
 [ApiController]
 [Route(RoutePrefix)]
 [AllowAnonymous]
+[ServiceFilter(typeof(GatewayUserPermissionFilter))]
 public partial class SapSalesOrderProxyController(
     GatewayAuth auth, GatewayIdempotency idempotency, SapODataProxy sap, IConfiguration config,
     ILogger<SapSalesOrderProxyController> log) : ControllerBase

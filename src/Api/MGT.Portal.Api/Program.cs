@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -7,9 +7,11 @@ using MGT.Portal.Api.Infrastructure.OpenApi;
 using MGT.Portal.Api.Infrastructure.Persistence;
 using MGT.Portal.Api.Modules.Access;
 using MGT.Portal.Api.Modules.Apps;
+using MGT.Portal.Api.Modules.Catalog;
 using MGT.Portal.Api.Modules.Gateway;
 using MGT.Portal.Api.Modules.Identity;
 using MGT.Portal.Api.Shared;
+using MGT.Portal.Api.Modules.Audit;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,16 +23,23 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddPortalOpenApi(); // /openapi/v1.json + /swagger — ดู Infrastructure/OpenApi/SwaggerSetup.cs
 
 builder.Services.AddDbContext<PortalDbContext>(opt =>
-    opt.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+    opt.UseSqlServer(builder.Configuration.GetConnectionString("Default"), sql =>
+        sql.EnableRetryOnFailure(maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(5), errorNumbersToAdd: null)));
 
 // ---- Modules ----
 // Identity
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<DataBoundaryResolver>();
+builder.Services.AddScoped<IUserDirectorySource, SqlUserDirectorySource>();
+builder.Services.AddScoped<UserDirectorySync>();
 // Access — เพิ่ม scope จาก AccessGrant ให้ Identity ตอนสร้างข้อมูลผู้ใช้
 builder.Services.AddScoped<IUserScopeProvider, GrantedScopeProvider>();
+builder.Services.AddScoped<ApiPermissionService>();
+builder.Services.AddScoped<GatewayUserPermissionFilter>();
+builder.Services.AddHttpContextAccessor();
 // Apps — กติกาการอนุมัติตาม Tier
 builder.Services.AddScoped<ApplicationWorkflow>();
+builder.Services.AddScoped<GatewayUserContext>();
 // Catalog — ตอนนี้มีแค่ controller ไม่มี service ที่ต้องลงทะเบียน
 // Gateway — แอปใช้ Token ID/Secret เรียกข้อมูลจริง (ตอนนี้: SaleOrder จาก Supabase)
 // Sandbox ใช้ Supabase:Url / Supabase:Key, Production ใช้ Supabase:Production:Url / Supabase:Production:Key
@@ -99,6 +108,25 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true,
             ClockSkew = TimeSpan.FromMinutes(2),
         };
+        opt.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var db = context.HttpContext.RequestServices.GetRequiredService<PortalDbContext>();
+                var aborted = context.HttpContext.RequestAborted;
+                try
+                {
+                    if (!await JwtSessionValidator.IsCurrentAsync(db, context.Principal, aborted, jwtKey))
+                        context.Fail("Your account has changed. Sign in again.");
+                }
+                catch (OperationCanceledException) when (aborted.IsCancellationRequested)
+                {
+                    // เบราว์เซอร์ยกเลิกคำขอระหว่างตรวจ session (เปลี่ยนหน้า / refresh / React ยกเลิก fetch) — ไม่มีใครรอคำตอบแล้ว
+                    // จบคำขอนี้เงียบ ๆ แทนการปล่อย exception ขึ้นไป (ซึ่งทำให้ Visual Studio หยุดที่ OperationCanceledException)
+                    context.Fail("Request canceled by the client.");
+                }
+            }
+        };
     });
 builder.Services.AddAuthorization();
 
@@ -131,6 +159,21 @@ using (var scope = app.Services.CreateScope())
     }
     DbSeeder.BackfillUnassignedUsersToSeeAll(db);
 
+    // การ์ด API Catalog ที่ฝังในโปรเจกต์ (Modules/Catalog/Seed) — ใส่เฉพาะใบที่ยังไม่มี ไม่ทับการ์ดที่ Admin แก้ในหน้าเว็บ
+    // ถ้าพังไม่ให้ Portal เปิดไม่ขึ้น แค่ log ไว้
+    try
+    {
+        var seeded = CatalogSeed.AddMissingFromResource(db, CatalogSeed.PurchaseResource);
+        if (seeded.CategoryMissing)
+            app.Logger.LogWarning("Catalog seed: ไม่พบหมวด {Category} ใน ApiCategories — ข้าม", seeded.Category);
+        else
+            app.Logger.LogInformation("Catalog seed {Category}: เพิ่ม {Added} ใบ, มีอยู่แล้ว {Existing} ใบ", seeded.Category, seeded.Added, seeded.Existing);
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "Catalog seed ล้มเหลว — Portal ทำงานต่อโดยไม่เติมการ์ด");
+    }
+
     // token แยกตามหมวด API — แอปที่เคยได้ token เดียวจะได้ token ของหมวดที่เหลือเพิ่ม (ตัวเดิมยังใช้ได้กับหมวดของมัน)
     var workflow = scope.ServiceProvider.GetRequiredService<ApplicationWorkflow>();
     foreach (var a in db.Applications.Where(x => x.ProductsCsv != "").ToList())
@@ -149,6 +192,7 @@ app.UseCors("Frontend");
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
+app.UseMiddleware<AuditFailureMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

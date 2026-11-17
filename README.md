@@ -1,4 +1,4 @@
-# MGT Portal (MGT Hub)
+# MGT Portal
 
 Portal กลางให้พนักงาน Megachem ขออนุมัติสร้าง App, ดู API catalog และขอสิทธิ์ใช้ API
 

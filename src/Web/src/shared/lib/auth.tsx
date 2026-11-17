@@ -1,3 +1,4 @@
+import { useEditingGuard } from "./editing-guard";
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router";
 import { api } from "./api";
@@ -22,8 +23,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserDto | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { requestExit } = useEditingGuard();
 
   useEffect(() => {
+    let active = true;
+    const refresh = async () => {
+      const token = localStorage.getItem("mgt_token") || sessionStorage.getItem("mgt_token");
+      if (!token) return;
+      try {
+        const current = await api.get<UserDto>("/api/auth/me");
+        if (!active || token !== (localStorage.getItem("mgt_token") || sessionStorage.getItem("mgt_token"))) return;
+        const store = localStorage.getItem("mgt_token") ? localStorage : sessionStorage;
+        store.setItem("mgt_user", JSON.stringify(current));
+        setUser(current);
+      } catch { /* API calls still enforce permissions when a background refresh fails. */ }
+    };
     queueMicrotask(() => {
       const raw = localStorage.getItem("mgt_user") || sessionStorage.getItem("mgt_user");
       const token = localStorage.getItem("mgt_token") || sessionStorage.getItem("mgt_token");
@@ -35,7 +49,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
       setLoading(false);
+      void refresh();
     });
+    window.addEventListener("focus", refresh);
+    window.addEventListener("mgt:permissions-updated", refresh);
+    return () => {
+      active = false;
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("mgt:permissions-updated", refresh);
+    };
   }, []);
 
   const login = useCallback(
@@ -50,19 +72,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       store.setItem("mgt_token", res.token);
       store.setItem("mgt_user", JSON.stringify(res.user));
       setUser(res.user);
-      navigate("/dashboard");
+      navigate("/ecosystem", { replace: true });
     },
     [navigate]
   );
 
-  const logout = useCallback(() => {
+  const logout = useCallback(() => requestExit(() => {
     localStorage.removeItem("mgt_token");
     localStorage.removeItem("mgt_user");
     sessionStorage.removeItem("mgt_token");
     sessionStorage.removeItem("mgt_user");
     setUser(null);
     navigate("/login");
-  }, [navigate]);
+  }), [navigate, requestExit]);
 
   const hasScope = useCallback(
     (scope: string) => {
@@ -82,3 +104,4 @@ export function useAuth() {
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 }
+

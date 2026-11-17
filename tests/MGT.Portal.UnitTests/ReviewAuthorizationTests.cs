@@ -49,7 +49,7 @@ public class ReviewAuthorizationTests
         // Sandbox ออกตอน IT เตรียมเสร็จ เพื่อให้ผู้ขอพัฒนาได้ — Production ยังไม่ออกจนกว่าจะอนุมัติ
         Assert.Equal(CredEnv.Sandbox, Assert.Single(await db.AppCredentials.ToListAsync()).Env);
         await new ApplicationWorkflow(db).RejectAsync(app, "it@megachem.co.th");
-        Assert.Equal("development", DevelopmentProcess.Read(app)!.Stage);
+        Assert.Equal("changes", DevelopmentProcess.Read(app)!.Stage); // ถูกส่งกลับ = รอแก้
     }
 
     [Theory]
@@ -64,6 +64,34 @@ public class ReviewAuthorizationTests
     }
 
     [Fact]
+    public async Task Sent_back_deployment_is_awaiting_changes_and_can_be_requested_again()
+    {
+        await using var db = NewDb();
+        var ownerUser = new User { Email = "sales@megachem.co.th" };
+        var itUser = new User { Email = "it@megachem.co.th" };
+        db.Users.AddRange(ownerUser, itUser); await db.SaveChangesAsync();
+        var app = new Application { OwnerUserId = ownerUser.Id, ProductsCsv = "sales" }; db.Applications.Add(app); await db.SaveChangesAsync();
+        var owner = Controller(db, ownerUser.Id, ownerUser.Email);
+        var it = Controller(db, itUser.Id, itUser.Email, "admin");
+        await owner.SaveDevelopmentAccess(app.Id, new("tier2", [ownerUser.Email], true));
+        await it.PrepareDevelopment(app.Id, new("https://github.com/company/repo", [new(ownerUser.Email, true, true)], true));
+        Assert.IsType<NoContentResult>(await owner.RequestDeployment(app.Id, new("main", "a1b2c3d")));
+        Assert.Equal("review", DevelopmentProcess.Read(app)!.Stage);
+
+        await it.CodeReview(app.Id, new CodeReviewRequest(false, "Add error handling", ["https://megachem.sharepoint.com/review.pdf"]));
+        Assert.Equal("changes", DevelopmentProcess.Read(app)!.Stage);
+        Assert.True(ApplicationWorkflow.CredentialAllowed(app, CredEnv.Sandbox).Ok); // ยังพัฒนาต่อด้วย Sandbox ได้
+        var detail = (await owner.GetById(app.Id)).Value!;
+        var request = Assert.Single(detail.ChangeRequests!);
+        Assert.Equal(("it", "Add error handling", 1), (request.Source, request.Note, request.Cycle));
+
+        Assert.IsType<NoContentResult>(await owner.RequestDeployment(app.Id, new("main", "b2c3d4e")));
+        Assert.Equal("review", DevelopmentProcess.Read(app)!.Stage);
+        Assert.Equal(2, app.ReviewCycle);
+        Assert.Single((await owner.GetById(app.Id)).Value!.ChangeRequests!); // ประวัติรอบก่อนยังอยู่
+    }
+
+    [Fact]
     public async Task Tier1_is_approved_only_after_development_and_a_separate_deployment_request()
     {
         await using var db = NewDb();
@@ -75,7 +103,7 @@ public class ReviewAuthorizationTests
             new("https://github.com/company/repo", [new("sales@megachem.co.th", true)], true));
         Assert.IsType<NoContentResult>(await owner.RequestDeployment(app.Id, new("main", "a1b2c3d")));
         Assert.Equal("active", app.Status);
-        Assert.Equal("approved", DevelopmentProcess.Read(app)!.Stage);
+        Assert.Equal("awaiting-deployment", DevelopmentProcess.Read(app)!.Stage);
         Assert.Empty(await db.AppCredentials.ToListAsync());
     }
 
@@ -191,28 +219,47 @@ public class ReviewAuthorizationTests
     {
         await using var db = NewDb();
         var person = new User { Email = "reviewer@example.com" };
-        var member = new CommitteeMember { Name = "Reviewer", RoleTitle = "Business review", User = person };
-        var other = new CommitteeMember { Name = "Other", RoleTitle = "Other review", User = new User { Email = "other@example.com" } };
+        var other = new User { Email = "other@example.com" };
         var app = new Application { Name = "Request", OwnerUserId = 999, Status = AppStatus.Pending, ReviewTarget = AppTier.Tier2, ReviewCycle = 1 };
-        db.CommitteeMembers.AddRange(member, other); db.Applications.Add(app); await db.SaveChangesAsync();
+        app.Reviewers.Add(new AppReviewer { User = person });
+        app.Reviewers.Add(new AppReviewer { User = other });
+        db.Applications.Add(app); await db.SaveChangesAsync();
         var result = await Controller(db, person.Id, person.Email).Vote(app.Id, new VoteRequest(true));
         Assert.IsType<NoContentResult>(result.Result);
         var vote = Assert.Single(await db.AppVotes.ToListAsync());
-        Assert.Equal(member.Id, vote.CommitteeMemberId);
+        Assert.Equal(person.Id, vote.ReviewerUserId);
         Assert.Equal(person.Email, vote.ActorEmail);
     }
 
     [Fact]
-    public async Task Same_account_cannot_be_assigned_to_two_committee_seats()
+    public async Task Committee_member_of_another_application_cannot_vote_here()
     {
         await using var db = NewDb();
         var person = new User { Email = "reviewer@example.com" };
-        var member = new CommitteeMember { Name = "First", User = person };
-        var other = new CommitteeMember { Name = "Second" };
-        db.CommitteeMembers.AddRange(member, other); await db.SaveChangesAsync();
-        var result = await new CommitteeController(db).Assign(other.Id, new(person.Id));
-        Assert.IsType<BadRequestObjectResult>(result);
-        Assert.Null(other.UserId);
+        var mine = new Application { Name = "Mine", OwnerUserId = 999, Status = AppStatus.Pending, ReviewTarget = AppTier.Tier2, ReviewCycle = 1 };
+        mine.Reviewers.Add(new AppReviewer { User = person });
+        var notMine = new Application { Name = "Other", OwnerUserId = 999, Status = AppStatus.Pending, ReviewTarget = AppTier.Tier2, ReviewCycle = 1 };
+        db.Applications.AddRange(mine, notMine); await db.SaveChangesAsync();
+        var result = await Controller(db, person.Id, person.Email).Vote(notMine.Id, new VoteRequest(true));
+        Assert.IsType<ForbidResult>(result.Result);
+        Assert.Empty(await db.AppVotes.ToListAsync());
+    }
+
+    [Fact]
+    public async Task Committee_member_sees_only_their_own_requests_in_the_queue()
+    {
+        await using var db = NewDb();
+        var reviewer = new User { Email = "reviewer@example.com" };
+        var owner = new User { Email = "owner@example.com" };
+        var mine = new Application { Name = "Mine", Owner = owner, Status = AppStatus.Pending, ReviewTarget = AppTier.Tier2, ReviewCycle = 1 };
+        mine.Reviewers.Add(new AppReviewer { User = reviewer });
+        var notMine = new Application { Name = "Other", Owner = owner, Status = AppStatus.Pending, ReviewTarget = AppTier.Tier2, ReviewCycle = 1 };
+        db.Applications.AddRange(mine, notMine); await db.SaveChangesAsync();
+        var queue = (await Controller(db, reviewer.Id, reviewer.Email).GetReviewQueue()).Value;
+        Assert.NotNull(queue);
+        Assert.Equal("Mine", Assert.Single(queue).Name);
+        var all = (await Controller(db, owner.Id, "it@example.com", "admin").GetReviewQueue()).Value;
+        Assert.Equal(2, all!.Count);
     }
 
     [Fact]
@@ -220,26 +267,107 @@ public class ReviewAuthorizationTests
     {
         await using var db = NewDb();
         var reviewer = new User { Email = "reviewer@example.com" };
-        db.CommitteeMembers.Add(new() { Name = "Reviewer", User = reviewer });
         var app = new Application { Name = "Request", Owner = new User { Email = "owner@example.com" }, Status = AppStatus.Pending, ReviewTarget = AppTier.Tier2, ReviewCycle = 1 };
+        app.Reviewers.Add(new AppReviewer { User = reviewer });
         app.Credentials.Add(new() { TokenId = "test-id", TokenSecret = "test-only-secret" });
         db.Applications.Add(app); await db.SaveChangesAsync();
         var result = await Controller(db, reviewer.Id, reviewer.Email).GetById(app.Id);
         Assert.NotNull(result.Value);
         Assert.Empty(result.Value.Credentials);
         Assert.Equal("Request", result.Value.Summary.Name);
+        Assert.Equal(reviewer.Id, Assert.Single(result.Value.Reviewers!).UserId);
     }
 
     [Fact]
-    public async Task Pending_vote_prevents_reassigning_its_committee_seat()
+    public async Task Reviewer_of_another_application_cannot_read_this_pending_request()
     {
         await using var db = NewDb();
-        var member = new CommitteeMember { Name = "First", User = new User { Email = "first@example.com" } };
-        var app = new Application { Status = AppStatus.Pending, ReviewCycle = 1 };
-        db.AppVotes.Add(new() { Application = app, CommitteeMember = member, ReviewCycle = 1, Approved = true });
-        await db.SaveChangesAsync();
-        var result = await new CommitteeController(db).Assign(member.Id, new(null));
-        Assert.IsType<BadRequestObjectResult>(result);
-        Assert.NotNull(member.UserId);
+        var reviewer = new User { Email = "reviewer@example.com" };
+        var owner = new User { Email = "owner@example.com" };
+        var mine = new Application { Name = "Mine", Owner = owner, Status = AppStatus.Pending, ReviewCycle = 1 };
+        mine.Reviewers.Add(new AppReviewer { User = reviewer });
+        var notMine = new Application { Name = "Other", Owner = owner, Status = AppStatus.Pending, ReviewCycle = 1 };
+        db.Applications.AddRange(mine, notMine); await db.SaveChangesAsync();
+        var result = await Controller(db, reviewer.Id, reviewer.Email).GetById(notMine.Id);
+        Assert.IsType<NotFoundResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task Update_request_preserves_live_system_and_credentials_until_new_release_goes_live()
+    {
+        await using var db = NewDb();
+        var owner = new User { Email = "owner@megachem.co.th" };
+        var app = new Application { Name = "Live system", Owner = owner, Status = AppStatus.Active, Type = AppTier.Tier2, ProductsCsv = "sales" };
+        DevelopmentProcess.Write(app, new DevelopmentRequest("live", "tier2", Branch: "main", Commit: "aaaaaaa", LiveBy: "first-it", LiveAt: DateTime.UtcNow.AddDays(-1)));
+        app.Credentials.Add(new AppCredential { Env = CredEnv.Production, TokenId = "existing-id", TokenSecret = "existing-secret", Category = "sales" });
+        var reviewers = Enumerable.Range(1, AppTier.CommitteeSize).Select(i => new User { Email = $"reviewer{i}@megachem.co.th" }).ToArray();
+        foreach (var reviewer in reviewers) app.Reviewers.Add(new AppReviewer { User = reviewer });
+        db.Applications.Add(app); await db.SaveChangesAsync();
+        var request = new SystemUpdateRequest("1.1.0", "Improved OCR", "release/1.1", "bbbbbbb");
+        Assert.IsType<ForbidResult>(await Controller(db, 999, "other@megachem.co.th").RequestSystemUpdate(app.Id, request));
+        Assert.IsType<BadRequestObjectResult>(await Controller(db, owner.Id, owner.Email).RequestSystemUpdate(app.Id, request with { Commit = "invalid" }));
+        Assert.IsType<OkObjectResult>(await Controller(db, owner.Id, owner.Email).RequestSystemUpdate(app.Id, request));
+        var current = DevelopmentProcess.Read(app)!;
+        Assert.Equal("live", current.Stage);
+        Assert.Equal("aaaaaaa", current.Commit);
+        Assert.NotNull(current.PendingUpdateId);
+        Assert.IsType<BadRequestObjectResult>(await Controller(db, owner.Id, owner.Email).RequestSystemUpdate(app.Id, request));
+        var candidate = await db.Applications.FindAsync(current.PendingUpdateId);
+        Assert.NotNull(candidate);
+        Assert.Equal(AppStatus.Pending, candidate.Status);
+        Assert.Equal(AppTier.CommitteeSize, await db.AppReviewers.CountAsync(r => r.ApplicationId == candidate.Id));
+        var workflow = new ApplicationWorkflow(db);
+        foreach (var reviewer in reviewers) Assert.True((await workflow.RecordVoteAsync(candidate, reviewer.Id, true, null, reviewer.Email)).Ok);
+        Assert.True((await workflow.RecordCodeReviewAsync(candidate, true, null, "second-it")).Ok);
+        Assert.Equal(AppStatus.Active, candidate.Status);
+        Assert.Equal("aaaaaaa", DevelopmentProcess.Read(app)!.Commit);
+        Assert.Single(await db.AppCredentials.ToListAsync());
+        Assert.True((await workflow.AdvanceDeploymentAsync(candidate, "deployed", "deployment-admin")).Ok);
+        Assert.Equal("aaaaaaa", DevelopmentProcess.Read(app)!.Commit);
+        Assert.True((await workflow.AdvanceDeploymentAsync(candidate, "live", "release-admin")).Ok);
+        db.ChangeTracker.Clear();
+        var live = DevelopmentProcess.Read((await db.Applications.FindAsync(app.Id))!)!;
+        Assert.Equal("live", live.Stage);
+        Assert.Equal("1.1.0", live.Version);
+        Assert.Equal("bbbbbbb", live.Commit);
+        Assert.Null(live.PendingUpdateId);
+        Assert.Equal(2, live.Releases!.Length);
+        Assert.Equal("aaaaaaa", live.Releases[0].Commit);
+        Assert.Equal(candidate.Id, live.Releases[1].RequestId);
+        Assert.Equal("deployment-admin", live.Releases[1].DeployedBy);
+        Assert.Equal("release-admin", live.Releases[1].LiveBy);
+        var credential = Assert.Single(await db.AppCredentials.ToListAsync());
+        Assert.False(credential.Revoked);
+        Assert.Equal("existing-secret", credential.TokenSecret);
+    }
+
+    [Fact]
+    public async Task Deployment_rejects_an_outdated_screen_without_changing_the_release()
+    {
+        await using var db = NewDb();
+        var app = new Application { OwnerUserId = 7, Status = AppStatus.Active, UpdatedAt = DateTime.UtcNow };
+        DevelopmentProcess.Write(app, new DevelopmentRequest("review", "tier2"));
+        db.Applications.Add(app); await db.SaveChangesAsync();
+        var admin = Controller(db, 42, "it@megachem.co.th", "admin");
+        Assert.IsType<ConflictObjectResult>(await admin.AdvanceDeployment(app.Id, new("deployed", app.UpdatedAt.AddMinutes(-1))));
+        Assert.Equal("awaiting-deployment", DevelopmentProcess.Read(app)!.Stage);
+        var timestamp = app.UpdatedAt;
+        Assert.IsType<NoContentResult>(await admin.AdvanceDeployment(app.Id, new("deployed", timestamp)));
+        Assert.IsType<ConflictObjectResult>(await admin.AdvanceDeployment(app.Id, new("live", timestamp)));
+        Assert.Equal("deployed", DevelopmentProcess.Read(app)!.Stage);
+    }
+
+    [Theory]
+    [InlineData("sandbox")]
+    [InlineData("production")]
+    public async Task Update_request_cannot_regenerate_its_own_credentials(string env)
+    {
+        await using var db = NewDb();
+        var app = new Application { OwnerUserId = 7, Status = AppStatus.Active, Type = AppTier.Tier2, ProductsCsv = "sales" };
+        DevelopmentProcess.Write(app, new DevelopmentRequest("live", "tier2", ParentApplicationId: 42));
+        db.Applications.Add(app); await db.SaveChangesAsync();
+        var result = await Controller(db, 42, "it@megachem.co.th", "admin").RegenerateCredential(app.Id, env, "sales");
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Empty(await db.AppCredentials.ToListAsync());
     }
 }

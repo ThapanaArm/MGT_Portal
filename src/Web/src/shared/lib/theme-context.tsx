@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useLayoutEffect, useState } from "react";
+import { useMatch } from "react-router";
 
 export type Theme = "light" | "dark";
 
@@ -14,24 +15,22 @@ function resolveInitialTheme(): Theme {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("light");
+  const [preferredTheme, setPreferredTheme] = useState(resolveInitialTheme);
+  const landingMatch = useMatch("/");
+  const loginMatch = useMatch("/login");
+  const forceDark = Boolean(landingMatch || loginMatch);
+  const theme = forceDark ? "dark" : preferredTheme;
 
-  useEffect(() => {
-    queueMicrotask(() => {
-      const initial = resolveInitialTheme();
-      setTheme(initial);
-      document.documentElement.setAttribute("data-theme", initial);
-    });
-  }, []);
+  useLayoutEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
 
   const toggle = useCallback(() => {
-    setTheme((prev) => {
-      const next: Theme = prev === "dark" ? "light" : "dark";
-      localStorage.setItem("mgt_theme", next);
-      document.documentElement.setAttribute("data-theme", next);
-      return next;
-    });
-  }, []);
+    if (forceDark) return;
+    const next = preferredTheme === "dark" ? "light" : "dark";
+    localStorage.setItem("mgt_theme", next);
+    setPreferredTheme(next);
+  }, [forceDark, preferredTheme]);
 
   return <ThemeContext.Provider value={{ theme, toggle }}>{children}</ThemeContext.Provider>;
 }

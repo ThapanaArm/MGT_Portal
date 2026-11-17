@@ -49,7 +49,7 @@ export function MethodBadge({ method }: { method: string }) {
 const TYPE_META: Record<AppType, { label: string; className: string }> = {
   tier1: { label: "Tier 1", className: "bg-surface-2 text-ink-dim" },
   tier2: { label: "Tier 2", className: "bg-put-soft text-put" },
-  tier3: { label: "Tier 3", className: "bg-teal-soft text-teal-strong" },
+  tier3: { label: "Tier 3", className: "bg-post-soft text-post" },
 };
 
 export function TypeChip({ type }: { type: AppType }) {

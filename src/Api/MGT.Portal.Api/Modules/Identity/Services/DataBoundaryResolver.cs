@@ -22,9 +22,10 @@ public sealed class DataBoundary
 /// แปลง "ระดับองค์กร + ทีม + override" ของผู้ใช้ ให้เป็นรายชื่อเจ้าของข้อมูลที่เขามีสิทธิ์เห็น
 ///
 /// เงื่อนไขตามที่ธุรกิจกำหนด:
-///   Management → เห็นทั้งหมด
-///   Manager    → เห็นเฉพาะสมาชิกในทีมตัวเอง
-///   Employee   → เห็นเฉพาะของตัวเอง
+///   Management    → เห็นทั้งหมด (CEO / CFO / CMO)
+///   Manager       → เห็นทุกคนในแผนก (Team) ตัวเอง
+///   Sales Manager → เห็นทุกคนใน Sale group ตัวเอง
+///   Employee      → เห็นเฉพาะของตัวเอง (Sales และพนักงานทั่วไป)
 /// และรองรับกรณีบางตำแหน่งต้องเห็นกว้างกว่าระดับปกติ ผ่าน User.DataScopeOverride
 /// </summary>
 public class DataBoundaryResolver(PortalDbContext db)
@@ -32,9 +33,9 @@ public class DataBoundaryResolver(PortalDbContext db)
     /// <param name="isAdmin">
     /// มาจาก role claim ใน token โดยตรง ไม่พึ่ง navigation property ที่อาจยังไม่ถูก Include
     /// </param>
-    public async Task<DataBoundary> ResolveAsync(User me, bool isAdmin)
+    public async Task<DataBoundary> ResolveAsync(User me, bool isAdmin, bool forWrite = false, string? scopeOverride = null)
     {
-        var scope = me.EffectiveDataScope;
+        var scope = scopeOverride ?? (forWrite ? me.EffectiveWriteDataScope : me.EffectiveDataScope);
 
         // ผู้ดูแลระบบเห็นทุกอย่างเสมอ เพื่อให้ดูแลและตรวจสอบระบบได้
         if (isAdmin || scope == DataScope.All)
@@ -53,7 +54,17 @@ public class DataBoundaryResolver(PortalDbContext db)
             return new DataBoundary { SeesAll = false, UserIds = teamMemberIds, Scope = DataScope.Team };
         }
 
-        // Manager ที่ยังไม่ถูกจัดทีม ถือว่าเห็นเฉพาะของตัวเอง — แคบไว้ก่อนปลอดภัยกว่ากว้างเกิน
+        if (scope == DataScope.SaleGroup && me.SaleGroupId is not null)
+        {
+            var groupMemberIds = await db.Users
+                .Where(u => u.SaleGroupId == me.SaleGroupId)
+                .Select(u => u.Id)
+                .ToListAsync();
+            if (!groupMemberIds.Contains(me.Id)) groupMemberIds.Add(me.Id);
+            return new DataBoundary { SeesAll = false, UserIds = groupMemberIds, Scope = DataScope.SaleGroup };
+        }
+
+        // Manager / Sales Manager ที่ยังไม่ถูกจัดทีมหรือกลุ่ม ถือว่าเห็นเฉพาะของตัวเอง — แคบไว้ก่อนปลอดภัยกว่ากว้างเกิน
         return new DataBoundary { SeesAll = false, UserIds = new[] { me.Id }, Scope = DataScope.Self };
     }
 }

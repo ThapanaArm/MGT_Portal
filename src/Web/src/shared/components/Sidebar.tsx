@@ -1,6 +1,7 @@
 import { AppIcon } from "@/shared/components/Icon";
 import { Children, useId, useState } from "react";
 import { Link, useLocation } from "react-router";
+import "./sidebar-hierarchy.css";
 /** MGT navigation item with a green active-page indicator. */
 export function SidebarItem({ href, active, label, children, onClick }: { href: string; active: boolean; label: string; children: React.ReactNode; onClick?: React.MouseEventHandler<HTMLAnchorElement> }) {
   const parts = Children.toArray(children);
@@ -24,15 +25,18 @@ export function SidebarItem({ href, active, label, children, onClick }: { href: 
 }
 
 /** Foldable navigation groups; navigating into a group reveals its current page. */
-export function SidebarGroup({ label, active, collapsed, children }: { label: string; active: boolean; collapsed: boolean; children: React.ReactNode }) {
+export function SidebarGroup({ label, icon, active, collapsed, children }: { label: string; icon?: React.ReactNode; active: boolean; collapsed: boolean; children: React.ReactNode }) {
   const id = useId();
   const { pathname } = useLocation();
   const [closedAt, setClosedAt] = useState<string | null>(null);
   const open = collapsed || closedAt === null || (active && closedAt !== pathname);
   return <div className="sidebar-group" data-active={active}>
     {!collapsed && <button type="button" className="sidebar-group-toggle" aria-expanded={open} aria-controls={id} onClick={() => setClosedAt(open ? pathname : null)}>
-      <span>{label}</span>
-      <AppIcon value="fa:chevron-down"/>
+      <span className="sidebar-group-label">
+        {icon && <span className="sidebar-item-icon" aria-hidden="true">{icon}</span>}
+        {label}
+      </span>
+      <AppIcon value="fa:chevron-down" className="sidebar-group-chevron" />
     </button>}
     <div id={id} hidden={!open} className="sidebar-group-items">{children}</div>
   </div>;
@@ -53,7 +57,7 @@ export function SidebarCount({ children, highlight = false }: { children: React.
 }
 
 
-export function SidebarFrame({children,collapsed=false,onToggle,home="/dashboard",caption="MGT HUB",id="portal-sidebar",onBrandClick}:{children:React.ReactNode;collapsed?:boolean;onToggle?:()=>void;home?:string;caption?:string;id?:string;onBrandClick?:React.MouseEventHandler<HTMLAnchorElement>}){return <aside id={id} aria-label="Main navigation" data-collapsed={collapsed} className="portal-sidebar flex flex-col flex-shrink-0">      <div className="sidebar-brand-header">
+export function SidebarFrame({children,collapsed=false,onToggle,home="/dashboard",caption="MGT PORTAL",id="portal-sidebar",onBrandClick}:{children:React.ReactNode;collapsed?:boolean;onToggle?:()=>void;home?:string;caption?:string;id?:string;onBrandClick?:React.MouseEventHandler<HTMLAnchorElement>}){return <aside id={id} aria-label="Main navigation" data-collapsed={collapsed} className="portal-sidebar flex flex-col flex-shrink-0">      <div className="sidebar-brand-header">
         {collapsed && onToggle ? <button type="button" className="sidebar-logo-toggle" onClick={onToggle} aria-controls={id} aria-expanded={false} aria-label="Expand sidebar" title="Expand sidebar">
           <img src="/mgt-logo.png" alt="" />
           <AppIcon value="fa:sidebar"/>

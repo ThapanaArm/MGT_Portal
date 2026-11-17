@@ -35,6 +35,18 @@ export const hasCatalogScope = (hasScope: (scope: string) => boolean, scope: str
   return hasScope(`${parts[0]}.${parts[parts.length - 1] === "read" ? "read" : "write"}`);
 };
 
+export function apiPermissionKey(category: string, scope: string, path: string, module?: string) {
+  if (category === "sales" && path.startsWith("/zoho/")) {
+    const name = module ?? path.split("/")[2];
+    const resource: Record<string, string> = { Deals: "deal", Quotes: "quote", Sales_Orders: "order" };
+    if (resource[name]) return `sales.${resource[name]}`;
+  }
+  const parts = scope.split(".");
+  if (parts.length >= 3) return parts.slice(0, -1).join(".");
+  const resource = path.replace(/^\//, "").split("/")[0].toLowerCase();
+  return category === "sales" && ["orders", "sap"].includes(resource) ? "sales.order" : `${category}.${resource}`;
+}
+
 // Zoho cards name their module in the path (/zoho/Deals, /zoho/Quotes/{id}, /zoho/Sales_Orders/search ...).
 const LIVE_ZOHO = /^sales (GET \/zoho\/(Deals|Quotes|Sales_Orders)(\/\{id\}|\/search)?|POST \/zoho\/(Deals|Quotes|Sales_Orders)|PUT \/zoho\/(Deals|Quotes|Sales_Orders)\/\{id\})$/;
 
@@ -45,6 +57,12 @@ export const isLiveEndpoint = (categoryKey: string, method: string, path: string
 
 export const GATEWAY_TOKEN_ID_HEADER = "X-Token-Id";
 export const GATEWAY_TOKEN_SECRET_HEADER = "X-Token-Secret";
+/** Personal token of the person using the app; the Gateway returns only data that person may see. */
+export const GATEWAY_USER_TOKEN_HEADER = "X-User-Token";
+
+/** Endpoints whose data is filtered per person, so they need X-User-Token (sales orders from Supabase for now). */
+export const needsUserToken = (categoryKey: string, method: string, path: string) =>
+  isLiveEndpoint(categoryKey, method, path);
 
 /** Request header rows for live endpoints: [header, value, required, description]. */
 export const GATEWAY_HEADER_ROWS: string[][] = [
@@ -88,12 +106,13 @@ export async function callGateway(
   query: Record<string, string>,
   tokenId: string,
   tokenSecret: string,
+  userToken?: string,
 ): Promise<GatewayResult> {
   const qs = buildQuery(query);
   const url = `${API_URL}${basePath}${path}${qs ? `?${qs}` : ""}`;
   const started = performance.now();
   const res = await fetch(url, {
-    headers: { [GATEWAY_TOKEN_ID_HEADER]: tokenId.trim(), [GATEWAY_TOKEN_SECRET_HEADER]: tokenSecret.trim() },
+    headers: { [GATEWAY_TOKEN_ID_HEADER]: tokenId.trim(), [GATEWAY_TOKEN_SECRET_HEADER]: tokenSecret.trim(), ...(userToken?.trim() ? { [GATEWAY_USER_TOKEN_HEADER]: userToken.trim() } : {}) },
   });
   const ms = Math.round(performance.now() - started);
   let body: unknown;

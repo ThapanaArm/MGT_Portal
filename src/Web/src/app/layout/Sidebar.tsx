@@ -5,7 +5,7 @@ import { useLocation } from "react-router";
 import { useAuth } from "@/shared/lib/auth";
 import { useLocale } from "@/shared/lib/locale-context";
 import { api } from "@/shared/lib/api";
-import type { CategoryDto, CommitteeMemberDto } from "@/shared/lib/types";
+import type { CategoryDto, CommitteeStatusDto } from "@/shared/lib/types";
 
 const CATEGORY_ICONS: Record<string, string> = {
   sales: "fa:chart-line",
@@ -28,7 +28,7 @@ export default function Sidebar({ collapsed = false, onToggle }: { collapsed?: b
     api.get<CategoryDto[]>("/api/categories").then(setCategories).catch(() => {});
   }, []);
 
-  useEffect(() => { api.get<CommitteeMemberDto[]>("/api/committee/members").then(members => setCommittee(members.some(member => member.userId === user?.id))).catch(() => setCommittee(false)); }, [user?.id, pathname]);
+  useEffect(() => { api.get<CommitteeStatusDto>("/api/committee/me").then(status => setCommittee(status.isReviewer)).catch(() => setCommittee(false)); }, [user?.id, pathname]);
 
   useEffect(() => {
     api.get<{ id: number }[]>("/api/applications").then((apps) => setAppCount(apps.length)).catch(() => {});
@@ -59,22 +59,16 @@ export default function Sidebar({ collapsed = false, onToggle }: { collapsed?: b
         </NavItem>
       </div>
 
-      <NavGroup label={t("nav.developerSection")} active={pathname === "/getting-started" || pathname === "/design-system"} collapsed={collapsed}>
-        <NavItem label={t("nav.gettingStarted")} href="/getting-started" active={pathname === "/getting-started"}>
-          <AppIcon value="fa:code" /> {t("nav.gettingStarted")}
-        </NavItem>
-        <NavItem label={t("nav.designSystem")} href="/design-system" active={pathname === "/design-system"}>
-          <AppIcon value="fa:tools" /> {t("nav.designSystem")}
-        </NavItem>
-      </NavGroup>
-
       <div className="flex flex-col gap-0.5">
-        <NavItem label={t("nav.exploreData")} href="/explore" active={pathname === "/explore"}>
-          <AppIcon value="fa:search" /> {t("nav.exploreData")}
+        <NavItem label={t("nav.gettingStarted")} href="/getting-started" active={pathname === "/getting-started"}>
+          <AppIcon value="fa-solid:book-open" /> {t("nav.gettingStarted")}
         </NavItem>
       </div>
 
-      <NavGroup label={t("nav.apiCategories")} active={pathname.startsWith("/catalog/")} collapsed={collapsed}>
+      <NavGroup label="Web APIs" icon={<AppIcon value="fa:code" />} active={pathname === "/explore" || pathname.startsWith("/catalog/")} collapsed={collapsed}>
+        <NavItem label={t("nav.exploreData")} href="/explore" active={pathname === "/explore"}>
+          <AppIcon value="fa:search" /> {t("nav.exploreData")}
+        </NavItem>
         {categories.map((c) => (
           <NavItem label={c.name} key={c.key} href={`/catalog/${c.key}`} active={pathname === `/catalog/${c.key}`}>
             <AppIcon value={CATEGORY_ICONS[c.key] ?? "fa:box"} />
@@ -88,12 +82,18 @@ export default function Sidebar({ collapsed = false, onToggle }: { collapsed?: b
 
       {(user?.roleKey === "admin" || committee) && <NavItem label="Requests and reviews" href="/reviews" active={pathname === "/reviews"}><AppIcon value="fa:check" /><span className="flex-1">Requests and reviews</span>{pendingCount > 0 && <NavCount highlight>{pendingCount}</NavCount>}</NavItem>}
       {user?.roleKey === "admin" && (
-        <NavGroup label={t("nav.adminSection")} active={pathname.startsWith("/admin/")} collapsed={collapsed}>
+        <NavGroup label="Administration" icon={<AppIcon value="fa:gear" />} active={pathname.startsWith("/admin/")} collapsed={collapsed}>
           <NavItem label={t("nav.manageApis")} href="/admin/apis" active={pathname === "/admin/apis"}>
             <AppIcon value="fa:gear" /> {t("nav.manageApis")}
           </NavItem>
           <NavItem label={t("nav.accessControl")} href="/admin/access" active={pathname === "/admin/access"}>
             <AppIcon value="fa:users" /> {t("nav.accessControl")}
+          </NavItem>
+          <NavItem label="User management" href="/admin/users" active={pathname === "/admin/users"}>
+            <AppIcon value="fa:users" /> User management
+          </NavItem>
+          <NavItem label="Audit & work summary" href="/admin/audit" active={pathname === "/admin/audit"}>
+            <AppIcon value="fa:clipboard" /> Audit & work summary
           </NavItem>
         </NavGroup>
       )}

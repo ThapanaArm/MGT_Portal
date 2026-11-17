@@ -18,9 +18,9 @@
 | Apps | `AppScreenshots` | 〃 | รูปหน้าจอของ App (base64) |
 | Apps | `AppCredentials` | 〃 | Token ID / Secret ของ App แยก sandbox / production |
 | Apps | `AppLogEntries` | 〃 | ประวัติการเปลี่ยนแปลงของ App |
-| Apps | `AppVotes` | 〃 | คะแนนโหวตของกรรมการต่อรอบการรีวิว |
+| Apps | `AppVotes` | 〃 | ความเห็นของกรรมการ (ผูกกับบัญชีผู้ใช้) ต่อรอบการรีวิว |
 | Apps | `AppCodeReviews` | 〃 | ผล IT code review ต่อรอบการรีวิว (Tier 2/3) |
-| Apps | `CommitteeMembers` | `Modules/Apps/Domain/CommitteeMember.cs` | รายชื่อคณะกรรมการ |
+| Apps | `AppReviewers` | `Modules/Apps/Domain/AppReviewer.cs` | กรรมการรายแอป — `Applications.CommitteeSize` คนต่อ App (ใหม่ 5, คำขอเดิม 3), IT เลือก/เปลี่ยนได้ทุกเมื่อ |
 | Access | `AccessGrants` | `Modules/Access/Domain/AccessGrant.cs` | สิทธิ์เพิ่มเติมที่ admin ให้ผู้ใช้รายคน มีวันหมดอายุ |
 | Access | `ApiTokens` | `Modules/Access/Domain/ApiToken.cs` | token ส่วนตัวที่ผู้ใช้สร้างจากหน้า "Token ของฉัน" |
 
@@ -41,7 +41,9 @@ erDiagram
     Applications ||--o{ AppLogEntries : "Cascade"
     Applications ||--o{ AppVotes : "Cascade"
     Applications ||--o{ AppCodeReviews : "Cascade"
-    CommitteeMembers ||--o{ AppVotes : "Restrict"
+    Applications ||--o{ AppReviewers : "Cascade"
+    Users ||--o{ AppReviewers : "UserId (Restrict)"
+    Users ||--o{ AppVotes : "ReviewerUserId (Restrict)"
 
     Users ||--o{ AccessGrants : "UserId (Restrict)"
     Users ||--o{ AccessGrants : "GrantedByUserId (Restrict)"
@@ -115,7 +117,7 @@ erDiagram
     AppVotes {
         int Id PK
         int ApplicationId FK
-        int CommitteeMemberId FK
+        int ReviewerUserId FK
         int ReviewCycle
         bit Approved
     }
@@ -151,7 +153,7 @@ erDiagram
 
 ภาพเดียวกันแบบความละเอียดสูง (ซูมได้ไม่แตก): [database-er.svg](database-er.svg)
 
-ตารางที่ไม่ได้แสดงคอลัมน์ในแผนภาพ: `AppScreenshots` (ImageData, SortOrder), `AppLogEntries` (ActionType, OccurredAt, Actor, Note), `CommitteeMembers` (Name, RoleTitle)
+ตารางที่ไม่ได้แสดงคอลัมน์ในแผนภาพ: `AppScreenshots` (ImageData, SortOrder), `AppLogEntries` (ActionType, OccurredAt, Actor, Note), `AppReviewers` (ApplicationId, UserId, AssignedAt, AssignedBy)
 
 ## Index และข้อบังคับ
 
@@ -162,7 +164,8 @@ erDiagram
 | `Roles` | `Key` | ✓ |
 | `Teams` | `Key` | ✓ |
 | `ApiCategories` | `Key` | ✓ |
-| `AppVotes` | (`ApplicationId`, `CommitteeMemberId`, `ReviewCycle`) | ✓ กรรมการ 1 คนโหวตได้ 1 ครั้งต่อรอบ |
+| `AppVotes` | (`ApplicationId`, `ReviewerUserId`, `ReviewCycle`) | ✓ กรรมการ 1 คนโหวตได้ 1 ครั้งต่อรอบ |
+| `AppReviewers` | (`ApplicationId`, `UserId`) | ✓ คนหนึ่งเป็นกรรมการของ App เดียวกันได้ครั้งเดียว |
 | `AppCodeReviews` | (`ApplicationId`, `ReviewCycle`) | ✓ IT รีวิวได้ 1 ผลต่อรอบ |
 | `AccessGrants` | (`UserId`, `Revoked`) | |
 | ตารางลูกทุกตัว | คอลัมน์ FK | |
@@ -190,7 +193,7 @@ erDiagram
 5. **ข้อมูลแบบ CSV** — `Applications.ProductsCsv`, `Roles.ScopesCsv`, `ApiTokens.ScopesCsv` ค้นหาและผูก FK ไม่ได้ ควรแยกเป็นตารางเชื่อม เช่น `ApplicationProducts (ApplicationId, CategoryId)`
 6. **วันหมดอายุของ token เป็นข้อความ** — `ApiTokens.Expiry` เก็บ "90 วัน" ระบบจึงบังคับหมดอายุไม่ได้ ควรเป็น `ExpiresAt datetime2`
 7. **คอลัมน์สถานะเป็น `nvarchar(max)`** — `Status`, `Type`, `Env`, `Level` ทำ index ไม่ได้ ควรกำหนดความยาว เช่น `nvarchar(32)` และใส่ check constraint
-8. **กรรมการไม่ผูกกับผู้ใช้** — `CommitteeMembers` ไม่มี `UserId` ตอนนี้ admin โหวตแทนกรรมการคนไหนก็ได้ ควรผูกกับ `Users` แล้วให้กรรมการโหวตเอง
+8. ~~กรรมการไม่ผูกกับผู้ใช้~~ — แก้แล้ว: กรรมการเป็นรายแอป (`AppReviewers`) และความเห็นผูกกับบัญชีผู้ใช้ (`AppVotes.ReviewerUserId`) — migration `PerApplicationReviewers`
 9. **ไม่มีการป้องกันแก้ข้อมูลพร้อมกัน** — `Applications` ควรมีคอลัมน์ `RowVersion` (concurrency token) เพราะโหวตหลายคนพร้อมกันได้
 10. **ทุกตารางอยู่ใน `dbo`** — ขั้นที่ 2 ของ modular monolith คือแยก schema `identity`, `catalog`, `apps`, `access`
 11. **`Users.PasswordHash`** — จะเลิกใช้เมื่อเปลี่ยนไป login ด้วย Entra ID (SSO)

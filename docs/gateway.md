@@ -35,7 +35,7 @@ Headers ที่ต้องส่งทุกครั้ง: `X-Token-Id`, `X
 | จังหวะ | ได้อะไร |
 |---|---|
 | IT กด "เตรียมเสร็จ" ในขั้น IT preparation | Sandbox token (ออกให้อัตโนมัติ) |
-| ผ่าน IT code review + กรรมการ 3 คน | Production token (ออกให้อัตโนมัติ) |
+| ผ่าน IT code review + กรรมการครบทุกคน (5 คน, คำขอเดิม 3 คน) | Production token (ออกให้อัตโนมัติ) |
 | แอปถูกระงับ | token ทั้งหมดถูกเพิกถอน |
 | รายการ API ของแอปเปลี่ยน | ออก token ให้หมวดที่เพิ่ม และเพิกถอน token ของหมวดที่เอาออก |
 
@@ -235,3 +235,58 @@ curl "http://localhost:5038/api/v1/sales/orders?year=2026&limit=5" -H "X-Token-I
   "meta": { "source": "supabase", "env": "sandbox" }
 }
 ```
+
+## สิทธิ์ข้อมูลรายคน (User token)
+
+แอปส่ง Token ID/Secret ของแอปเหมือนเดิม และส่ง **User token** ของคนที่ใช้แอปอยู่มาด้วยใน header `X-User-Token`
+ผู้ใช้สร้าง token เองที่หน้า **My tokens** (เมนูบัญชีมุมขวาบน) — ระบบเก็บเฉพาะ SHA-256 ของ token, ยกเลิกได้, หมดอายุ 30–365 วัน
+
+ตอนนี้บังคับกับ `GET /api/v1/sales/orders` (ไม่ส่ง → 401) — SAP และ Zoho เป็นรอบถัดไป
+
+| ระดับ (Users.Level) | เห็นข้อมูลของ |
+|---|---|
+| `management` (CEO / CFO / CMO) | ทั้งหมด |
+| `manager` | ทุกคนในแผนก (Users.TeamId) |
+| `sales_manager` | Sale group ตัวเอง (Users.SaleGroupId) |
+| `employee` (Sales และพนักงานอื่น) | ตัวเอง |
+
+สิทธิ์ admin ของหน้า Portal **ไม่ได้** ทำให้เห็นข้อมูลธุรกิจทั้งหมด — ใช้ระดับองค์กรเท่านั้น
+
+### การกรอง SaleOrder ใน Supabase
+
+ตารางและข้อมูลทดสอบอยู่ใน [supabase.md](supabase.md)
+
+| ตั้งค่า (appsettings) | ค่าเริ่มต้น | ความหมาย |
+|---|---|---|
+| `Gateway:SaleOrder:OwnerColumn` | `Sales_Employee_Id` | คอลัมน์รหัสพนักงานขายเจ้าของรายการ |
+| `Gateway:SaleOrder:OwnerPlatform` | `sap` | รหัสในคอลัมน์นั้นมาจากระบบไหน (จับคู่กับ `UserPlatformIds.Platform`) |
+| `Gateway:SaleOrder:GroupColumn` | `Sale_Group` | คอลัมน์ Sale group (ค่าเดียวกับ `SaleGroups.Key`) |
+| `Gateway:SaleOrder:Schema` | (ว่าง = public) | schema ของตาราง — ตั้งไว้ `saleorder_data` (ส่ง header `Accept-Profile`) |
+| `Gateway:SaleOrder:Table` | `SaleOrder` | ชื่อตาราง |
+
+- Employee / Manager → `OwnerColumn in (รหัสของคนที่มองเห็นได้)` — ไม่มีรหัสเลย = ได้รายการว่าง
+- Sales Manager → `GroupColumn = Sale group ของตัวเอง`
+- Management → ไม่กรอง
+- `meta.dataScope` ในคำตอบบอกขอบเขตที่ใช้ (all / team / salegroup / self)
+
+### ข้อมูลที่ IT ใส่เองด้วย SQL
+
+```sql
+-- Sale group (Key ต้องตรงกับค่าในคอลัมน์ Sale_Group ของ SaleOrder)
+INSERT INTO SaleGroups ([Key], Name) VALUES (N'SG-N', N'Sales North');
+
+-- ระดับและกลุ่มของพนักงาน
+UPDATE Users SET Level = 'sales_manager', SaleGroupId = (SELECT Id FROM SaleGroups WHERE [Key] = N'SG-N')
+WHERE Email = 'sales.manager@megachem.co.th';
+UPDATE Users SET SaleGroupId = (SELECT Id FROM SaleGroups WHERE [Key] = N'SG-N')
+WHERE Email IN ('sales.staff@megachem.co.th', 'sales.staff2@megachem.co.th');
+UPDATE Users SET Level = 'management' WHERE Email = 'director@megachem.co.th';
+
+-- รหัสพนักงานของแต่ละระบบ (รหัสแต่ละระบบไม่เท่ากัน) — รหัสหนึ่งในระบบหนึ่งเป็นของคนเดียว
+INSERT INTO UserPlatformIds (UserId, Platform, ExternalId)
+SELECT Id, 'sap', '50001234' FROM Users WHERE Email = 'sales.staff@megachem.co.th';
+INSERT INTO UserPlatformIds (UserId, Platform, ExternalId)
+SELECT Id, 'zoho', '4876000000123456' FROM Users WHERE Email = 'sales.staff@megachem.co.th';
+```
+
+หน้า Admin › Access Control แสดง Sale group และรหัสพนักงานของแต่ละคนให้ตรวจ (แก้ผ่าน SQL)

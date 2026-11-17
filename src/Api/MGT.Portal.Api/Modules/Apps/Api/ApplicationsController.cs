@@ -22,23 +22,42 @@ public partial class ApplicationsController(PortalDbContext db, DataBoundaryReso
         a.Id, a.Name, a.Description, a.Subdomain, a.Github,
         a.ProductsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries),
         a.Status, a.Type, a.ReviewTarget, a.Image, a.Icon, ownerEmail, a.CreatedAt, a.UpdatedAt,
-        a.Audience, DevelopmentProcess.Read(a)?.Stage);
+        a.Audience, DevelopmentProcess.Read(a)?.Stage,
+        a.Status is AppStatus.Active or AppStatus.Suspended ? null : DevelopmentProcess.Read(a)?.TargetTier ?? a.ReviewTarget,
+        string.IsNullOrWhiteSpace(a.Owner?.DisplayName) ? ownerEmail : a.Owner.DisplayName);
 
     private bool CanSeeCredentials(string ownerEmail) =>
         User.IsAdmin() || string.Equals(ownerEmail, User.Email(), StringComparison.OrdinalIgnoreCase);
 
     private bool CanManage(Application a) => User.IsAdmin() || a.OwnerUserId == User.Id();
 
-    private Task<bool> IsCommitteeMemberAsync() => db.CommitteeMembers.AnyAsync(m => m.UserId == User.Id());
+    private async Task<bool> CanEditDataAsync(Application a)
+    {
+        if (User.IsAdmin()) return true;
+        var me = await db.Users.AsNoTracking().FirstAsync(u => u.Id == User.Id());
+        return (await boundaries.ResolveAsync(me, User.IsAdmin(), forWrite: true)).Allows(a.OwnerUserId);
+    }
 
+    /// <summary>ผู้ใช้เป็นกรรมการของ App ใดอยู่หรือไม่ (กรรมการเป็นรายแอป)</summary>
+    private Task<bool> IsReviewerAsync() => db.AppReviewers.AnyAsync(r => r.UserId == User.Id());
+
+    private Task<bool> IsReviewerOfAsync(int applicationId) =>
+        db.AppReviewers.AnyAsync(r => r.ApplicationId == applicationId && r.UserId == User.Id());
+
+    /// <summary>คิวรีวิว — IT เห็นทุกคำขอที่รอรีวิว, กรรมการเห็นเฉพาะคำขอที่ตัวเองเป็นกรรมการ</summary>
     [HttpGet("review-queue")]
     public async Task<ActionResult<List<AppSummaryDto>>> GetReviewQueue()
     {
-        if (!User.IsAdmin() && !await IsCommitteeMemberAsync()) return Forbid();
-        var apps = await db.Applications.Include(a => a.Owner).Where(a => a.Status == AppStatus.Pending)
+        var isAdmin = User.IsAdmin();
+        if (!isAdmin && !await IsReviewerAsync()) return Forbid();
+        var me = User.Id();
+        var apps = await db.Applications.Include(a => a.Owner)
+            .Where(a => a.Status == AppStatus.Pending && (isAdmin || a.Reviewers.Any(r => r.UserId == me)))
             .OrderBy(a => a.UpdatedAt).ToListAsync();
         return apps.Select(a => ToSummary(a, a.Owner.Email)).ToList();
     }
+
+    private static string PersonName(User u) => string.IsNullOrWhiteSpace(u.DisplayName) ? u.Email : u.DisplayName;
 
     private ActionResult ToError(WorkflowResult r) => BadRequest(new { message = r.Error });
 
@@ -77,7 +96,7 @@ public partial class ApplicationsController(PortalDbContext db, DataBoundaryReso
         }
 
         var apps = await query.OrderByDescending(a => a.UpdatedAt).ToListAsync();
-        return apps.Select(a => ToSummary(a, a.Owner.Email)).ToList();
+        return apps.Where(a => !catalog || DevelopmentProcess.Read(a)?.ParentApplicationId == null).Select(a => ToSummary(a, a.Owner.Email)).ToList();
     }
 
     [HttpGet("{id:int}")]
@@ -88,7 +107,8 @@ public partial class ApplicationsController(PortalDbContext db, DataBoundaryReso
             .Include(x => x.Screenshots)
             .Include(x => x.Credentials)
             .Include(x => x.Log)
-            .Include(x => x.Votes).ThenInclude(v => v.CommitteeMember)
+            .Include(x => x.Votes).ThenInclude(v => v.ReviewerUser)
+            .Include(x => x.Reviewers).ThenInclude(r => r.User)
             .Include(x => x.CodeReviews)
             .AsSplitQuery()
             .FirstOrDefaultAsync(x => x.Id == id);
@@ -98,7 +118,7 @@ public partial class ApplicationsController(PortalDbContext db, DataBoundaryReso
         // ส่วนที่ยังไม่เผยแพร่ ต้องอยู่ในขอบเขตข้อมูลของผู้เรียกเท่านั้น
         // คืน 404 แทน 403 เพื่อไม่ให้ไล่เดา id แล้วรู้ว่ามีรายการนี้อยู่จริง
         if (a.Status != AppStatus.Active && !(await CurrentBoundaryAsync()).Allows(a.OwnerUserId)
-            && !(a.Status == AppStatus.Pending && await IsCommitteeMemberAsync()))
+            && !(a.Status == AppStatus.Pending && await IsReviewerOfAsync(a.Id)))
             return NotFound();
 
         var screenshots = a.Screenshots.OrderBy(s => s.SortOrder).Select(s => s.ImageData).ToList();
@@ -107,13 +127,22 @@ public partial class ApplicationsController(PortalDbContext db, DataBoundaryReso
             : new List<CredentialDto>();
         var log = a.Log.OrderByDescending(l => l.OccurredAt).Select(l => new LogEntryDto(l.ActionType, l.OccurredAt, l.Actor, l.Note)).ToList();
         var votes = a.Votes.Where(v => v.ReviewCycle == a.ReviewCycle)
-            .Select(v => new VoteDto(v.CommitteeMemberId, v.CommitteeMember.Name, v.CommitteeMember.RoleTitle, v.Approved, v.ActorEmail, v.DecidedAt, v.Note)).ToList();
+            .Select(v => new VoteDto(v.ReviewerUserId, PersonName(v.ReviewerUser), v.ReviewerUser.Email, v.Approved, v.ActorEmail, v.DecidedAt, v.Note)).ToList();
+        var reviewers = a.Reviewers.OrderBy(r => r.AssignedAt).ThenBy(r => r.Id)
+            .Select(r => new ReviewerDto(r.UserId, PersonName(r.User), r.User.Email, r.AssignedAt, r.AssignedBy)).ToList();
+        // ประวัติการขอแก้ไขทุกรอบ (ผู้ขออาจถูกขอแก้มากกว่าหนึ่งครั้ง)
+        var changeRequests = a.CodeReviews.Where(r => !r.Approved)
+            .Select(r => new ChangeRequestDto(r.ReviewCycle, "it", r.ReviewerEmail, r.ReviewedAt, r.Note, ApplicationWorkflow.SplitLinks(r.Links), r.ResolvedInCycle, r.ResolvedBy, r.ResolvedAt))
+            .Concat(a.Votes.Where(v => !v.Approved && v.DecidedAt != null)
+                .Select(v => new ChangeRequestDto(v.ReviewCycle, "committee", PersonName(v.ReviewerUser), v.DecidedAt!.Value, v.Note, [])))
+            .OrderByDescending(c => c.At).ToList();
         var codeReview = a.CodeReviews.Where(r => r.ReviewCycle == a.ReviewCycle)
-            .Select(r => new CodeReviewDto(r.Approved, r.ReviewerEmail, r.Note, r.ReviewedAt)).FirstOrDefault();
+            .Select(r => new CodeReviewDto(r.Approved, r.ReviewerEmail, r.Note, r.ReviewedAt, ApplicationWorkflow.SplitLinks(r.Links))).FirstOrDefault();
 
         var tier = DevelopmentProcess.Read(a)?.TargetTier ?? a.ReviewTarget ?? a.Type;
         return new AppDetailDto(ToSummary(a, a.Owner.Email), screenshots, credentials, log, votes, a.ReviewCycle,
-            codeReview, AppTier.RequiredVotes(tier), AppTier.RequiresCodeReview(tier), DevelopmentProcess.Read(a));
+            codeReview, AppTier.RequiredVotes(tier, a.CommitteeSize), AppTier.RequiresCodeReview(tier), DevelopmentProcess.Read(a), reviewers, changeRequests,
+            await CanEditDataAsync(a), a.CommitteeSize);
     }
 
     [HttpPost]
@@ -164,7 +193,7 @@ public partial class ApplicationsController(PortalDbContext db, DataBoundaryReso
     {
         var a = await db.Applications.Include(x => x.Owner).Include(x => x.Screenshots).FirstOrDefaultAsync(x => x.Id == id);
         if (a is null) return NotFound();
-        if (!CanManage(a)) return Forbid();
+        if (!await CanEditDataAsync(a)) return Forbid();
 
         if (a.DevelopmentJson is not null && DevelopmentProcess.Read(a)?.Stage != "draft")
             return BadRequest(new { message = "Submitted development details are locked. Contact IT to revise the access request." });
@@ -248,10 +277,22 @@ public partial class ApplicationsController(PortalDbContext db, DataBoundaryReso
         return result.Ok ? NoContent() : ToError(result);
     }
 
+    /// <summary>IT เลือก/เปลี่ยนกรรมการของ App นี้ (ไม่เกิน CommitteeSize คน) — ทำได้ทุกเมื่อ (กติกาอยู่ใน ApplicationWorkflow.SetReviewersAsync)</summary>
+    [HttpPut("{id:int}/reviewers")]
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> SetReviewers(int id, SetReviewersRequest req)
+    {
+        var a = await db.Applications.FirstOrDefaultAsync(x => x.Id == id);
+        if (a is null) return NotFound();
+
+        var result = await workflow.SetReviewersAsync(a, req.UserIds ?? [], Actor);
+        return result.Ok ? NoContent() : ToError(result);
+    }
+
     [HttpPost("{id:int}/vote")]
     public async Task<ActionResult<AppDetailDto>> Vote(int id, [FromBody] VoteRequest req)
     {
-        if (!await IsCommitteeMemberAsync()) return Forbid();
+        if (!await IsReviewerOfAsync(id)) return Forbid();
         var a = await db.Applications.FirstOrDefaultAsync(x => x.Id == id);
         if (a is null) return NotFound();
 
@@ -267,8 +308,34 @@ public partial class ApplicationsController(PortalDbContext db, DataBoundaryReso
         var a = await db.Applications.FirstOrDefaultAsync(x => x.Id == id);
         if (a is null) return NotFound();
 
-        var result = await workflow.RecordCodeReviewAsync(a, req.Approved, req.Note, Actor);
-        return result.Ok ? await GetById(id) : ToError(result);
+        try
+        {
+            var result = await workflow.RecordCodeReviewAsync(a, req.Approved, req.Note, Actor, req.Links, req.ResolvedCycles, req.ResolveOnly);
+            return result.Ok ? await GetById(id) : ToError(result);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Conflict(new { message = "Another administrator updated this review. Refresh and check the latest decision." });
+        }
+    }
+
+    /// <summary>IT ถอนผล code review ของรอบปัจจุบัน (กลับเป็นรอรีวิว)</summary>
+    [HttpDelete("{id:int}/code-review")]
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> WithdrawCodeReview(int id)
+    {
+        var a = await db.Applications.FirstOrDefaultAsync(x => x.Id == id);
+        if (a is null) return NotFound();
+
+        try
+        {
+            var result = await workflow.WithdrawCodeReviewAsync(a, Actor);
+            return result.Ok ? NoContent() : ToError(result);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Conflict(new { message = "Another administrator updated this review. Refresh and check the latest decision." });
+        }
     }
 
     [HttpPost("{id:int}/reject")]

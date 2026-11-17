@@ -3,9 +3,12 @@ namespace MGT.Portal.Api.Modules.Identity;
 /// <summary>ระดับในองค์กร — ใช้กำหนดขอบเขตการเห็นข้อมูลเริ่มต้นของผู้ใช้</summary>
 public static class OrgLevel
 {
-    public const string Employee = "employee";     // เห็นเฉพาะข้อมูลของตัวเอง
-    public const string Manager = "manager";       // เห็นข้อมูลของทีมตัวเอง
-    public const string Management = "management"; // เห็นข้อมูลทั้งหมด
+    public const string Employee = "employee";          // Sales และพนักงานทั่วไป: เห็นเฉพาะข้อมูลของตัวเอง
+    public const string SalesManager = "sales_manager"; // หัวหน้า Sale group: เห็นข้อมูลทุกคนใน Sale group ตัวเอง
+    public const string Manager = "manager";            // ผู้จัดการแผนก: เห็นข้อมูลทุกคนในแผนก (Team) ตัวเอง
+    public const string Management = "management";      // ผู้บริหาร (CEO / CFO / CMO): เห็นข้อมูลทั้งหมด
+
+    public static bool IsValid(string? level) => level is Employee or SalesManager or Manager or Management;
 }
 
 /// <summary>
@@ -16,6 +19,7 @@ public static class DataScope
 {
     public const string Self = "self";
     public const string Team = "team";
+    public const string SaleGroup = "salegroup";
     public const string All = "all";
 
     /// <summary>ขอบเขตเริ่มต้นตามระดับองค์กร — ไม่รู้จักระดับไหน ถือว่าแคบสุดไว้ก่อน (deny by default)</summary>
@@ -23,8 +27,9 @@ public static class DataScope
     {
         OrgLevel.Management => All,
         OrgLevel.Manager => Team,
+        OrgLevel.SalesManager => SaleGroup,
         _ => Self,
     };
 
-    public static bool IsValid(string? value) => value is Self or Team or All;
+    public static bool IsValid(string? value) => value is Self or Team or SaleGroup or All;
 }

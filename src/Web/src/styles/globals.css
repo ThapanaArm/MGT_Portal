@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+:root[data-theme="dark"] { color-scheme: dark; }
+:root[data-theme="light"] { color-scheme: light; }
+
 /*
  * MGT Design System — โทเคนชุดเดียวกับ 07_DESIGN_SYSTEM (mgt-design-system/tokens.scss)
  * ฟอนต์โหลดจาก Google Fonts ใน index.html:

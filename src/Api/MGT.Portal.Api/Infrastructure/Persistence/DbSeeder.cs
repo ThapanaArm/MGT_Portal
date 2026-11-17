@@ -35,15 +35,6 @@ public static class DbSeeder
         db.Users.AddRange(users);
         db.SaveChanges();
 
-        var committee = new[]
-        {
-            new CommitteeMember { Name = "สมหญิง วัฒนา", RoleTitle = "IT Security" },
-            new CommitteeMember { Name = "ประเสริฐ ชัยมงคล", RoleTitle = "Business Owner" },
-            new CommitteeMember { Name = "อรทัย ธนากร", RoleTitle = "Compliance" },
-        };
-        db.CommitteeMembers.AddRange(committee);
-        db.SaveChanges();
-
         var categories = new[]
         {
             new ApiCategory { Key = "sales", Name = "Sales", BasePath = "/api/v1/sales", Description = "จัดการคำสั่งขาย ใบเสนอราคา และข้อมูลลูกค้า สำหรับทีมขายและหน้าร้าน", RateLimit = "120 คำขอ / นาที" },
@@ -263,8 +254,9 @@ public static class DbSeeder
             new AppLogEntry { ApplicationId = app5.Id, ActionType = LogActionType.Publish, OccurredAt = new DateTime(2026, 2, 20), Actor = "it-digital@megachem.co.th", Note = "คณะกรรมการอนุมัติระดับ Tier 3 (3/3 เสียง)" }
         );
 
-        var c1 = committee[0];
-        db.AppVotes.Add(new AppVote { ApplicationId = app2.Id, CommitteeMemberId = c1.Id, ReviewCycle = 1, Approved = true });
+        // กรรมการเป็นรายแอป — ตัวอย่าง: คำขอที่รอรีวิวมีกรรมการ 3 คนที่ไม่ใช่ผู้ขอ
+        foreach (var reviewer in new[] { salesUser, financeUser, hrUser })
+            db.AppReviewers.Add(new AppReviewer { ApplicationId = app2.Id, UserId = reviewer.Id, AssignedAt = new DateTime(2026, 8, 10), AssignedBy = "it-digital@megachem.co.th" });
 
         db.SaveChanges();
     }

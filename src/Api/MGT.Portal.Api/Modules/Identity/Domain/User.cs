@@ -16,6 +16,13 @@ public class User
     public int? TeamId { get; set; }
     public Team? Team { get; set; }
 
+    /// <summary>Sale group ที่สังกัด — ใช้เป็นขอบเขตข้อมูลเมื่อผู้ใช้ระดับ Sales Manager</summary>
+    public int? SaleGroupId { get; set; }
+    public SaleGroup? SaleGroup { get; set; }
+
+    /// <summary>รหัสพนักงานของคนนี้ในแต่ละระบบ (SAP / Zoho / ...) — รหัสแต่ละระบบไม่เท่ากัน</summary>
+    public ICollection<UserPlatformId> PlatformIds { get; set; } = new List<UserPlatformId>();
+
     /// <summary>ระดับในองค์กร (employee / manager / management)</summary>
     public string Level { get; set; } = OrgLevel.Employee;
 
@@ -25,8 +32,16 @@ public class User
     /// </summary>
     public string? DataScopeOverride { get; set; }
 
+    public string? ReadDataScope { get; set; }
+    public string? WriteDataScope { get; set; }
+
+    [NotMapped]
+    public string EffectiveWriteDataScope =>
+        DataScope.IsValid(WriteDataScope) ? WriteDataScope! : DataScope.Self;
+
     /// <summary>ขอบเขตที่มีผลจริง — override ชนะระดับองค์กรเสมอ</summary>
     [NotMapped]
     public string EffectiveDataScope =>
+        DataScope.IsValid(ReadDataScope) ? ReadDataScope! :
         DataScope.IsValid(DataScopeOverride) ? DataScopeOverride! : DataScope.FromLevel(Level);
 }

@@ -1,0 +1,40 @@
+:root {
+  --mgt-motion-feedback: 150ms;
+  --mgt-motion-enter: 200ms;
+  --mgt-motion-ease-out: cubic-bezier(.2, .65, .3, 1);
+}
+
+/* Apply to a region as it opens. Keep its content visible without animation. */
+.mgt-motion-enter {
+  animation: mgt-enter var(--mgt-motion-enter) var(--mgt-motion-ease-out);
+}
+
+/* Keep the directional cue inside the action so the hit area stays still. */
+.mgt-motion-action .portal-button-icon:last-child {
+  transition: transform var(--mgt-motion-feedback) var(--mgt-motion-ease-out);
+}
+
+.portal-button.mgt-motion-action:is(:hover, :active):not(:disabled) { transform: none; }
+
+.mgt-motion-action:focus-visible:not(:disabled) .portal-button-icon:last-child {
+  transform: translateX(3px);
+}
+
+@media (hover: hover) {
+  .mgt-motion-action:hover:not(:disabled) .portal-button-icon:last-child {
+    transform: translateX(3px);
+  }
+}
+
+@keyframes mgt-enter {
+  from { opacity: .65; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mgt-motion-enter { animation: none; }
+  .mgt-motion-action .portal-button-icon:last-child { transition: none; }
+  .mgt-motion-action:is(:hover, :focus-visible):not(:disabled) .portal-button-icon:last-child {
+    transform: none;
+  }
+}

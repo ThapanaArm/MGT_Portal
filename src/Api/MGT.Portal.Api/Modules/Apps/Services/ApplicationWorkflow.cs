@@ -19,7 +19,9 @@ public sealed record WorkflowResult(bool Ok, string? Error = null)
 ///                         │                                    ▲                │
 ///                         └──ปฏิเสธ──▶ Draft                    └────Publish────┘
 ///
-/// เกณฑ์ของแต่ละ Tier อยู่ใน AppTier: Tier 1 ผ่านทันที, Tier 2/3 ต้องได้กรรมการ 3 เสียง + IT รีวิวโค้ดผ่าน
+/// เกณฑ์ของแต่ละ Tier อยู่ใน AppTier: Tier 1 ผ่านทันที, Tier 2/3 ต้องได้เสียงกรรมการครบ Application.CommitteeSize (ใหม่ 5, คำขอเดิม 3) + IT รีวิวโค้ดผ่าน
+/// กรรมการเป็นรายแอป: IT เลือก 3 คนให้แต่ละ App และเปลี่ยนได้ทุกเมื่อ (SetReviewersAsync)
+/// นับเฉพาะเสียงของคนที่ยังเป็นกรรมการของ App อยู่ — เปลี่ยนคนระหว่างรีวิว เสียงของคนเดิมในรอบนั้นถูกทิ้ง
 /// credential ที่ Gateway ออกให้เฉพาะ Tier ที่ใช้ API ได้ และถูกปิดทันทีเมื่อ App ถูกระงับ
 /// Sandbox ออกตั้งแต่ IT เตรียม repo เสร็จ ส่วน Production ออกหลังอนุมัติ (ดู CredentialAllowed)
 /// credential แยกตามหมวด API ที่ขอ (ProductsCsv) — ขอ 2 หมวดได้ 2 token ต่อ env
@@ -28,9 +30,9 @@ public class ApplicationWorkflow(PortalDbContext db)
 {
     public static string TierLabel(string tier) => tier switch
     {
-        AppTier.Tier1 => "Tier 1",
-        AppTier.Tier2 => "Tier 2",
-        AppTier.Tier3 => "Tier 3",
+        AppTier.Tier1 => "Tier 1 Register",
+        AppTier.Tier2 => "Tier 2 Verify",
+        AppTier.Tier3 => "Tier 3 Official",
         _ => tier,
     };
 
@@ -63,6 +65,8 @@ public class ApplicationWorkflow(PortalDbContext db)
     {
         if (env is not (CredEnv.Sandbox or CredEnv.Production))
             return WorkflowResult.Fail("Unknown credential environment");
+        if (DevelopmentProcess.Read(a)?.ParentApplicationId != null)
+            return WorkflowResult.Fail("Manage API credentials on the main application. Update requests do not have separate credentials.");
         if (a.Status == AppStatus.Active)
             return AppTier.CanUseApis(a.Type)
                 ? WorkflowResult.Success
@@ -71,7 +75,7 @@ public class ApplicationWorkflow(PortalDbContext db)
             return WorkflowResult.Fail("Production credentials are issued only after the application is approved");
 
         var state = DevelopmentProcess.Read(a);
-        if (state?.Stage is not ("development" or "review"))
+        if (state is null || (!DevelopmentProcess.IsDeveloping(state.Stage) && state.Stage != "review"))
             return WorkflowResult.Fail("Sandbox credentials are issued after IT completes development preparation");
         if (!AppTier.CanUseApis(state.TargetTier) || !HasApis(a))
             return WorkflowResult.Fail("This request does not include API access");
@@ -108,27 +112,71 @@ public class ApplicationWorkflow(PortalDbContext db)
         return WorkflowResult.Success;
     }
 
-    /// <summary>กรรมการกดโหวต — กดซ้ำคือสลับ อนุมัติ/ยกเลิก ของรอบปัจจุบัน</summary>
+    /// <summary>
+    /// IT เลือก/เปลี่ยนกรรมการของ App (ไม่เกิน Application.CommitteeSize คน ไม่ซ้ำกัน และไม่ใช่ผู้ขอเอง) — เปลี่ยนได้ทุกเมื่อ
+    /// ถ้า App กำลังรอรีวิว ความเห็นของคนที่ถูกเอาออกในรอบปัจจุบันจะถูกทิ้ง กรรมการคนใหม่ต้องลงความเห็นเอง
+    /// </summary>
+    public async Task<WorkflowResult> SetReviewersAsync(Application a, IReadOnlyCollection<int> userIds, string actor)
+    {
+        var wanted = userIds.Distinct().ToList();
+        if (wanted.Count != userIds.Count)
+            return WorkflowResult.Fail("Select a different person for each committee seat");
+        if (wanted.Count > a.CommitteeSize)
+            return WorkflowResult.Fail($"This application has at most {a.CommitteeSize} committee members");
+        if (wanted.Contains(a.OwnerUserId))
+            return WorkflowResult.Fail("The requester cannot be a committee member for their own application");
+        var users = await db.Users.Where(u => wanted.Contains(u.Id)).ToListAsync();
+        if (users.Count != wanted.Count)
+            return WorkflowResult.Fail("User not found");
+
+        var current = await db.AppReviewers.Include(r => r.User).Where(r => r.ApplicationId == a.Id).ToListAsync();
+        var removed = current.Where(r => !wanted.Contains(r.UserId)).ToList();
+        var added = users.Where(u => current.All(r => r.UserId != u.Id)).OrderBy(u => wanted.IndexOf(u.Id)).ToList();
+        if (removed.Count == 0 && added.Count == 0) return WorkflowResult.Success;
+
+        db.AppReviewers.RemoveRange(removed);
+        var now = DateTime.UtcNow;
+        foreach (var user in added)
+            db.AppReviewers.Add(new AppReviewer { ApplicationId = a.Id, UserId = user.Id, AssignedAt = now, AssignedBy = actor });
+
+        var discarded = 0;
+        if (a.Status == AppStatus.Pending && removed.Count > 0)
+        {
+            var removedIds = removed.Select(r => r.UserId).ToList();
+            var stale = await db.AppVotes.Where(v =>
+                v.ApplicationId == a.Id && v.ReviewCycle == a.ReviewCycle && removedIds.Contains(v.ReviewerUserId)).ToListAsync();
+            db.AppVotes.RemoveRange(stale);
+            discarded = stale.Count;
+        }
+
+        var parts = new List<string>();
+        if (added.Count > 0) parts.Add("เพิ่ม " + string.Join(", ", added.Select(u => u.Email)));
+        if (removed.Count > 0) parts.Add("เอาออก " + string.Join(", ", removed.Select(r => r.User.Email)));
+        if (discarded > 0) parts.Add($"ทิ้งความเห็นของคนที่ถูกเอาออก {discarded} รายการในรอบรีวิวนี้");
+        Log(a, LogActionType.Update, actor, "เปลี่ยนกรรมการ: " + string.Join(" · ", parts));
+        await db.SaveChangesAsync();
+        return WorkflowResult.Success;
+    }
+
+    /// <summary>กรรมการของ App นี้ลงความเห็น — กดซ้ำคือแก้ความเห็นของตัวเองในรอบปัจจุบัน</summary>
     public async Task<WorkflowResult> RecordVoteAsync(Application a, int userId, bool approved, string? note, string actor)
     {
         if (a.Status != AppStatus.Pending)
             return WorkflowResult.Fail("This application is not awaiting review");
-        if (AppTier.RequiredVotes(a.ReviewTarget ?? a.Type) == 0)
+        if (AppTier.RequiredVotes(a.ReviewTarget ?? a.Type, a.CommitteeSize) == 0)
             return WorkflowResult.Fail("This tier does not require committee votes");
-        var member = await db.CommitteeMembers.Include(m => m.User).SingleOrDefaultAsync(m => m.UserId == userId);
-        if (member?.User is null || !string.Equals(member.User.Email, actor, StringComparison.OrdinalIgnoreCase))
-            return WorkflowResult.Fail("Only an assigned committee member can record their own decision");
+        var reviewer = await db.AppReviewers.Include(r => r.User)
+            .SingleOrDefaultAsync(r => r.ApplicationId == a.Id && r.UserId == userId);
+        if (reviewer is null || !string.Equals(reviewer.User.Email, actor, StringComparison.OrdinalIgnoreCase))
+            return WorkflowResult.Fail("Only a committee member assigned to this application can record their own decision");
         if (!approved && string.IsNullOrWhiteSpace(note))
             return WorkflowResult.Fail("Enter a reason for requesting changes");
-        var committeeMemberId = member.Id;
 
         var existing = await db.AppVotes.FirstOrDefaultAsync(v =>
-            v.ApplicationId == a.Id && v.CommitteeMemberId == committeeMemberId && v.ReviewCycle == a.ReviewCycle);
-        if (existing is not null && existing.ActorEmail is not null && !string.Equals(existing.ActorEmail, actor, StringComparison.OrdinalIgnoreCase))
-            return WorkflowResult.Fail("This committee seat already has a decision from a different account in this review cycle");
+            v.ApplicationId == a.Id && v.ReviewerUserId == userId && v.ReviewCycle == a.ReviewCycle);
         if (existing is null)
         {
-            existing = new AppVote { ApplicationId = a.Id, CommitteeMemberId = committeeMemberId, ReviewCycle = a.ReviewCycle };
+            existing = new AppVote { ApplicationId = a.Id, ReviewerUserId = userId, ReviewCycle = a.ReviewCycle };
             db.AppVotes.Add(existing);
         }
         existing.Approved = approved;
@@ -145,17 +193,64 @@ public class ApplicationWorkflow(PortalDbContext db)
         return WorkflowResult.Success;
     }
 
-    /// <summary>IT บันทึกผลรีวิวโค้ดของรอบปัจจุบัน (บันทึกซ้ำ = แก้ผลเดิม)</summary>
-    public async Task<WorkflowResult> RecordCodeReviewAsync(Application a, bool approved, string? note, string actor)
+    public const int MaxReviewLinks = 5;
+
+    /// <summary>
+    /// ตรวจลิงก์เอกสารประกอบ: ต้องเป็น https:// แบบเต็ม ไม่เกิน 5 ลิงก์ ลิงก์ละไม่เกิน 2,000 ตัวอักษร
+    /// Portal เก็บเฉพาะลิงก์ (เช่น SharePoint / OneDrive) ไม่เก็บไฟล์
+    /// </summary>
+    public static WorkflowResult NormalizeLinks(IEnumerable<string>? links, out List<string> normalized)
     {
+        normalized = (links ?? []).Select(l => l?.Trim() ?? "").Where(l => l.Length > 0).Distinct().ToList();
+        if (normalized.Count > MaxReviewLinks)
+            return WorkflowResult.Fail($"Add up to {MaxReviewLinks} links");
+        foreach (var link in normalized)
+            if (link.Length > 2000 || !Uri.TryCreate(link, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
+                return WorkflowResult.Fail("Links must be full https:// addresses, such as a SharePoint or OneDrive link");
+        return WorkflowResult.Success;
+    }
+
+    public static List<string> SplitLinks(string? links) =>
+        string.IsNullOrWhiteSpace(links) ? [] : links.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+
+    /// <summary>IT บันทึกผลรีวิวโค้ดของรอบปัจจุบัน (บันทึกซ้ำ = แก้ผลเดิม) แนบลิงก์เอกสารประกอบได้</summary>
+    public async Task<WorkflowResult> RecordCodeReviewAsync(Application a, bool approved, string? note, string actor, IEnumerable<string>? links = null, IEnumerable<int>? resolvedCycles = null, bool resolveOnly = false)
+    {
+        if (resolveOnly && !approved) return WorkflowResult.Fail("Select a passing change review.");
         if (!approved && string.IsNullOrWhiteSpace(note))
             return WorkflowResult.Fail("Enter the changes required by IT code review");
+        var linkCheck = NormalizeLinks(links, out var cleanLinks);
+        if (!linkCheck.Ok) return linkCheck;
         if (a.Status != AppStatus.Pending)
             return WorkflowResult.Fail("This application is not awaiting review");
         if (!AppTier.RequiresCodeReview(a.ReviewTarget ?? a.Type))
             return WorkflowResult.Fail("This tier does not require IT code review");
 
+        var outstanding = await db.AppCodeReviews.Where(r => r.ApplicationId == a.Id && !r.Approved && r.ResolvedInCycle == null).ToListAsync();
+        var confirmed = (resolvedCycles ?? []).Distinct().Order().ToArray();
+        if (resolveOnly)
+        {
+            if (confirmed.Length == 0 || confirmed.Any(cycle => !outstanding.Any(r => r.ReviewCycle == cycle)))
+                return WorkflowResult.Fail("Select outstanding IT change requests. Refresh if another administrator updated them.");
+            var checkedAt = DateTime.UtcNow;
+            foreach (var change in outstanding.Where(r => confirmed.Contains(r.ReviewCycle)))
+            {
+                change.ResolvedInCycle = a.ReviewCycle;
+                change.ResolvedBy = actor;
+                change.ResolvedAt = checkedAt;
+                Log(a, LogActionType.Update, actor, $"IT change request round {change.ReviewCycle} passed in round {a.ReviewCycle} (requested by {change.ReviewerEmail}).");
+            }
+            await db.SaveChangesAsync();
+            return WorkflowResult.Success;
+        }
+        if (approved && !confirmed.SequenceEqual(outstanding.Select(r => r.ReviewCycle).Order()))
+            return WorkflowResult.Fail("Confirm every outstanding IT change request before passing the review. Refresh if another administrator updated the request.");
+        if (approved && outstanding.Any(r => r.ReviewCycle == a.ReviewCycle))
+            return WorkflowResult.Fail("Resubmit the changes in a new review round to preserve the original IT change request.");
+
         var review = await db.AppCodeReviews.FirstOrDefaultAsync(r => r.ApplicationId == a.Id && r.ReviewCycle == a.ReviewCycle);
+        if (review?.Approved == true)
+            return WorkflowResult.Fail("Withdraw the current IT approval before recording a new decision.");
         if (review is null)
         {
             review = new AppCodeReview { ApplicationId = a.Id, ReviewCycle = a.ReviewCycle };
@@ -163,8 +258,18 @@ public class ApplicationWorkflow(PortalDbContext db)
         }
         review.Approved = approved;
         review.Note = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
+        review.Links = cleanLinks.Count == 0 ? null : string.Join("\n", cleanLinks);
         review.ReviewerEmail = actor;
         review.ReviewedAt = DateTime.UtcNow;
+
+        if (approved)
+            foreach (var change in outstanding)
+            {
+                change.ResolvedInCycle = a.ReviewCycle;
+                change.ResolvedBy = actor;
+                change.ResolvedAt = review.ReviewedAt;
+                Log(a, LogActionType.Update, actor, $"IT change request round {change.ReviewCycle} passed in round {a.ReviewCycle} (requested by {change.ReviewerEmail}).");
+            }
 
         Log(a, LogActionType.Update, actor, approved ? "IT code review: ผ่าน" : $"IT code review: ไม่ผ่าน{(review.Note is null ? "" : $" — {review.Note}")}");
         await db.SaveChangesAsync();
@@ -172,6 +277,57 @@ public class ApplicationWorkflow(PortalDbContext db)
         if (!approved && a.DevelopmentJson is not null) return await RejectAsync(a, actor);
         if (approved && await TryCompleteReviewAsync(a, actor))
             await db.SaveChangesAsync();
+        return WorkflowResult.Success;
+    }
+
+    /// <summary>IT ถอนผล code review ของรอบปัจจุบัน — กลับเป็น "รอรีวิว" แล้วบันทึกผลใหม่ได้</summary>
+    public async Task<WorkflowResult> WithdrawCodeReviewAsync(Application a, string actor)
+    {
+        if (a.Status != AppStatus.Pending)
+            return WorkflowResult.Fail("This application is not awaiting review");
+        var review = await db.AppCodeReviews.FirstOrDefaultAsync(r => r.ApplicationId == a.Id && r.ReviewCycle == a.ReviewCycle);
+        if (review is null)
+            return WorkflowResult.Fail("There is no IT code review to withdraw in this review cycle");
+
+        if (!review.Approved)
+            return WorkflowResult.Fail("Change requests are retained as history. Submit a new review round after correcting the changes.");
+
+        // Item-level passes are independent of the overall IT approval.
+        db.AppCodeReviews.Remove(review);
+        Log(a, LogActionType.Update, actor, review.Approved ? "IT code review: ถอนผลผ่าน กลับเป็นรอรีวิว" : "IT code review: ถอนผลขอแก้ไข กลับเป็นรอรีวิว");
+        await db.SaveChangesAsync();
+        return WorkflowResult.Success;
+    }
+
+    public async Task<WorkflowResult> AdvanceDeploymentAsync(Application app, string stage, string actor)
+    {
+        var state = DevelopmentProcess.Read(app);
+        if (app.Status != AppStatus.Active || state is null)
+            return WorkflowResult.Fail("The request must be approved before deployment.");
+        var now = DateTime.UtcNow;
+        if (stage == "deployed" && state.Stage == "awaiting-deployment")
+            state = state with { Stage = "deployed", DeployedBy = actor, DeployedAt = now };
+        else if (stage == "live" && state.Stage == "deployed")
+            state = state with { Stage = "live", LiveBy = actor, LiveAt = now };
+        else return WorkflowResult.Fail("Refresh the request and follow Awaiting deployment, Deployed, then Go live.");
+        if (stage == "live" && state.ParentApplicationId is int parentId)
+        {
+            var parent = await db.Applications.FindAsync(parentId);
+            var previous = parent is null ? null : DevelopmentProcess.Read(parent);
+            if (parent?.Status != AppStatus.Active || previous?.Stage != "live" || previous.PendingUpdateId != app.Id)
+                return WorkflowResult.Fail("The live application is unavailable or this update is no longer current.");
+            var release = new ReleaseRecord(app.Id, state.Version, state.ChangeSummary, state.Branch, state.Commit,
+                state.DeployedBy, state.DeployedAt, state.LiveBy, state.LiveAt);
+            DevelopmentProcess.Write(parent, previous with { Stage = "live", Version = state.Version, ChangeSummary = state.ChangeSummary,
+                Branch = state.Branch, Commit = state.Commit, DeployedBy = state.DeployedBy, DeployedAt = state.DeployedAt,
+                LiveBy = state.LiveBy, LiveAt = state.LiveAt, PendingUpdateId = null, Releases = [.. previous.Releases ?? [], release] });
+            parent.UpdatedAt = now;
+            Log(parent, LogActionType.Update, actor, $"Update {state.Version} is live (request #{app.Id}).");
+        }
+        DevelopmentProcess.Write(app, state);
+        app.UpdatedAt = now;
+        Log(app, LogActionType.Update, actor, stage == "live" ? "Application is now live." : "Deployment completed. Awaiting go live.");
+        await db.SaveChangesAsync();
         return WorkflowResult.Success;
     }
 
@@ -211,7 +367,7 @@ public class ApplicationWorkflow(PortalDbContext db)
 
         a.Status = AppStatus.Active;
         a.UpdatedAt = DateTime.UtcNow;
-        if (AppTier.CanUseApis(a.Type) && (a.DevelopmentJson is null || HasApis(a)))
+        if (DevelopmentProcess.Read(a)?.ParentApplicationId == null && AppTier.CanUseApis(a.Type) && (a.DevelopmentJson is null || HasApis(a)))
         {
             await EnsureCredentialAsync(a, CredEnv.Sandbox);
             await EnsureCredentialAsync(a, CredEnv.Production);
@@ -230,9 +386,16 @@ public class ApplicationWorkflow(PortalDbContext db)
         if (a.Status != AppStatus.Pending) return false;
 
         var target = a.ReviewTarget ?? a.Type;
-        var need = AppTier.RequiredVotes(target);
-        var votes = need == 0 ? 0 : await db.AppVotes.CountAsync(v =>
-            v.ApplicationId == a.Id && v.ReviewCycle == a.ReviewCycle && v.Approved && v.ActorEmail != null && v.DecidedAt != null);
+        var need = AppTier.RequiredVotes(target, a.CommitteeSize);
+        var votes = 0;
+        if (need > 0)
+        {
+            // นับเฉพาะเสียงของคนที่ยังเป็นกรรมการของ App นี้อยู่
+            var reviewerIds = await db.AppReviewers.Where(r => r.ApplicationId == a.Id).Select(r => r.UserId).ToListAsync();
+            votes = await db.AppVotes.CountAsync(v =>
+                v.ApplicationId == a.Id && v.ReviewCycle == a.ReviewCycle && v.Approved && v.ActorEmail != null && v.DecidedAt != null
+                && reviewerIds.Contains(v.ReviewerUserId));
+        }
         if (votes < need) return false;
 
         if (AppTier.RequiresCodeReview(target) && !await db.AppCodeReviews.AnyAsync(r =>
@@ -245,11 +408,13 @@ public class ApplicationWorkflow(PortalDbContext db)
         a.UpdatedAt = DateTime.UtcNow;
 
         string note;
-        if (AppTier.CanUseApis(target) && a.DevelopmentJson is null)
+        if (DevelopmentProcess.Read(a)?.ParentApplicationId != null)
+            note = "System update approved for deployment. Existing live application and credentials remain unchanged.";
+        else if (AppTier.CanUseApis(target) && a.DevelopmentJson is null)
         {
             await EnsureCredentialAsync(a, CredEnv.Sandbox);
             await EnsureCredentialAsync(a, CredEnv.Production);
-            note = $"อนุมัติระดับ {TierLabel(target)}: กรรมการ {votes}/3 เสียง และ IT รีวิวโค้ดผ่าน — ออก credential ให้อัตโนมัติ";
+            note = $"อนุมัติระดับ {TierLabel(target)}: กรรมการ {votes}/{need} เสียง และ IT รีวิวโค้ดผ่าน — ออก credential ให้อัตโนมัติ";
         }
         else if (!AppTier.CanUseApis(target))
         {

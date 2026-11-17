@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MGT Hub</title>
-    <meta name="description" content="MGT Hub — Internal API portal for Megachem employees" />
+    <title>MGT Portal</title>
+    <meta name="description" content="MGT Portal — Internal API portal for Megachem employees" />
     <link rel="icon" href="/favicon.ico" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -16,6 +16,10 @@
       // ตั้งธีมก่อน React โหลด เพื่อไม่ให้หน้าจอกระพริบจากสว่างเป็นมืด
       (function () {
         try {
+          if (/^\/(?:login\/*)?$/i.test(window.location.pathname)) {
+            document.documentElement.setAttribute("data-theme", "dark");
+            return;
+          }
           var saved = localStorage.getItem("mgt_theme");
           var theme =
             saved === "light" || saved === "dark"

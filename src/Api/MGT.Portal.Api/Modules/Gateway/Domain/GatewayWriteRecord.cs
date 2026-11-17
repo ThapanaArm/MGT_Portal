@@ -19,6 +19,7 @@ public class GatewayWriteRecord
 {
     public long Id { get; set; }
     public int ApplicationId { get; set; }
+    public int? RequestUserId { get; set; }
     public string ApplicationName { get; set; } = "";
     public string Env { get; set; } = "";
     public string Operation { get; set; } = "";

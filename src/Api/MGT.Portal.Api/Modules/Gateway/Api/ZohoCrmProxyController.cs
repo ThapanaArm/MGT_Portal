@@ -17,6 +17,7 @@ namespace MGT.Portal.Api.Modules.Gateway;
 [ApiController]
 [Route(RoutePrefix)]
 [AllowAnonymous]
+[ServiceFilter(typeof(GatewayUserPermissionFilter))]
 public class ZohoCrmProxyController(
     GatewayAuth auth, GatewayIdempotency idempotency, ZohoCrmClient zoho, IConfiguration config,
     ILogger<ZohoCrmProxyController> log) : ControllerBase

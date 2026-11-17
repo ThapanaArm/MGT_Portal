@@ -24,7 +24,7 @@ public sealed record WriteStart(WriteStartKind Kind, GatewayWriteRecord Record);
 /// Idempotency-Key + audit log ของคำขอเขียนผ่าน Gateway (ตาราง GatewayWriteRecords)
 /// แอปส่ง key ใหม่ (เช่น UUID) ทุกครั้งที่เป็นคำขอใหม่ ถ้าเน็ตหลุดแล้วส่งซ้ำด้วย key เดิม จะได้ผลเดิม ไม่สร้าง SO ซ้ำ
 /// </summary>
-public class GatewayIdempotency(PortalDbContext db)
+public class GatewayIdempotency(PortalDbContext db, IHttpContextAccessor? httpContext = null)
 {
     public const string Header = "Idempotency-Key";
     public const int MaxKeyLength = 100;
@@ -40,12 +40,16 @@ public class GatewayIdempotency(PortalDbContext db)
     public async Task<WriteStart> BeginAsync(
         GatewayCaller caller, string operation, string key, string? salesOrder, string hash, CancellationToken ct)
     {
+        var actor = httpContext?.HttpContext?.Items[GatewayUserPermissionFilter.UserIdItem] as int?;
+        // A replay must belong to the same person as the original request.
+        if (actor is not null) hash = Hash(operation, salesOrder, new { actor, hash });
         var existing = await FindAsync(caller, key, ct);
         if (existing is not null) return Classify(existing, hash);
 
         var record = new GatewayWriteRecord
         {
             ApplicationId = caller.ApplicationId,
+            RequestUserId = actor,
             ApplicationName = caller.ApplicationName,
             Env = caller.Env,
             Operation = operation,

@@ -8,7 +8,7 @@ The running portal and its Design System explorer share the tokens in `src/Web/s
 - Inputs use an 8px radius, standard buttons 11px, cards 12px, feature panels 16px. The sidebar stays square and flush to the viewport.
 - Standard buttons and inputs are 42px high; small buttons are 32px. Use 16/24/32px spacing between related content, sections, and large regions.
 - Navigation and feedback may use subtle glass. Tables, forms, and content cards use opaque surfaces and thin borders.
-- Keep sidebar groups collapsible with a simple label and chevron. No connecting tree lines. The collapsed rail uses the logo as the expand control.
+- Sidebar groups use an icon, label, and chevron. Indented links share a subtle vertical guide and the group highlights the current section. Web APIs groups the catalog, API categories, and getting-started guide. The collapsed rail uses the logo as the expand control.
 - Breadcrumbs and user controls share one contextual bar. Content fills the available workspace width.
 - The authentication screen follows the approved dark split-panel pattern; its styles are isolated in `features/auth/auth.css`.
 - Update the explorer whenever a shared component changes. Button examples use the actual `Btn` component; token samples show current theme values.

@@ -18,6 +18,6 @@ export const EXAMPLE_PAGES = [
  {path:"contact", title:"Contact", description:"Contact details and message form", icon:"fa:comment"},
  {path:"forgot-password", title:"Account recovery", description:"Account recovery and confirmation", icon:"fa:lock"},
  {path:"help", title:"Help center", description:"Frequently asked questions and support contacts", icon:"fa:comment"},
- {path:"loading", title:"Loading screen", description:"Full-screen loader with the MGT Hub mark, progress steps, slow-network hint, error and ready states", icon:"fa:rotate"},
+ {path:"loading", title:"Loading screen", description:"Full-screen loader with the MGT Portal mark, progress steps, slow-network hint, error and ready states", icon:"fa:rotate"},
  {path:"not-found", title:"404", description:"Page not found with a link back home", icon:"fa:search"},
 ] as const;

@@ -1,151 +1,91 @@
-import { AppIcon } from "@/shared/components/Icon";
-import { Input,Select } from "@/shared/components/design-system";
 import { useEffect, useState } from "react";
-import { api } from "@/shared/lib/api";
+import { AppIcon } from "@/shared/components/Icon";
+import { Badge, Dialog, Field, Input, Select, Skeleton } from "@/shared/components/design-system";
+import { Alert } from "@/shared/components/feedback";
+import { api, ApiError } from "@/shared/lib/api";
 import { useAuth } from "@/shared/lib/auth";
 import { useToast } from "@/shared/lib/toast";
-import { useLocale } from "@/shared/lib/locale-context";
-import { Btn, EmptyRow, EnvChip, Panel, ScopeTag } from "@/shared/components/ui";
-import type { CategoryDto, CredEnv, EndpointDto, TokenDto } from "@/shared/lib/types";
+import { Btn, EmptyState, Panel } from "@/shared/components/ui";
+import type { UserTokenDto } from "@/shared/lib/types";
 
+const SCOPE_TEXT: Record<string, string> = { all: "All data", team: "Your department's data", salegroup: "Your sale group's data", self: "Only your own data" };
+const day = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-GB") : "Never");
+
+/**
+ * User tokens: apps send one with their own Token ID/Secret (header X-User-Token),
+ * and the Gateway returns only the data this person may see.
+ */
 export default function TokensPage() {
-  const { user, hasScope } = useAuth();
-  const { t } = useLocale();
+  const { user } = useAuth();
   const toast = useToast();
-  const [tokens, setTokens] = useState<TokenDto[]>([]);
-  const [allScopes, setAllScopes] = useState<string[]>([]);
-  const [checked, setChecked] = useState<Set<string>>(new Set());
-  const [env, setEnv] = useState<CredEnv>("sandbox");
-  const [expiry, setExpiry] = useState("90 days");
+  const [tokens, setTokens] = useState<UserTokenDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [name, setName] = useState("");
+  const [days, setDays] = useState("90");
+  const [busy, setBusy] = useState(false);
+  const [created, setCreated] = useState<string | null>(null);
+  const [revoking, setRevoking] = useState<UserTokenDto | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
-  const load = () => api.get<TokenDto[]>("/api/tokens").then(setTokens);
+  useEffect(() => { let active = true; api.get<UserTokenDto[]>("/api/me/user-tokens").then(value => { if (active) { setTokens(value); setError(false); } }).catch(() => { if (active) setError(true); }).finally(() => { if (active) setLoading(false); }); return () => { active = false; }; }, [attempt]);
+  const reload = () => setAttempt(value => value + 1);
 
-  useEffect(() => {
-    load();
-    api.get<CategoryDto[]>("/api/categories").then(async (cats) => {
-      const all = await Promise.all(cats.map((c) => api.get<EndpointDto[]>(`/api/categories/${c.key}/endpoints`)));
-      const scopes = Array.from(new Set(all.flat().map((e) => e.scope)));
-      setAllScopes(scopes);
-    });
-  }, []);
+  async function create(event: React.FormEvent) {
+    event.preventDefault(); setBusy(true);
+    try {
+      const result = await api.post<{ token: UserTokenDto; value: string }>("/api/me/user-tokens", { name: name.trim(), days: Number(days) });
+      setCreated(result.value); setName(""); reload();
+    } catch (err) { toast({ tone: "danger", message: err instanceof ApiError ? err.message : "Couldn't create the token" }); }
+    finally { setBusy(false); }
+  }
+  async function revoke() {
+    if (!revoking) return; setBusy(true);
+    try { await api.del(`/api/me/user-tokens/${revoking.id}`); toast({ tone: "success", message: "Token revoked" }); setRevoking(null); reload(); }
+    catch (err) { toast({ tone: "danger", message: err instanceof ApiError ? err.message : "Couldn't revoke the token" }); }
+    finally { setBusy(false); }
+  }
+  async function copy(text: string) {
+    try { await navigator.clipboard.writeText(text); toast({ tone: "success", message: "Copied" }); } catch { toast({ tone: "danger", message: "Copy it manually" }); }
+  }
 
-  const toggle = (s: string) =>
-    setChecked((prev) => {
-      const next = new Set(prev);
-      if (next.has(s)) next.delete(s);
-      else next.add(s);
-      return next;
-    });
+  return <div>
+    <div className="rv-heading"><h1>My tokens</h1></div>
+    <p className="rv-muted mb-4">Apps send your token with each request, so you only get data you're allowed to see: <strong>{SCOPE_TEXT[user?.dataScope ?? "self"] ?? "Only your own data"}</strong>.</p>
 
-  const generate = async () => {
-    if (checked.size === 0) {
-      toast({ tone: "warning", message: "Select at least one scope" });
-      return;
-    }
-    await api.post("/api/tokens", { scopes: Array.from(checked), env, expiry });
-    toast(env === "production" ? "Production token created. Store it securely." : "Token created");
-    setChecked(new Set());
-    load();
-  };
+    <Panel title="New token">
+      <form className="token-form" onSubmit={create}>
+        <Field>Name<Input required maxLength={100} value={name} onChange={event => setName(event.target.value)} placeholder="Sales dashboard on my laptop" /></Field>
+        <Field>Expires in<Select value={days} onChange={event => setDays(event.target.value)}>{[30, 90, 180, 365].map(value => <option key={value} value={value}>{value} days</option>)}</Select></Field>
+        <Btn type="submit" variant="primary" loading={busy} startIcon={<AppIcon value="fa:plus" />}>Create token</Btn>
+      </form>
+      {created && <Alert tone="warning" title="Copy your token now. You won't see it again." onDismiss={() => setCreated(null)}>
+        <div className="token-value"><code>{created}</code><Btn size="sm" onClick={() => void copy(created)}>Copy</Btn></div>
+      </Alert>}
+    </Panel>
 
-  const revoke = async (id: number) => {
-    await api.del(`/api/tokens/${id}`);
-    toast({ tone: "success", message: "Token revoked" });
-    load();
-  };
+    {loading ? <Skeleton rows={3} /> : error ? <Alert tone="danger" title="Couldn't load your tokens"><Btn onClick={reload}>Try again</Btn></Alert>
+      : !tokens.length ? <EmptyState title="No tokens yet" description="Create a token, then give it to the app you use." />
+      : <div className="portal-panel app-list" role="list" aria-label="Your tokens">
+        <div className="app-list-head token-row" aria-hidden="true"><span>Token</span><span>Expires</span><span>Last used</span><span>Status</span><span /></div>
+        {tokens.map(token => <div key={token.id} role="listitem" className="app-list-row token-row">
+          <span className="app-list-app"><span><strong>{token.name}</strong><small><code>{token.prefix}…</code> · created {day(token.createdAt)}</small></span></span>
+          <span className="app-list-date">{day(token.expiresAt)}</span>
+          <span className="app-list-date">{day(token.lastUsedAt)}</span>
+          <span><Badge tone={token.status === "active" ? "success" : "neutral"}>{token.status === "active" ? "Active" : token.status === "expired" ? "Expired" : "Revoked"}</Badge></span>
+          <span>{token.status === "active" && <Btn size="sm" variant="ghost" danger onClick={() => setRevoking(token)}>Revoke</Btn>}</span>
+        </div>)}
+      </div>}
 
-  const copy = (v: string) => {
-    navigator.clipboard?.writeText(v).catch(() => {});
-    toast({ tone: "success", message: "Token copied" });
-  };
+    <details className="rv-help"><summary>How apps use it</summary>
+      <pre className="token-snippet">{`X-Token-Id: <app Token ID>
+X-Token-Secret: <app Token Secret>
+X-User-Token: mgtu_...   ← your token`}</pre>
+    </details>
 
-  return (
-    <div>
-      <div className="portal-page-heading mb-3.5">
-        <div className="flex items-center gap-2 text-[13.5px] uppercase tracking-wide text-ink-faint font-bold mb-1.5">
-          <span className="w-2 h-2 rounded-sm bg-teal" /> My Account
-        </div>
-        <h1 className="text-[26px] font-bold">My Tokens</h1>
-        <p className="text-ink-dim text-[16px] mt-1.5 max-w-[62ch] leading-relaxed">
-          Create and manage tokens for Megachem APIs. Available scopes are restricted to your role ({user ? t(`roles.${user.roleKey}`) : ""})
-        </p>
-      </div>
-
-      <div className="portal-settings-grid">
-      <Panel title="Create token" hint="Choose scopes and an environment. Disabled scopes are not available to your role.">
-        <div className="grid grid-cols-2 gap-2 mb-3">
-          {(["sandbox", "production"] as const).map((e) => (
-            <label key={e} className="flex items-center gap-2 border border-line-strong rounded-lg px-2.5 py-2 text-[15px] cursor-pointer">
-              <Input type="radio" name="env" checked={env === e} onChange={() => setEnv(e)} className="accent-teal" />
-              {e === "sandbox" ? "Developer (Sandbox)" : "Production"}
-            </label>
-          ))}
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
-          {allScopes.map((s) => {
-            const ok = hasScope(s);
-            return (
-              <label key={s} className={`flex items-center gap-2 border border-line-strong rounded-lg px-2.5 py-2 text-[15px] ${ok ? "cursor-pointer" : "opacity-45 cursor-not-allowed"}`}>
-                <Input type="checkbox" disabled={!ok} checked={checked.has(s)} onChange={() => toggle(s)} className="accent-teal" />
-                <code className="font-mono text-[14px]">{s}</code>
-              </label>
-            );
-          })}
-        </div>
-        <div className="flex items-center gap-2.5 mb-3.5 flex-wrap">
-          <label className="text-[15px] text-ink-dim">Expiration</label>
-          <Select value={expiry} onChange={(e) => setExpiry(e.target.value)} className="border border-line-strong bg-paper rounded-lg px-2.5 py-2 text-[15px]">
-            <option>30 days</option>
-            <option>90 days</option>
-            <option>Never expires</option>
-          </Select>
-        </div>
-        <Btn variant="primary" onClick={generate}><AppIcon value="fa:plus"/> Create token</Btn>
-      </Panel>
-
-      <Panel title="Active tokens" hint={`${tokens.length} token`}>
-        {tokens.length ? (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-[15px]">
-              <thead>
-                <tr>
-                  {["Token", "Environment", "Scope", "Created", "Expires in", ""].map((h) => (
-                    <th key={h} className="text-left text-ink-faint text-[13px] uppercase tracking-wide font-bold pr-2.5 pb-2 border-b border-line whitespace-nowrap">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {tokens.map((t) => (
-                  <tr key={t.id}>
-                    <td className="py-2.5 pr-2.5 border-b border-line"><code className="font-mono bg-surface-2 rounded-md px-2 py-0.5 text-[14px]">{t.value}</code></td>
-                    <td className="py-2.5 pr-2.5 border-b border-line"><EnvChip env={t.env} /></td>
-                    <td className="py-2.5 pr-2.5 border-b border-line">
-                      <div className="flex gap-1 flex-wrap">
-                        {t.scopes.map((s) => (
-                          <ScopeTag key={s}>{s}</ScopeTag>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="py-2.5 pr-2.5 border-b border-line whitespace-nowrap">{t.createdAt.slice(0, 10)}</td>
-                    <td className="py-2.5 pr-2.5 border-b border-line whitespace-nowrap">{t.expiry}</td>
-                    <td className="py-2.5 border-b border-line">
-                      <div className="flex gap-1.5">
-                        <Btn size="sm" onClick={() => copy(t.value)}>Copy</Btn>
-                        <Btn size="sm" danger onClick={() => revoke(t.id)}>Revoke</Btn>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <EmptyRow>No tokens yet. Create your first token above.</EmptyRow>
-        )}
-      </Panel>
-      </div>
-    </div>
-  );
+    <Dialog open={!!revoking} confirmation tone="danger" title="Revoke this token?" onClose={() => { if (!busy) setRevoking(null); }}>
+      <p>Apps using “{revoking?.name}” stop working right away.</p>
+      <div className="example-form-footer mt-6"><Btn disabled={busy} onClick={() => setRevoking(null)}>Cancel</Btn><Btn variant="primary" danger loading={busy} onClick={() => void revoke()}>Revoke</Btn></div>
+    </Dialog>
+  </div>;
 }

@@ -4,7 +4,7 @@ import "./loading-screen.css";
 
 export type LoadingStep = { label: string; state: "done" | "current" | "pending" };
 
-/** MGT Hub app icon (logo A — "Portal"): an arch with the green dot entering it. */
+/** MGT Portal app icon (logo A — "Portal"): an arch with the green dot entering it. */
 export function HubMark({ className = "" }: { className?: string }) {
   const id = useId().replace(/:/g, "");
   return (
@@ -22,7 +22,7 @@ export function HubMark({ className = "" }: { className?: string }) {
 }
 
 /**
- * Loading state from the MGT Design System: the MGT Hub mark inside a spinning ring,
+ * Loading state from the MGT Design System: the MGT Portal mark inside a spinning ring,
  * a message that says what the system is doing, and optional progress steps.
  * - fullScreen: covers the viewport (app start, route loading). Otherwise it fills its container.
  * - delay: wait this many ms before appearing, so very fast loads do not flash a spinner.

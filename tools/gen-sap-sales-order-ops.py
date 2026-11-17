@@ -59,8 +59,9 @@ if len(sys.argv) > 3:
     comps = g.setdefault('components', {})
     comps['securitySchemes'] = {
         'TokenId': {'type': 'apiKey', 'in': 'header', 'name': 'X-Token-Id'},
-        'TokenSecret': {'type': 'apiKey', 'in': 'header', 'name': 'X-Token-Secret'}}
-    g['security'] = [{'TokenId': [], 'TokenSecret': []}]
+        'TokenSecret': {'type': 'apiKey', 'in': 'header', 'name': 'X-Token-Secret'},
+        'UserToken': {'type': 'apiKey', 'in': 'header', 'name': 'X-User-Token', 'description': 'Personal token; per-API R/CUD permission and row ownership are checked on every call.'}}
+    g['security'] = [{'TokenId': [], 'TokenSecret': [], 'UserToken': []}]
     comps.setdefault('parameters', {})['IdempotencyKey'] = {
         'name': 'Idempotency-Key', 'in': 'header', 'required': True,
         'description': 'UUID ใหม่ทุกคำขอ ส่งค่าเดิมเมื่อ retry', 'schema': {'type': 'string', 'maxLength': 100}}

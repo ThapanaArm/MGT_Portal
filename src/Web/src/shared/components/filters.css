@@ -14,3 +14,7 @@
 .mgt-filter-toolbar > .mgt-filter-search > .mgt-input { padding-block:10px; line-height:22px; }
 @media(max-width:600px) { .mgt-filter-toolbar > label { flex:1; min-width:140px; }.mgt-filter-toolbar > label > select.mgt-input { width:100%; min-width:0; } }
 @media(max-width:900px) { .mgt-filter-toolbar > .mgt-filter-search { flex-basis:100%; min-width:0; }.mgt-filter-toolbar > label { flex:1; min-width:140px; }.mgt-filter-toolbar > label > select.mgt-input { width:100%; min-width:0; } }
+/* Fallback for browsers without the Popover API: lift the toolbar context above table headers. */
+.mgt-filter-toolbar:has(.example-filter-popover-panel){position:relative;z-index:30}
+.example-filter-popover-panel::backdrop{background:transparent;pointer-events:none}
+.example-filter-popover-panel{color:var(--ink)}

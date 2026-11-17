@@ -72,6 +72,13 @@ public static class SwaggerSetup
 
                 if (path.StartsWith(GatewayPrefix, StringComparison.OrdinalIgnoreCase))
                 {
+                    op.Parameters ??= [];
+                    op.Parameters.Add(new OpenApiParameter
+                    {
+                        Name = "X-User-Token", In = ParameterLocation.Header, Required = true,
+                        Description = "Personal user token. API permissions and row scopes are checked for this user on every call.",
+                        Schema = new OpenApiSchema { Type = JsonSchemaType.String },
+                    });
                     // ต้องส่งทั้ง 2 header พร้อมกัน → อยู่ใน requirement เดียวกัน
                     op.Security = [new OpenApiSecurityRequirement
                     {

@@ -53,7 +53,7 @@ export default function PortalLayout() {
     if (!loading && !user) navigate("/login", { replace: true });
   }, [loading, user, navigate]);
 
-  if (loading || !user) return <LoadingScreen fullScreen delay={150} message="Loading MGT Hub" detail="Checking your sign-in..." />;
+  if (loading || !user) return <LoadingScreen fullScreen delay={150} message="Loading MGT Portal" detail="Checking your sign-in..." />;
 
   return (
     <EnvProvider>
@@ -76,7 +76,8 @@ export default function PortalLayout() {
               </button>}
               <Breadcrumbs />
               <TopBar />
-            </ContextBar><Outlet /></div>
+            </ContextBar>
+            <Outlet /></div>
           </main>
         </div>
       </AudienceProvider>

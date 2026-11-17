@@ -13,6 +13,8 @@ export default function Breadcrumbs() {
     "design-preview": "Example website", "design-system": t("nav.designSystem"), explore: t("nav.exploreData"),
     catalog: t("nav.apiCategories"), "my-apps": t("nav.myApp"), tokens: t("nav.myTokens"),
     admin: t("nav.adminSection"), apis: t("nav.manageApis"), review: t("nav.reviewApplications"), access: t("nav.accessControl"),
+    audit: "Audit & work summary",
+    users: "User management",
     sales: "Sales", purchase: "Purchasing", inventory: "Inventory", finance: "Finance", hr: "Human Resources",
   };
   const hasParent = parts.length > 1 && ["ecosystem", "my-apps"].includes(parts[0]);

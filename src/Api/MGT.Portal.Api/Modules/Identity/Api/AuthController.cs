@@ -33,9 +33,11 @@ public class AuthController(PortalDbContext db, JwtService jwt, IUserScopeProvid
     }
 
     private async Task<UserDto> ToDto(User user) => new(
-        user.Id, user.Email, user.DisplayName, user.Role.Key, user.Role.Name,
+        user.Id, user.Email, string.IsNullOrWhiteSpace(user.DisplayName) ? user.Email : user.DisplayName, user.Role.Key, user.Role.Name,
         await EffectiveScopes(user),
-        user.Level, user.EffectiveDataScope, user.Team?.Name);
+        user.Level, user.EffectiveDataScope, user.Team?.Name,
+        await db.UserApiPermissions.Where(p => p.UserId == user.Id)
+            .ToDictionaryAsync(p => p.ResourceKey, p => new ApiScopeOverrideDto(p.ReadScope, p.WriteScope)));
 
     /// <summary>Role scopes บวกกับ scope ที่ module อื่นให้เพิ่ม (ตอนนี้คือ AccessGrant ที่ยังไม่หมดอายุและยังไม่ถูกยกเลิก)</summary>
     private async Task<string[]> EffectiveScopes(User user)

@@ -45,6 +45,8 @@ const legacyIcons: Record<string, string> = {
   "🗓": "calendar", "💰": "credit-card", "👥": "users", "🏠": "home", "⚠": "warning",
 };
 export function iconKey(value: string) {
+  // Any free Solid icon pasted from fontawesome.com (see fa-code.ts) — not one of the keys above.
+  if (value.startsWith("fa-solid:")) return value;
   return value.startsWith("fa:") ? value.slice(3) : legacyIcons[value.replace(/\uFE0F/g, "")] ?? "box";
 }
 export function resolveIcon(value: string) {

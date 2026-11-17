@@ -24,6 +24,8 @@
   <ItemGroup>
     <!-- OpenAPI ของ SAP Sales Order ผ่าน Gateway (สร้างด้วย tools/gen-sap-sales-order-ops.py) เสิร์ฟที่ /api/v1/specs/sales-order-sap.json -->
     <EmbeddedResource Include="Modules\Gateway\Specs\sales-order-sap.json" LogicalName="MGT.Portal.Api.Gateway.Specs.sales-order-sap.json" />
+    <!-- การ์ด API Catalog หมวด Purchase (แสดงอย่างเดียว) — ใส่ตอน Start เฉพาะใบที่ยังไม่มี (CatalogSeed) -->
+    <EmbeddedResource Include="Modules\Catalog\Seed\purchase-catalog.json" LogicalName="MGT.Portal.Api.Catalog.Seed.purchase-catalog.json" />
   </ItemGroup>
 
 </Project>

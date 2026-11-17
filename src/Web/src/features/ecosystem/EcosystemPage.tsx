@@ -1,5 +1,12 @@
 import { Input, Select, Skeleton } from "@/shared/components/design-system";
-import ApiIllustration from "@/shared/components/ApiIllustration";
+import AppsIllustration from "@/shared/components/AppsIllustration";
+import OrbitIllustration from "@/shared/components/OrbitIllustration";
+
+/** Shown on the light-theme orbit until there are at least three approved apps. */
+const SAMPLE_APPS = [
+  { icon: "fa:chart-column", label: "Reports" }, { icon: "fa:truck", label: "Shipping" }, { icon: "fa:flask", label: "Lab" },
+  { icon: "fa:users", label: "People" }, { icon: "fa:warehouse", label: "Inventory" },
+];
 import { AppIcon } from "@/shared/components/IconPicker";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
@@ -8,6 +15,7 @@ import { useLocale } from "@/shared/lib/locale-context";
 import { Btn, EmptyState, ScopeTag, TypeChip } from "@/shared/components/ui";
 import { Alert } from "@/shared/components/feedback";
 import { AppAvatar } from "@/shared/components/MediaPickers";
+import { Carousel } from "@/shared/components/Carousel";
 import type { AppSummaryDto, CategoryDto } from "@/shared/lib/types";
 
 export default function EcosystemPage() {
@@ -37,15 +45,19 @@ export default function EcosystemPage() {
       .sort((a, b) => sort === "name" ? a.name.localeCompare(b.name) : b.updatedAt.localeCompare(a.updatedAt));
   }, [apps, cat, query, sort]);
   return <div>
-    <section className="ecosystem-hero ecosystem-welcome relative overflow-hidden text-white" style={{ background: "radial-gradient(circle at 88% 8%, rgba(76,148,229,.4), transparent 23rem), linear-gradient(135deg, #06131f, #0b2947 58%, #123b61)" }}>
+    <section className="ecosystem-hero ecosystem-welcome relative overflow-hidden">
       <div className="relative max-w-[620px]">
         <span className="workspace-kicker"><AppIcon value="fa:globe" /> Connected by MGT</span>
-        <h1>{t("ecosystem.title")}</h1><p className="text-[#b9cadd]">{t("ecosystem.desc")}</p>
+        <h1>{t("ecosystem.title")}</h1><p>{t("ecosystem.desc")}</p>
         <div className="flex gap-3 flex-wrap mt-6">
           <button onClick={() => navigate("/my-apps?new=1")} className="bg-[#89c64a] text-[#10210b] rounded-lg px-4 py-2.5 font-bold transition hover:-translate-y-px">{t("ecosystem.registerApp")} <span aria-hidden="true"><AppIcon value="fa:external-link"/></span></button>
-          <button onClick={() => navigate("/getting-started")} className="bg-white/10 border border-white/28 text-white rounded-lg px-4 py-2.5 font-bold hover:bg-white/18 transition">{t("ecosystem.requestAccess")}</button>
         </div>
-      </div><ApiIllustration className="ecosystem-illustration" />
+      </div>
+      {/* Dark theme: app launcher illustration · Light theme: apps orbiting the MGT hub */}
+      <div className="hero-art">
+        <AppsIllustration className="ecosystem-illustration hero-art-dark" count={loading || error ? undefined : apps.length} />
+        <OrbitIllustration className="hero-art-light" hub="fa:globe" compact items={apps.length >= 3 ? apps.map(app => ({ icon: app.icon, label: app.name })) : SAMPLE_APPS} />
+      </div>
     </section>
     {loading ? <Skeleton rows={3} /> : error ? <Alert tone="danger" title="Unable to load the application catalog"><p>Please try again to reconnect to your workspace.</p><Btn onClick={retry}>Try again</Btn></Alert> : <>
       <div className="ecosystem-stats">
@@ -53,13 +65,30 @@ export default function EcosystemPage() {
         <div className="ecosystem-stat"><AppIcon value="fa:globe" /><div><strong>{categories.length}</strong><small>API categories</small></div></div>
         <div className="ecosystem-stat"><AppIcon value="fa:code" /><div><strong>{categories.reduce((sum, category) => sum + category.endpointCount, 0)}</strong><small>API endpoints</small></div></div>
       </div>
-      {!!highlight.length && <section aria-labelledby="featured-apps">
-        <div className="workspace-section-title"><h2 id="featured-apps">{t("ecosystem.highlight")}</h2><span>Discover your next tool</span></div>
-        <div className="ecosystem-featured-grid">{highlight.map(app => <Link key={app.id} to={`/ecosystem/${app.id}`} className="ecosystem-card">
-          <div className="ecosystem-feature-art" aria-hidden="true">{app.image ? <img src={app.image} alt="" loading="lazy" /> : <AppIcon value={app.icon} />}</div>
-          <div className="ecosystem-feature-copy"><TypeChip type={app.type} /><strong>{app.name}</strong><span>{app.products.length ? categoryName(app.products[0]) : "Standalone application"} <span aria-hidden="true"><AppIcon value="fa:external-link"/></span></span></div>
-        </Link>)}</div>
-      </section>}
+      {!!highlight.length && <div className="ecosystem-highlights">
+        <div className="workspace-section-title"><h2>{t("ecosystem.highlight")}</h2></div>
+        <Carousel label={t("ecosystem.highlight")} variant="centered" slides={highlight.map(app => {
+          const category = app.products[0];
+          const card = <>
+            <div className="ecosystem-feature-art" data-category={category} aria-hidden="true">
+              <div className="ecosystem-feature-mark" data-has-logo={Boolean(app.image)}>
+                {app.image ? <img src={app.image} alt="" /> : <AppIcon value={app.icon} />}
+              </div>
+            </div>
+            <div className="ecosystem-feature-copy">
+              <TypeChip type={app.type} />
+              <strong>{app.name}</strong>
+              <span>{category ? categoryName(category) : "Standalone application"}</span>
+            </div>
+          </>;
+          return {
+            id: String(app.id),
+            title: app.name,
+            content: <Link to={`/ecosystem/${app.id}`} className="ecosystem-card">{card}</Link>,
+            preview: <div className="ecosystem-card">{card}</div>,
+          };
+        })} />
+      </div>}
       <section aria-labelledby="all-apps">
         <div className="workspace-section-title"><h2 id="all-apps">{t("ecosystem.exploreApps")}</h2><span role="status">{filtered.length} applications</span></div>
         <div className="workspace-filterbar">

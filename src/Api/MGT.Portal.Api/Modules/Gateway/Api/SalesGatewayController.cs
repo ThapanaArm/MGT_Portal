@@ -1,21 +1,25 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MGT.Portal.Api.Modules.Apps;
 
 namespace MGT.Portal.Api.Modules.Gateway;
 
 public sealed record GatewayPage<T>(List<T> Data, GatewayPageInfo Page, GatewayMeta Meta);
 public sealed record GatewayPageInfo(int Limit, int Offset, long? Total);
-public sealed record GatewayMeta(string Source, string Env);
+/// <param name="DataScope">ขอบเขตข้อมูลของผู้ใช้ที่ส่ง User token มา (all / team / salegroup / self)</param>
+public sealed record GatewayMeta(string Source, string Env, string? DataScope = null);
 
 /// <summary>
 /// API จริงของหมวด Sales ที่แอปซึ่งอนุมัติแล้วเรียกด้วย Token ID/Secret
 /// ไม่ใช้ JWT ของหน้า Portal — ตรวจสิทธิ์ด้วย GatewayAuth แทน
+/// อ่านข้อมูลต้องส่ง User token ของคนที่ใช้แอป (X-User-Token) ด้วย แล้วจะเห็นเฉพาะข้อมูลตามสิทธิ์ของคนนั้น
 /// </summary>
 [ApiController]
 [Route("api/v1/sales")]
 [AllowAnonymous]
+[ServiceFilter(typeof(GatewayUserPermissionFilter))]
 public class SalesGatewayController(
-    GatewayAuth auth, SupabaseSaleOrderClient supabase, ILogger<SalesGatewayController> log) : ControllerBase
+    GatewayAuth auth, GatewayUserContext users, SupabaseSaleOrderClient supabase, ILogger<SalesGatewayController> log) : ControllerBase
 {
     private const string Category = "sales";
     private const int MaxLimit = 500;
@@ -42,14 +46,21 @@ public class SalesGatewayController(
         var caller = who.Caller!;
         try
         {
-            var (rows, total) = await supabase.ListAsync(caller.Env,
-                new SaleOrderQuery(year, customer, productCode, category, limit, offset), ct);
+            var person = await users.ResolveAsync(Request.Headers[GatewayUserContext.Header].ToString(), supabase.OwnerPlatform, ct, "sales.order");
+            if (!person.Ok) return StatusCode(person.StatusCode, new { message = person.Error });
+            var scope = person.User!;
 
-            log.LogInformation("Gateway sales/orders: app {AppId} ({AppName}, {Env}) ได้ {Count} แถว",
-                caller.ApplicationId, caller.ApplicationName, caller.Env, rows.Count);
+            // Management เห็นทั้งหมด · Sales Manager กรองด้วย Sale group · คนอื่นกรองด้วยรหัสพนักงานที่มองเห็นได้
+            var (rows, total) = await supabase.ListAsync(caller.Env,
+                new SaleOrderQuery(year, customer, productCode, category, limit, offset,
+                    OwnerIds: scope.SeesAll || scope.SaleGroupKey is not null ? null : scope.OwnerIds,
+                    SaleGroupKey: scope.SeesAll ? null : scope.SaleGroupKey), ct);
+
+            log.LogInformation("Gateway sales/orders: app {AppId} ({AppName}, {Env}) user {UserId} ({Scope}) ได้ {Count} แถว",
+                caller.ApplicationId, caller.ApplicationName, caller.Env, scope.UserId, scope.Scope, rows.Count);
 
             return Ok(new GatewayPage<SaleOrderDto>(rows, new GatewayPageInfo(limit, offset, total),
-                new GatewayMeta("supabase", caller.Env)));
+                new GatewayMeta("supabase", caller.Env, scope.Scope)));
         }
         catch (SupabaseException ex) when (ex.NotConfigured)
         {

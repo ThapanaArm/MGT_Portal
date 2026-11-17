@@ -8,6 +8,24 @@ namespace MGT.Portal.UnitTests;
 /// <summary>Idempotency-Key ของคำขอเขียนผ่าน Gateway และการแปลงค่า OData V2 ของ SAP</summary>
 public class GatewayWriteTests
 {
+    [Fact]
+    public async Task Replay_cannot_disclose_another_users_write_response()
+    {
+        await using var db = NewDb();
+        var http = new Microsoft.AspNetCore.Http.DefaultHttpContext();
+        var accessor = new Microsoft.AspNetCore.Http.HttpContextAccessor { HttpContext = http };
+        var idempotency = new GatewayIdempotency(db, accessor);
+        var hash = GatewayIdempotency.Hash(GatewayWriteOperation.CreateSalesOrder, null, Order(1));
+        http.Items[GatewayUserPermissionFilter.UserIdItem] = 10;
+        var first = await idempotency.BeginAsync(Caller, GatewayWriteOperation.CreateSalesOrder, "shared-key", null, hash, default);
+        Assert.Equal(10, first.Record.RequestUserId);
+        await idempotency.CompleteAsync(first.Record, 201, new { salesOrder = "123" }, "123");
+        http.Items[GatewayUserPermissionFilter.UserIdItem] = 20;
+        var other = await idempotency.BeginAsync(Caller, GatewayWriteOperation.CreateSalesOrder, "shared-key", null, hash, default);
+        Assert.Equal(WriteStartKind.KeyReused, other.Kind);
+        http.Items[GatewayUserPermissionFilter.UserIdItem] = 10;
+        Assert.Equal(WriteStartKind.Replay, (await idempotency.BeginAsync(Caller, GatewayWriteOperation.CreateSalesOrder, "shared-key", null, hash, default)).Kind);
+    }
     private static readonly GatewayCaller Caller = new(7, "Sales Mobile App", CredEnv.Sandbox);
 
     private static PortalDbContext NewDb() => new(new DbContextOptionsBuilder<PortalDbContext>()

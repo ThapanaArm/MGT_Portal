@@ -5,6 +5,7 @@ import { useToast } from "@/shared/lib/toast";
 import { Btn, Panel, ScopeTag, TypeChip } from "@/shared/components/ui";
 import { AppAvatar, ShotsGallery } from "@/shared/components/MediaPickers";
 import type { AppDetailDto, CategoryDto } from "@/shared/lib/types";
+import { appDomain } from "@/shared/lib/tiers";
 
 export default function EcosystemAppPage() {
   const { id = "" } = useParams();
@@ -47,7 +48,7 @@ export default function EcosystemAppPage() {
           <Panel title="About this application"><div className="text-[15px] text-ink-dim">{a.description}</div></Panel>
           <Panel title="Subdomain">
             <div className="font-mono text-[15px] bg-surface border border-line rounded-lg px-3 py-2">
-              <code className="text-teal-strong">https://{a.subdomain}.megachem.co.th</code>
+              <code className="text-teal-strong">https://{appDomain(a.subdomain)}</code>
             </div>
           </Panel>
           <Panel title="Repository">

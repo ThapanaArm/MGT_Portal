@@ -1,6 +1,10 @@
 import { Input, Select } from "@/shared/components/design-system";
 import { AppIcon } from "@/shared/components/IconPicker";
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router";
+import ApiIllustration from "@/shared/components/ApiIllustration";
+import OrbitIllustration from "@/shared/components/OrbitIllustration";
+import { useLocale } from "@/shared/lib/locale-context";
 import { api } from "@/shared/lib/api";
 import AudienceToggle from "@/features/catalog/components/AudienceToggle";
 import EndpointCard from "@/features/catalog/components/EndpointCard";
@@ -18,6 +22,8 @@ const CATEGORY_ICONS: Record<string, string> = {
 const SUGGESTIONS = ["Sales", "Invoices", "Stock", "Purchase order approval", "Leave requests", "Payroll", "Customers"];
 
 export default function ExplorePage() {
+  const navigate = useNavigate();
+  const { t } = useLocale();
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [endpoints, setEndpoints] = useState<EndpointDto[]>([]);
   const [query, setQuery] = useState("");
@@ -56,13 +62,27 @@ export default function ExplorePage() {
 
   return (
     <div>
-      <div className="explore-heading text-center mb-6 mt-2">
-        <h1 className="text-[28px] font-bold text-balance">What data would you like to use?</h1>
-        <p className="text-ink-dim text-[16px] mt-2">Explore data and services for your application.</p>
+      <section className="ecosystem-hero ecosystem-welcome relative overflow-hidden">
+        <div className="relative max-w-[620px]">
+          <span className="workspace-kicker"><AppIcon value="fa:code" /> API Catalog</span>
+          <h1 className="text-balance">What data would you like to use?</h1>
+          <p>Explore company data and services for your application. Each API shows what it does, who can use it and a ready-to-copy example.</p>
+          <div className="flex gap-3 flex-wrap mt-6">
+            <button onClick={() => navigate("/getting-started")} className="bg-[#89c64a] text-[#10210b] rounded-lg px-4 py-2.5 font-bold transition hover:-translate-y-px">{t("ecosystem.requestAccess")}</button>
+          </div>
+        </div>
+        {/* Dark theme: API call illustration · Light theme: business areas orbiting the MGT hub */}
+        <div className="hero-art">
+          <ApiIllustration className="ecosystem-illustration hero-art-dark" />
+          <OrbitIllustration className="hero-art-light" hub="fa:code" items={categories.map(c => ({ icon: CATEGORY_ICONS[c.key] ?? "fa:box", label: c.name }))} />
+        </div>
+      </section>
 
-        <div className="max-w-[520px] mx-auto mt-5">
+      <div className="explore-heading text-center mb-6 mt-2">
+        <div className="max-w-[520px] mx-auto">
           <Input
             autoFocus
+            aria-label="Search the API catalog"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="e.g. Customer sales, stock, invoices..."

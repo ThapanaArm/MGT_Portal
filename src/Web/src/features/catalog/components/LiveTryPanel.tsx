@@ -4,7 +4,7 @@ import { Input, Segmented } from "@/shared/components/design-system";
 import { Btn } from "@/shared/components/ui";
 import FriendlyResult from "@/features/catalog/components/FriendlyResult";
 import JsonTable from "@/features/catalog/components/JsonTable";
-import { callGateway, type GatewayResult } from "@/features/catalog/gateway";
+import { callGateway, needsUserToken, type GatewayResult } from "@/features/catalog/gateway";
 import { CopyButton } from "@/shared/components/CopyButton";
 import type { CategoryDto, EndpointDto } from "@/shared/lib/types";
 
@@ -34,6 +34,8 @@ export default function LiveTryPanel({
   const queryParams = endpoint.params.filter((p) => p[1] === "query");
   const [tokenId, setTokenId] = useState("");
   const [tokenSecret, setTokenSecret] = useState("");
+  const [userToken, setUserToken] = useState("");
+  const personal = needsUserToken(category.key, endpoint.method, endpoint.path);
   const [tokenError, setTokenError] = useState("");
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<GatewayResult | null>(null);
@@ -46,10 +48,14 @@ export default function LiveTryPanel({
       setTokenError("Enter the Token ID and Token Secret from your application's API credentials");
       return;
     }
+    if (personal && !userToken.trim()) {
+      setTokenError("Enter your user token (My tokens). This data is filtered to what you may see.");
+      return;
+    }
     setSending(true);
     setNetworkError("");
     try {
-      setResult(await callGateway(category.basePath, endpoint.path, values, tokenId, tokenSecret));
+      setResult(await callGateway(category.basePath, endpoint.path, values, tokenId, tokenSecret, personal ? userToken : undefined));
     } catch {
       setResult(null);
       setNetworkError("Couldn't reach the Gateway. Check that the Portal API is running.");
@@ -87,6 +93,19 @@ export default function LiveTryPanel({
             className="w-full mt-1 font-mono"
           />
         </label>
+        {personal && (
+          <label className="text-[13.5px] text-ink-dim md:col-span-2">
+            Your user token <span className="text-ink-faint">· from My tokens</span>
+            <Input
+              type="password"
+              value={userToken}
+              onChange={(e) => { setUserToken(e.target.value); setTokenError(""); }}
+              placeholder="mgtu_..."
+              autoComplete="off"
+              className="w-full mt-1 font-mono"
+            />
+          </label>
+        )}
         {queryParams.map(([name, , type, , description]) => (
           <label key={name} className="text-[13.5px] text-ink-dim">
             <code className="text-teal-strong">{name}</code>

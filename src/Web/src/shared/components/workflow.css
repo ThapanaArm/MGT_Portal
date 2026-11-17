@@ -1,0 +1,27 @@
+.mgt-workflow-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 12px 0;
+}
+
+.mgt-workflow-status > div:first-child { flex: 1 1 12rem; min-width: 0; }
+.mgt-workflow-status p,
+.mgt-work-queue p { color: var(--ink-dim); font-size: 13px; line-height: 1.6; }
+.mgt-workflow-status p { margin-top: 6px; }
+.mgt-workflow-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.mgt-work-queue > ul { list-style: none; margin: 0; padding: 0; }
+.mgt-work-queue > ul > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+.mgt-work-queue-item { flex: 1 1 14rem; min-width: 0; overflow-wrap: anywhere; }
+.mgt-work-queue-item > strong { display: block; }
+.mgt-work-queue li > .mgt-workflow-status { flex: 2 1 22rem; min-width: 0; padding: 0; }
+.mgt-work-queue > .portal-button { margin-top: 12px; }

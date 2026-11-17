@@ -5,6 +5,7 @@ export const dictionaries = {
     },
     roles: {
       admin: "Administrator",
+      employee: "Employee",
       sales: "Sales Staff",
       purchase: "Purchase Staff",
       finance: "Finance Staff",
@@ -23,7 +24,7 @@ export const dictionaries = {
       accessControl: "Access Control",
       myAccount: "My Account",
       myTokens: "My Tokens",
-      brandCaption: "MGT Hub",
+      brandCaption: "MGT Portal",
       designSystem: "Design System",
     },
     login: {
@@ -56,7 +57,7 @@ export const dictionaries = {
     },
     ecosystem: {
       title: "MGT Ecosystem",
-      desc: "Discover approved application requests from the Megachem team. Approval and deployment are separate; contact the owner for application availability.",
+      desc: "Discover apps created by your colleagues and the IT team, all in one place.",
       registerApp: "Register your application",
       requestAccess: "Request API access",
       highlight: "Highlights",
