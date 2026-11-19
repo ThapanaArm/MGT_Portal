@@ -20,7 +20,7 @@ function readAsDataUrl(file: File): Promise<string> {
 function validateImage(file: File, maxMb: number): string | null {
   if (!file.type.startsWith("image/")) return `“${file.name}” is not an image file`;
   const mb = file.size / 1024 / 1024;
-  if (mb > maxMb) return `“${file.name}” size ${mb.toFixed(1)} MB — exceeds the limit of ${maxMb} MB`;
+  if (mb > maxMb) return `“${file.name}” is ${mb.toFixed(1)} MB, over the ${maxMb} MB limit`;
   return null;
 }
 
@@ -28,9 +28,9 @@ function pickImageFiles(list: FileList | null | undefined): File[] {
   return Array.from(list ?? []);
 }
 
-export function AppAvatar({ image, icon, size = "md" }: { image: string | null; icon: string; size?: "sm" | "md" | "lg" }) {
-  const dim = size === "sm" ? "w-7.5 h-7.5 text-sm rounded-lg" : size === "lg" ? "w-14 h-14 text-2xl rounded-xl" : "w-10 h-10 text-lg rounded-[10px]";
-  const pad = size === "sm" ? "p-1" : size === "lg" ? "p-2" : "p-1.5";
+export function AppAvatar({ image, icon, size = "md" }: { image: string | null; icon: string; size?: "sm" | "md" | "lg" | "xl" }) {
+  const dim = size === "sm" ? "w-7.5 h-7.5 text-sm rounded-lg" : size === "lg" ? "w-14 h-14 text-2xl rounded-xl" : size === "xl" ? "w-32 h-32 text-5xl rounded-[30px]" : "w-10 h-10 text-lg rounded-[10px]";
+  const pad = size === "sm" ? "p-1" : size === "lg" ? "p-2" : size === "xl" ? "p-3" : "p-1.5";
   return (
     <div
       className={`flex items-center justify-center flex-shrink-0 overflow-hidden border border-line ${dim} ${

@@ -2,9 +2,10 @@ namespace MGT.Portal.Api.Modules.Apps;
 
 /// <summary>
 /// ระดับของ App — กำหนดว่าต้องผ่านอะไรบ้างก่อน Active และได้ credential ที่ Gateway หรือไม่
-///   Tier 1 Register : User ทั่วไปสร้าง, ไม่ต่อ API, อนุมัติอัตโนมัติ
-///   Tier 2 Verify   : User ทั่วไปสร้าง, ต่อ API ได้, ต้องได้เสียงกรรมการครบทุกคน (5 คน, คำขอก่อน 11 พ.ย. 2026 = 3 คน) + IT รีวิวโค้ด
-///   Tier 3 Official : ทีม IT สร้าง, ต่อ API ได้, ขั้นตอนเหมือน Tier 2
+///   Register : User ทั่วไปสร้าง, ไม่ต่อ API, ต้องได้เสียงอนุมัติ 3 ใน 5 ของกรรมการ (ไม่มี IT code review)
+///   Verify   : User ทั่วไปสร้าง, ต่อ API ได้, ต้องได้เสียงกรรมการครบทุกคน (5/5, คำขอก่อน 11 พ.ย. 2026 = 3/3) + IT รีวิวโค้ด
+///   Official : ทีม IT สร้าง, ต่อ API ได้, ขั้นตอนเหมือน Verify
+/// กรรมการกด Reject (ต้องใส่เหตุผล) ได้ — เมื่อเสียง Reject ทำให้ไม่มีทางได้เสียงอนุมัติครบ คำขอถูกปิดเป็น Rejected
 /// ค่าที่เก็บในคอลัมน์ Applications.Type / ReviewTarget
 /// </summary>
 public static class AppTier
@@ -15,14 +16,26 @@ public static class AppTier
 
     public static bool IsValid(string? tier) => tier is Tier1 or Tier2 or Tier3;
 
-    /// <summary>จำนวนกรรมการของคำขอใหม่ (IT เลือกเองต่อ App) — เก็บไว้ที่ Application.CommitteeSize ของแต่ละคำขอ</summary>
+    /// <summary>
+    /// จำนวนคนในคณะกรรมการชุดเดียวของ Portal (CommitteeMembers) — ทุกคำขอใช้ชุดนี้
+    /// Application.CommitteeSize ของคำขอ = 5 หรือ 4 ถ้าผู้ขอเป็นกรรมการเอง (ไม่ลงความเห็นคำขอของตัวเอง)
+    /// </summary>
     public const int CommitteeSize = 5;
 
-    /// <summary>จำนวนกรรมการของคำขอที่สร้างก่อนเปลี่ยนเป็น 5 คน (migration CommitteeSizePerApplication ตั้งให้คำขอเดิม)</summary>
-    public const int LegacyCommitteeSize = 3;
+    /// <summary>Register ต้องได้เสียงอนุมัติ 3 เสียง (จากกรรมการ 5 คน)</summary>
+    public const int RegisterVotes = 3;
 
-    /// <summary>จำนวนเสียงกรรมการที่ต้องได้ก่อน Active — ต้องครบทุกคนในคณะกรรมการของ App (committeeSize ของคำขอนั้น)</summary>
-    public static int RequiredVotes(string tier, int committeeSize) => tier == Tier1 ? 0 : committeeSize;
+    /// <summary>
+    /// จำนวนเสียงอนุมัติที่ต้องได้ก่อน Active — Register 3 ใน 5 (ไม่เกินจำนวนกรรมการของคำขอ),
+    /// Verify / Official ต้องครบทุกคนในคณะกรรมการของ App (committeeSize ของคำขอนั้น)
+    /// </summary>
+    public static int RequiredVotes(string tier, int committeeSize) => tier == Tier1 ? Math.Min(RegisterVotes, committeeSize) : committeeSize;
+
+    /// <summary>
+    /// จำนวนเสียง Reject ที่ทำให้คำขอถูกปิด = เมื่อเสียงที่เหลือไม่มีทางอนุมัติครบแล้ว
+    /// (Verify / Official: 1 เสียง · Register กรรมการ 5 คน: 3 เสียง)
+    /// </summary>
+    public static int RejectionsToClose(string tier, int committeeSize) => committeeSize - RequiredVotes(tier, committeeSize) + 1;
 
     /// <summary>ต้องผ่าน IT code review ก่อน Active หรือไม่</summary>
     public static bool RequiresCodeReview(string tier) => tier != Tier1;
@@ -47,6 +60,8 @@ public static class AppStatus
     public const string Pending = "pending";
     public const string Active = "active";
     public const string Suspended = "suspended";
+    /// <summary>กรรมการปฏิเสธ — ปิดคำขอถาวร แก้ไข/ส่งใหม่ไม่ได้ ต้องสร้างคำขอใหม่</summary>
+    public const string Rejected = "rejected";
 }
 
 public static class LogActionType

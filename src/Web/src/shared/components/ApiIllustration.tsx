@@ -83,7 +83,8 @@ export function GlassCard({ badge, children }: { badge: string; children: ReactN
     >
       {/* light sweep across the glass */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 bottom-0 w-16 mgt-sweep" style={{ background: "linear-gradient(90deg, transparent, var(--ill-sweep), transparent)" }} />
+        {/* Full-width layer with a narrow light band, so the sweep crosses the whole card before it disappears. */}
+        <div className="absolute inset-y-0 left-0 w-full mgt-sweep" style={{ background: "linear-gradient(90deg, transparent 40%, var(--ill-sweep) 50%, transparent 60%)" }} />
       </div>
       {/* title bar */}
       <div className="relative flex items-center gap-1.5 px-3.5 py-2.5" style={{ borderBottom: "1px solid var(--ill-line)" }}>

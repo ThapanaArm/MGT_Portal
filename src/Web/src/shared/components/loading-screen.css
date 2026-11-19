@@ -13,7 +13,7 @@
 .mgt-loading-detail{max-width:42ch;font-size:14px;line-height:1.6;color:var(--ink-dim)}
 .mgt-loading-steps{display:grid;gap:8px;margin:14px 0 0;padding:0;list-style:none;text-align:left}
 .mgt-loading-steps li{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--ink-faint)}
-.mgt-loading-steps li>span{width:20px;height:20px;display:grid;place-items:center;flex-shrink:0;border:2px solid var(--line-strong);border-radius:50%;font-size:11px;font-weight:900}
+.mgt-loading-steps li>span{width:20px;height:20px;display:grid;place-items:center;flex-shrink:0;border:2px solid var(--line-strong);border-radius:50%;font-size:12px;font-weight:900}
 .mgt-loading-steps li.done{color:var(--ink-dim)}
 .mgt-loading-steps li.done>span{color:#fff;border-color:var(--mgt-green);background:var(--mgt-green)}
 .mgt-loading-steps li.current{color:var(--ink);font-weight:700}

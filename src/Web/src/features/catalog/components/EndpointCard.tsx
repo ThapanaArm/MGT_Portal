@@ -151,7 +151,7 @@ export default function EndpointCard({
     <div className="endpoint-module-choice">
       <span className="endpoint-module-label">Zoho module</span>
       <Segmented label="Zoho module" items={ZOHO_MODULES.map((m) => m.label)} value={ZOHO_MODULES.find((m) => m.value === zohoModule)?.label ?? ""} onChange={chooseModule} />
-      <span className="endpoint-ai-hint">Pick what your app works with — it fills <code>{endpoint.path.includes("{module}") ? "{module}" : "module"}</code> with <code>{zohoModule}</code> in the URL, cURL and examples.</span>
+      <span className="endpoint-ai-hint">Pick what your app works with. It fills <code>{endpoint.path.includes("{module}") ? "{module}" : "module"}</code> with <code>{zohoModule}</code> in the URL, cURL and examples.</span>
     </div>
   );
   const detailParams = endpoint.params.filter(
@@ -174,7 +174,7 @@ export default function EndpointCard({
       {scope && <span className="endpoint-fact"><AppIcon value="fa:lock" /> Scope <code>{scope}</code></span>}
       <span className="endpoint-fact"><AppIcon value="fa:code" /> Headers <code>{GATEWAY_TOKEN_ID_HEADER}</code> <code>{GATEWAY_TOKEN_SECRET_HEADER}</code>{write && <code>{IDEMPOTENCY_HEADER}</code>}</span>
       <span className="endpoint-fact"><AppIcon value="fa:info" /> {env === "sandbox" ? "Use a Sandbox token (test systems: SAP DEV, Zoho sandbox)" : "Use a Production token (live data)"}</span>
-      {!live && <span className="endpoint-fact is-warning"><AppIcon value="fa:warning" /> Not available in the Gateway yet — documentation only</span>}
+      {!live && <span className="endpoint-fact is-warning"><AppIcon value="fa:warning" /> Not available in the Gateway yet. Documentation only.</span>}
     </div>
   );
 
@@ -225,7 +225,7 @@ export default function EndpointCard({
           ) : live ? (
             aiActions(write ? "This API changes data in SAP, so it is not run from this page. Give the copied text to your developer or paste it into Claude." : "Give the copied text to your developer or paste it into Claude.")
           ) : (
-            <div className="endpoint-fact is-warning"><AppIcon value="fa:warning" /> Not available in the Gateway yet — documentation only</div>
+            <div className="endpoint-fact is-warning"><AppIcon value="fa:warning" /> Not available in the Gateway yet. Documentation only.</div>
           )}
 
           <div className="flex items-center gap-2.5 mt-4 pt-3.5 border-t border-line flex-wrap">
@@ -255,7 +255,7 @@ export default function EndpointCard({
             <>
               <p className="text-[15px] text-ink-dim leading-relaxed mb-3">{endpoint.description || endpoint.summary}</p>
               {facts}
-              {aiActions("Paste into Claude to generate the code — includes rules, cURL, JSON and status codes.")}
+              {aiActions("Paste into Claude to generate the code. Includes rules, cURL, JSON and status codes.")}
 
               <div className="endpoint-code-grid">
                 <div>
@@ -299,7 +299,7 @@ export default function EndpointCard({
             </>
           ) : (
             <div className="flex items-center gap-2.5 bg-danger-soft text-danger rounded-lg px-3 py-2.5 text-[15px]">
-              <AppIcon value="fa:lock"/> <span>Your role does not have access to <code className="font-mono">{endpoint.scope}</code> — Request additional access before calling this API.</span>
+              <AppIcon value="fa:lock"/> <span>Your role does not have access to this API. Request additional access before calling it.</span>
             </div>
           )}
         </div>

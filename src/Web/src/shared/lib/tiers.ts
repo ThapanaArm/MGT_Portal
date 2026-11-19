@@ -3,21 +3,19 @@ import type { AppAudience, AppType } from "@/shared/lib/types";
 /** Application tiers must match the backend AppTier values. */
 export const TIERS: AppType[] = ["tier1", "tier2", "tier3"];
 
-export const TIER_LABEL: Record<AppType, string> = {
-  tier1: "Tier 1",
-  tier2: "Tier 2",
-  tier3: "Tier 3",
-};
-
+/** The tier names shown to people. The keys (tier1/2/3) stay internal only. */
 export const TIER_NAME: Record<AppType, string> = {
   tier1: "Register",
   tier2: "Verify",
   tier3: "Official",
 };
 
+/** Kept for existing imports — the label is the tier name ("Tier 1/2/3" is no longer shown). */
+export const TIER_LABEL = TIER_NAME;
+
 export const TIER_DESC: Record<AppType, string> = {
-  tier1: "Register an application that does not use company APIs. Approved automatically; no credentials issued.",
-  tier2: "Verify an application that uses company APIs. Requires five committee approvals and IT code review.",
+  tier1: "Register an application that does not use company APIs. Needs 3 of 5 committee approvals; no IT code review and no credentials issued.",
+  tier2: "Verify an application that uses company APIs. Needs all 5 committee approvals and an IT code review.",
   tier3: "Official IT application. Follows the same review process as Verify.",
 };
 
@@ -29,10 +27,10 @@ export const normalizeTier = (tier: string | null | undefined): AppType | null =
   return TIERS.includes(key as AppType) ? key as AppType : LEGACY_TIERS[key] ?? null;
 };
 
-/** Always "Tier 2 · Verify", including records saved with old level names. */
+/** Always the tier name ("Verify"), including records saved with old level names. */
 export const tierText = (tier: string | null | undefined) => {
   const key = normalizeTier(tier);
-  return key ? `${TIER_LABEL[key]} · ${TIER_NAME[key]}` : "Tier not set";
+  return key ? TIER_NAME[key] : "Tier not set";
 };
 
 /** Whether a tier supports API access. */

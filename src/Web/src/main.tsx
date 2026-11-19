@@ -17,4 +17,5 @@ import "@/styles/workspace.css";
 import "@/styles/governance.css";
 import "@/styles/color-refresh.css";
 import "@/styles/motion.css";
+import "@/styles/banner.css";
 

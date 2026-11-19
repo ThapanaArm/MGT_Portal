@@ -47,9 +47,9 @@ export function MethodBadge({ method }: { method: string }) {
 }
 
 const TYPE_META: Record<AppType, { label: string; className: string }> = {
-  tier1: { label: "Tier 1", className: "bg-surface-2 text-ink-dim" },
-  tier2: { label: "Tier 2", className: "bg-put-soft text-put" },
-  tier3: { label: "Tier 3", className: "bg-post-soft text-post" },
+  tier1: { label: "Register", className: "bg-surface-2 text-ink-dim" },
+  tier2: { label: "Verify", className: "bg-put-soft text-put" },
+  tier3: { label: "Official", className: "bg-post-soft text-post" },
 };
 
 export function TypeChip({ type }: { type: AppType }) {
@@ -62,6 +62,7 @@ const STATUS_META: Record<AppStatus, { label: string; dot: string }> = {
   pending: { label: "Pending Review", dot: "bg-put" },
   draft: { label: "Draft", dot: "bg-ink-faint" },
   suspended: { label: "Suspended", dot: "bg-danger" },
+  rejected: { label: "Rejected", dot: "bg-danger" },
 };
 
 export function StatusDot({ status }: { status: AppStatus }) {

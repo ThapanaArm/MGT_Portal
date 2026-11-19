@@ -1,10 +1,11 @@
 # MGT Portal — notes for Claude
 
 - Read `README.md` for structure and commands; `docs/database.md` for the schema.
-- Backend is one ASP.NET Core project split into modules under `src/Api/MGT.Portal.Api/Modules/<Module>` (Identity, Catalog, Apps, Access, Gateway). One namespace per module: `MGT.Portal.Api.Modules.<Module>`.
+- Backend is one ASP.NET Core project split into modules under `src/Api/MGT.Portal.Api/Modules/<Module>` (Identity, Catalog, Apps, Access, Gateway, Scheduling). One namespace per module: `MGT.Portal.Api.Modules.<Module>`.
 - Allowed module dependencies: Apps → Identity; Access → Identity, Catalog. Gateway → Apps (no module may depend on Gateway). Identity and Catalog depend on no other module. `tests/MGT.Portal.ArchitectureTests` enforces this — keep it green.
 - Entity configuration goes in `Modules/<Module>/Persistence/*Configuration.cs` (picked up by `ApplyConfigurationsFromAssembly`), not in `PortalDbContext`.
 - Frontend is plain React 19 + Vite + React Router (no Next.js). Pages live in `src/Web/src/features/<area>/`, routes in `src/Web/src/app/routes.tsx`. Import with the `@/` alias. Never add a frontend route starting with `/api`.
 - UI text is Thai first; strings for TH/EN toggle live in `src/Web/src/shared/lib/i18n.ts`.
-- Approval rules (Tier 1/2/3, per-application committee of 3 chosen by IT, committee votes, IT code review, credential issue/revoke) live only in `Modules/Apps/Services/ApplicationWorkflow.cs`; controllers just call it. `tests/MGT.Portal.UnitTests` covers it.
+- Approval rules (Tier 1/2/3, one shared committee of 5 chosen by IT (requester on it sits out → 4), Register 3/5 and Verify/Official 5/5 committee approvals, committee Reject that closes a request, IT code review, credential issue/revoke) live only in `Modules/Apps/Services/ApplicationWorkflow.cs`; controllers just call it. `tests/MGT.Portal.UnitTests` covers it.
+- IT calendar rules (available slots, user bookings that IT confirms/declines, no deploy during a freeze, no overlapping bookings) live only in `Modules/Scheduling/Services/CalendarService.cs`.
 - Seed data (test passwords) is applied only in Development.

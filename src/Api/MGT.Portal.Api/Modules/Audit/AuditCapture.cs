@@ -8,6 +8,7 @@ using MGT.Portal.Api.Modules.Apps;
 using MGT.Portal.Api.Modules.Catalog;
 using MGT.Portal.Api.Modules.Gateway;
 using MGT.Portal.Api.Modules.Identity;
+using MGT.Portal.Api.Modules.Scheduling;
 
 namespace MGT.Portal.Api.Modules.Audit;
 
@@ -17,7 +18,7 @@ public static class AuditCapture
         { "PasswordHash", "TokenHash", "TokenId", "TokenSecret", "Value", "Prefix", "ResponseJson", "RequestHash", "IdempotencyKey", "ImageData", "Image", "ReqBody", "RespExample", "ParamsJson", "RespFieldsJson" };
     private static readonly HashSet<string> SecretJsonNames = new(StringComparer.OrdinalIgnoreCase)
         { "password", "passwordHash", "token", "tokenId", "tokenSecret", "tokenHash", "secret", "apiKey", "authorization", "accessToken", "refreshToken", "clientSecret" };
-    private static bool Supported(object entity) => entity is Application or AppScreenshot or AppCredential or AppReviewer or AppVote or AppCodeReview
+    private static bool Supported(object entity) => entity is Application or AppScreenshot or AppCredential or AppReviewer or AppVote or AppCodeReview or CommitteeMember or CalendarEvent
         or User or Role or Team or SaleGroup or UserPlatformId or UserToken or ApiToken or AccessGrant or UserApiPermission or ApiCategory or ApiEndpoint or GatewayWriteRecord or DisplayNameOption or UserSyncLevelMapping;
 
     public static List<AuditLog> Capture(DbContext db, HttpContext? http)
@@ -103,7 +104,9 @@ public static class AuditCapture
             Application when previousStage != newStage => $"application.stage.{newStage ?? "cleared"}",
             Application => $"application.{action}",
             AppReviewer => action == "deleted" ? "reviewer.removed" : "reviewer.assigned",
-            AppVote vote => action == "deleted" ? "committee.vote_removed" : $"committee.{(vote.Approved ? "approved" : "changes_requested")}",
+            AppVote vote => action == "deleted" ? "committee.vote_removed" : $"committee.{(vote.Approved ? "approved" : vote.Rejected ? "rejected" : "changes_requested")}",
+            CommitteeMember => action == "deleted" ? "committee.member_removed" : "committee.member_added",
+            CalendarEvent calendarEvent => action == "deleted" ? "calendar.deleted" : $"calendar.{calendarEvent.Kind}.{calendarEvent.Status}",
             AppCodeReview review => action == "deleted" ? "code_review.withdrawn" : $"code_review.{(review.Approved ? "approved" : "changes_requested")}",
             AppCredential => $"credential.{action}", UserApiPermission => $"api_permission.{action}",
             AccessGrant grant => grant.Revoked ? "access_grant.revoked" : $"access_grant.{action}",

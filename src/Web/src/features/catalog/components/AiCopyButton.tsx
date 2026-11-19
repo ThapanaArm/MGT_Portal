@@ -39,9 +39,9 @@ export default function AiCopyButton({
       variant={variant}
       onClick={onClick}
       startIcon={<AppIcon value={copied ? "fa:tick" : "fa:copy"} />}
-      title="Copies the API contract, cURL and JSON examples as Markdown — paste it into Claude to write the code"
+      title="Copies the API contract, cURL and JSON examples as Markdown. Paste it into Claude to write the code"
     >
-      {copied ? "Copied — paste into Claude" : label}
+      {copied ? "Copied. Paste into Claude" : label}
     </Btn>
   );
 }

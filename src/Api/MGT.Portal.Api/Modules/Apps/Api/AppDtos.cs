@@ -10,12 +10,13 @@ public record AppSummaryDto(
     string? Image, string Icon, string OwnerEmail, DateTime CreatedAt, DateTime UpdatedAt,
     string Audience, string? ProcessStage = null, string? RequestedTier = null, string? OwnerDisplayName = null);
 
-public record CredentialDto(string Env, string Category, string TokenId, string TokenSecret, DateTime CreatedAt);
+/// <summary>Hidden = true: Production key ที่ผู้ดูไม่ใช่ IT — TokenId ถูกปิดบางส่วน และไม่ส่ง TokenSecret มา</summary>
+public record CredentialDto(string Env, string Category, string TokenId, string TokenSecret, DateTime CreatedAt, bool Hidden = false);
 
 public record LogEntryDto(string ActionType, DateTime OccurredAt, string Actor, string? Note);
 
 public record VoteDto(int ReviewerUserId, string MemberName, string MemberEmail, bool Approved,
-    string? ActorEmail, DateTime? DecidedAt, string? Note);
+    string? ActorEmail, DateTime? DecidedAt, string? Note, bool Rejected = false);
 
 /// <summary>การขอแก้ไขหนึ่งครั้ง (จาก IT review หรือกรรมการ) — ทุกรอบรีวิว ใหม่สุดก่อน</summary>
 /// <param name="Source">it / committee</param>
@@ -30,7 +31,7 @@ public record CodeReviewDto(bool Approved, string ReviewerEmail, string? Note, D
 /// <param name="RequiredVotes">จำนวนเสียงที่ต้องได้สำหรับ Tier ที่ขอ</param>
 /// <param name="RequiresCodeReview">Tier ที่ขอต้องผ่าน IT code review หรือไม่</param>
 /// <param name="Reviewers">กรรมการของ App นี้ (สูงสุด CommitteeSize คน)</param>
-/// <param name="CommitteeSize">จำนวนกรรมการของคำขอนี้ (ใหม่ 5 คน, คำขอเดิม 3 คน) — ต้องอนุมัติครบทุกคน</param>
+/// <param name="CommitteeSize">จำนวนกรรมการของคำขอนี้ (5 คน หรือ 4 ถ้าผู้ขอเป็นกรรมการเอง)</param>
 public record AppDetailDto(AppSummaryDto Summary, List<string> Screenshots, List<CredentialDto> Credentials,
     List<LogEntryDto> Log, List<VoteDto> Votes, int ReviewCycle,
     CodeReviewDto? CodeReview, int RequiredVotes, bool RequiresCodeReview, DevelopmentRequest? Development = null,
@@ -48,16 +49,23 @@ public record UpdateAppRequest(
 /// <param name="TargetType">Tier ที่ขอ (tier1 / tier2 / tier3)</param>
 public record SendReviewRequest(string TargetType);
 
-public record VoteRequest(bool Approved, string? Note = null);
+/// <summary>Reject = true: ปฏิเสธคำขอ (ต้องมี Note เป็นเหตุผล) · Approved = false และ Reject = false: ขอให้แก้</summary>
+public record VoteRequest(bool Approved, string? Note = null, bool Reject = false);
+
+/// <summary>IT เปิดคำขอที่ถูก Reject กลับมาพัฒนาใหม่ — ต้องมีเหตุผล</summary>
+public record ReopenRequest(string? Note);
 
 /// <param name="Links">ลิงก์เอกสารประกอบ https:// (เช่น SharePoint) ไม่เกิน 5 ลิงก์</param>
 public record CodeReviewRequest(bool Approved, string? Note, List<string>? Links = null, List<int>? ResolvedCycles = null, bool ResolveOnly = false);
 
 public record SetAppRepositoryRequest(string Github);
 
-/// <summary>IT เลือกกรรมการของ App — ส่งรายชื่อทั้งชุด (ไม่เกิน CommitteeSize ของคำขอ) คนที่ไม่อยู่ในรายการจะถูกเอาออก</summary>
-public record SetReviewersRequest(List<int> UserIds);
+/// <summary>กรรมการหนึ่งคนในคณะกรรมการชุดเดียวของ Portal</summary>
+public record CommitteeMemberDto(int UserId, string Email, string DisplayName);
 
-/// <param name="IsReviewer">เป็นกรรมการของ App ใดอยู่หรือไม่</param>
+/// <summary>IT ตั้งคณะกรรมการทั้งชุด — ต้องครบ AppTier.CommitteeSize คน ไม่ซ้ำกัน คนที่ไม่อยู่ในรายการจะถูกเอาออก</summary>
+public record SetCommitteeRequest(List<int>? UserIds);
+
+/// <param name="IsReviewer">อยู่ในคณะกรรมการ หรือเคยเป็นกรรมการของ App ใด</param>
 /// <param name="PendingAssigned">จำนวนคำขอที่รอรีวิวและผู้ใช้เป็นกรรมการ</param>
 public record CommitteeStatusDto(bool IsReviewer, int PendingAssigned);

@@ -74,6 +74,7 @@ public sealed class UserDirectorySync(PortalDbContext db, IUserDirectorySource s
                 if (!byEmail.TryGetValue(Normalize(email), out var inactive)) { unchanged++; continue; }
                 if (await db.Applications.AnyAsync(x => x.OwnerUserId == inactive.Id, ct)
                     || await db.AppReviewers.AnyAsync(x => x.UserId == inactive.Id, ct)
+                    || await db.CommitteeMembers.AnyAsync(x => x.UserId == inactive.Id, ct)
                     || await db.AppVotes.AnyAsync(x => x.ReviewerUserId == inactive.Id, ct)
                     || await db.AccessGrants.AnyAsync(x => x.GrantedByUserId == inactive.Id && x.UserId != inactive.Id, ct))
                 {

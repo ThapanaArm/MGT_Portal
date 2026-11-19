@@ -13,6 +13,8 @@ interface AuthContextValue {
   user: UserDto | null;
   loading: boolean;
   login: (email: string, password: string, remember?: boolean) => Promise<void>;
+  /** Development only: sign in as an account without a password (the backend refuses outside Development). */
+  devLogin: (email: string, remember?: boolean) => Promise<void>;
   logout: () => void;
   hasScope: (scope: string) => boolean;
 }
@@ -60,9 +62,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const login = useCallback(
-    async (email: string, password: string, remember = true) => {
-      const res = await api.post<LoginResponse>("/api/auth/login", { email, password });
+  const startSession = useCallback(
+    (res: LoginResponse, remember: boolean) => {
       // "Remember me" decides whether the session survives closing the browser
       // (localStorage) or ends with the tab (sessionStorage).
       const store = remember ? localStorage : sessionStorage;
@@ -75,6 +76,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       navigate("/ecosystem", { replace: true });
     },
     [navigate]
+  );
+
+  const login = useCallback(
+    async (email: string, password: string, remember = true) =>
+      startSession(await api.post<LoginResponse>("/api/auth/login", { email, password }), remember),
+    [startSession]
+  );
+
+  const devLogin = useCallback(
+    async (email: string, remember = true) =>
+      startSession(await api.post<LoginResponse>("/api/auth/dev-login", { email }), remember),
+    [startSession]
   );
 
   const logout = useCallback(() => requestExit(() => {
@@ -95,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, hasScope }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, loading, login, devLogin, logout, hasScope }}>{children}</AuthContext.Provider>
   );
 }
 

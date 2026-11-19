@@ -1,4 +1,4 @@
-import { useState, type CSSProperties, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { AppIcon } from "./Icon";
 import { Btn } from "./ui";
 import "./carousel.css";
@@ -7,9 +7,12 @@ export type CarouselSlide = {
   id: string;
   title: string;
   content: ReactNode;
-  preview?: ReactNode;
 };
 
+/**
+ * banner: the slide fills the width.
+ * centered: one slide in the middle with empty space on both sides (no neighbouring slides), arrows beside it.
+ */
 export function Carousel({ label, slides, variant = "banner" }: {
   label: string;
   slides: readonly CarouselSlide[];
@@ -20,8 +23,7 @@ export function Carousel({ label, slides, variant = "banner" }: {
   const current = slides[index];
   if (!current) return null;
 
-  const centered = variant === "centered" && slides.length > 1;
-  const offsets = slides.length >= 5 ? [-2, -1, 1, 2] : slides.length >= 3 ? [-1, 1] : [1];
+  const centered = variant === "centered";
   const slideAt = (offset: number) => slides[(index + offset + slides.length) % slides.length];
   function move(offset: number) {
     setSelectedId(slideAt(offset).id);
@@ -31,12 +33,6 @@ export function Carousel({ label, slides, variant = "banner" }: {
     <section className={`mgt-carousel${centered ? " mgt-carousel-centered" : ""}`} aria-label={label} aria-roledescription="carousel">
       <div className="mgt-carousel-stage">
         <div className="mgt-carousel-track">
-          {centered && offsets.map(offset => {
-            const slide = slideAt(offset);
-            return <div key={offset} className="mgt-carousel-preview" style={{ "--slide-offset": offset } as CSSProperties} aria-hidden="true" inert>
-              {slide.preview ?? <span className="mgt-carousel-preview-title">{slide.title}</span>}
-            </div>;
-          })}
           <div key={current.id} className="mgt-carousel-slide mgt-motion-enter" role="group" aria-roledescription="slide" aria-label={current.title}>
             {current.content}
           </div>

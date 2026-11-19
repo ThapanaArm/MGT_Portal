@@ -1,7 +1,7 @@
 import { useEditingGuard } from "@/shared/lib/editing-guard";
 import { AppIcon } from "@/shared/components/Icon";
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { useLocation, useNavigate, useSearchParams } from "react-router";
 import { api } from "@/shared/lib/api";
 import { useToast } from "@/shared/lib/toast";
 import { Btn, EmptyState, TypeChip } from "@/shared/components/ui";
@@ -12,7 +12,7 @@ import AppForm, { AppFormValues } from "@/features/apps/AppForm";
 import type { AppSummaryDto, AppType, CategoryDto } from "@/shared/lib/types";
 import { TIER_NAME, appDomain, normalizeTier } from "@/shared/lib/tiers";
 
-const STATUS_TABS = { "All": null, "Draft": "draft", "IT preparation": "setup", "Development": "development", "Changes requested": "changes", "Under review": "pending", "Awaiting deployment": "awaiting-deployment", "Deployed": "deployed", "Live": "live", "Approved": "active", "Suspended": "suspended" } as const;
+const STATUS_TABS = { "All": null, "Draft": "draft", "IT preparation": "setup", "Development": "development", "Changes requested": "changes", "Under review": "pending", "Awaiting deployment": "awaiting-deployment", "Deployed": "deployed", "Live": "live", "Approved": "active", "Suspended": "suspended", "Rejected": "rejected" } as const;
 
 const requestStatus = (app: AppSummaryDto) => ["setup","development","changes","awaiting-deployment","deployed","live"].includes(app.processStage ?? "") ? app.processStage : app.status;
 /** One readable status per request: the process stage when it has one, otherwise the approval status. */
@@ -20,7 +20,7 @@ const STATUS_LABEL: Record<string, { text: string; tone: "neutral" | "info" | "w
   draft: { text: "Draft", tone: "neutral" }, setup: { text: "IT preparation", tone: "info" }, development: { text: "Development", tone: "info" },
   changes: { text: "Changes requested", tone: "warning" }, review: { text: "Under review", tone: "info" }, pending: { text: "Under review", tone: "info" },
   "awaiting-deployment": { text: "Awaiting deployment", tone: "info" }, deployed: { text: "Deployed", tone: "info" }, live: { text: "Live", tone: "success" },
-  approved: { text: "Approved", tone: "success" }, active: { text: "Approved", tone: "success" }, suspended: { text: "Suspended", tone: "danger" },
+  approved: { text: "Approved", tone: "success" }, active: { text: "Approved", tone: "success" }, suspended: { text: "Suspended", tone: "danger" }, rejected: { text: "Rejected", tone: "danger" },
 };
 const statusOf = (app: AppSummaryDto) => STATUS_LABEL[app.processStage && app.processStage !== "draft" ? app.processStage : app.status] ?? { text: app.status, tone: "neutral" as const };
 const ago = (iso: string) => {
@@ -39,6 +39,10 @@ export default function MyAppsPage() {
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [showForm, setShowForm] = useState(searchParams.get("new") === "1");
   const { requestExit, complete } = useEditingGuard(showForm);
+  // Leaving through the sidebar link to this same page keeps the component mounted, so close the form on every navigation.
+  const { key: locationKey } = useLocation();
+  const [formKey, setFormKey] = useState(locationKey);
+  if (formKey !== locationKey) { setFormKey(locationKey); setShowForm(searchParams.get("new") === "1"); }
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
 
@@ -76,12 +80,12 @@ export default function MyAppsPage() {
           <span className="w-2 h-2 rounded-sm bg-teal" /> My App
         </div>
         <h1 className="text-[26px] font-bold">My Applications</h1>
-        <p className="text-ink-dim text-[16px] mt-1.5 max-w-[62ch] leading-relaxed">Your requests and where each one is.</p>
-        <div className="mt-3.5">
-          <Btn variant="primary" onClick={() => showForm ? requestExit(() => setShowForm(false)) : setShowForm(true)}>
-            <AppIcon value={showForm ? "fa:close" : "fa:plus"} /> {showForm ? "Cancel" : "Register application"}
+        
+        {!showForm && <div className="mt-3.5">
+          <Btn variant="primary" onClick={() => setShowForm(true)}>
+            <AppIcon value="fa:plus" /> Register application
           </Btn>
-        </div>
+        </div>}
       </div>
 
       {!showForm && !loading && !loadError && apps.length > 0 && <Tabs label="Application request status" items={Object.keys(STATUS_TABS).filter(label => label === "All" || label === statusTab || apps.some(app => requestStatus(app) === STATUS_TABS[label as keyof typeof STATUS_TABS]))} value={statusTab} onChange={setStatusTab} renderLabel={label=><>{label}<span className="mgt-tab-count">{apps.filter(app=>!STATUS_TABS[label as keyof typeof STATUS_TABS] || requestStatus(app)===STATUS_TABS[label as keyof typeof STATUS_TABS]).length}</span></>} />}

@@ -8,6 +8,7 @@ public class ApiCategory
     public string BasePath { get; set; } = ""; // /api/v1/sales
     public string Description { get; set; } = "";
     public string RateLimit { get; set; } = "";
+    public string Icon { get; set; } = ""; // Font Awesome value from IconPicker, e.g. "fa:chart-line"
 
     public ICollection<ApiEndpoint> Endpoints { get; set; } = new List<ApiEndpoint>();
 }

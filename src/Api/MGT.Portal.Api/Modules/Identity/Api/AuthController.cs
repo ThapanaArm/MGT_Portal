@@ -6,8 +6,34 @@ namespace MGT.Portal.Api.Modules.Identity;
 
 [ApiController]
 [Route("api/auth")]
-public class AuthController(PortalDbContext db, JwtService jwt, IUserScopeProvider scopeProvider) : ControllerBase
+public class AuthController(PortalDbContext db, JwtService jwt, IUserScopeProvider scopeProvider, IWebHostEnvironment env) : ControllerBase
 {
+    /// <summary>
+    /// Development only: accounts that have a display name, for the quick sign-in list on the login page.
+    /// Returns 404 in any other environment so the staff list is never exposed on a real server.
+    /// </summary>
+    [HttpGet("dev-accounts")]
+    public async Task<ActionResult<List<DevAccountDto>>> DevAccounts()
+    {
+        if (!env.IsDevelopment()) return NotFound();
+        return await db.Users.Include(u => u.Role)
+            .Where(u => u.DisplayName != null && u.DisplayName.Trim() != "")
+            .OrderBy(u => u.Role.Name).ThenBy(u => u.DisplayName)
+            .Select(u => new DevAccountDto(u.Email, u.DisplayName, u.Role.Name))
+            .ToListAsync();
+    }
+
+    /// <summary>Development only: sign in as an account from <see cref="DevAccounts"/> without a password.</summary>
+    [HttpPost("dev-login")]
+    public async Task<ActionResult<LoginResponse>> DevLogin(DevLoginRequest req)
+    {
+        if (!env.IsDevelopment()) return NotFound();
+        var user = await db.Users.Include(u => u.Role).Include(u => u.Team)
+            .FirstOrDefaultAsync(u => u.Email == req.Email && u.DisplayName != null && u.DisplayName.Trim() != "");
+        if (user is null) return Unauthorized(new { message = "Account not found" });
+        return Ok(new LoginResponse(jwt.CreateToken(user), await ToDto(user)));
+    }
+
     [HttpPost("login")]
     public async Task<ActionResult<LoginResponse>> Login(LoginRequest req)
     {

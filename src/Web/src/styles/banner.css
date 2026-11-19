@@ -1,0 +1,55 @@
+/* Page banners: 70% of their original size (Ecosystem, API Catalog, each API category).
+   Loaded last so it overrides portal.css, workspace.css and governance.css. Body text stays readable. */
+
+/* Ecosystem + API Catalog banner */
+.ecosystem-welcome { min-height: 0; padding: 22px 28px; gap: 22px; margin-bottom: 16px; border-radius: 14px; }
+.ecosystem-welcome .workspace-kicker { margin-bottom: 8px; }
+.ecosystem-hero h1 { font-size: clamp(24px, 2.4vw, 32px); }
+.ecosystem-hero p { margin-top: 6px; line-height: 1.6; }
+.ecosystem-hero .mt-6 { margin-top: 12px; }
+.ecosystem-hero button { min-height: 36px; padding-block: 8px; }
+/* Illustrations (dark: API call, light: orbit) shrink as one piece so the orbit keeps its proportions. */
+.ecosystem-hero .hero-art { zoom: .6; }
+
+/* API category banner (Sales, Purchase, ...) */
+.category-hero { padding: 22px; gap: 17px; margin-bottom: 22px; border-radius: 14px; }
+.category-hero-icon { width: 50px; height: 50px; font-size: 21px; border-radius: 14px; }
+.category-hero h1 { font-size: 24px; margin: 4px 0 6px; }
+.category-hero-tags { margin-top: 11px; }
+.category-hero-count { padding: 14px 20px; }
+.category-hero-count strong { font-size: 24px; }
+
+@media (max-width: 760px) {
+  .ecosystem-welcome { padding: 20px 17px; min-height: auto; }
+  .category-hero { padding: 17px; }
+  .category-hero-icon { width: 40px; height: 40px; font-size: 17px; border-radius: 10px; }
+  .category-hero h1 { font-size: 20px; }
+}
+
+/* The illustration (no orbit) shows in both themes and follows the theme colours from workspace.css (--hero-*, --ill-*). */
+
+/* Ecosystem first screen: banner + stats + Highlights fit on one screen on small and large monitors.
+   Sizes follow the viewport height (dvh, per UI UX Pro Max "Viewport Units") within min/max limits,
+   so a 1366x768 laptop and a 1920x1080 / 2560x1440 monitor both show the Highlights cards in full. */
+.ecosystem-welcome { padding: clamp(18px, 2.6dvh, 34px) clamp(20px, 2.4vw, 36px); }
+.ecosystem-hero .hero-art { zoom: .62; }
+@media (min-height: 860px) { .ecosystem-hero .hero-art { zoom: .72; } }
+@media (min-height: 1040px) { .ecosystem-hero .hero-art { zoom: .85; } }
+@media (max-height: 700px) { .ecosystem-hero .hero-art { zoom: .52; } }
+
+.ecosystem-stats { margin-bottom: clamp(14px, 2.2dvh, 28px); }
+.ecosystem-stat { padding: clamp(10px, 1.6dvh, 20px) 22px; }
+.ecosystem-stat > svg { padding: 10px; }
+.ecosystem-stat strong { font-size: clamp(20px, 2.4dvh, 26px); }
+
+.ecosystem-highlights { margin-bottom: 28px; }
+.ecosystem-highlights .workspace-section-title { margin-bottom: clamp(8px, 1.4dvh, 16px); }
+.ecosystem-highlights .ecosystem-feature-copy { gap: 8px; padding: clamp(12px, 1.6dvh, 18px) 16px; }
+
+
+/* Tablet: the banner stacks, so keep the illustration small. Phone: hide it — the Highlights matter more there. */
+@media (max-width: 1080px) { .ecosystem-hero .hero-art { zoom: .55; } }
+@media (max-width: 640px) {
+  .ecosystem-hero .hero-art { display: none; }
+  .ecosystem-stat { padding: 12px 10px; }
+}

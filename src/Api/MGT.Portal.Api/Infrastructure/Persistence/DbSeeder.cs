@@ -37,11 +37,11 @@ public static class DbSeeder
 
         var categories = new[]
         {
-            new ApiCategory { Key = "sales", Name = "Sales", BasePath = "/api/v1/sales", Description = "จัดการคำสั่งขาย ใบเสนอราคา และข้อมูลลูกค้า สำหรับทีมขายและหน้าร้าน", RateLimit = "120 คำขอ / นาที" },
-            new ApiCategory { Key = "purchase", Name = "Purchase", BasePath = "/api/v1/purchase", Description = "จัดการใบสั่งซื้อ ผู้ขาย (Vendor) และการอนุมัติจัดซื้อ", RateLimit = "120 คำขอ / นาที" },
-            new ApiCategory { Key = "inventory", Name = "Inventory", BasePath = "/api/v1/inventory", Description = "ตรวจสอบสต๊อกสินค้า คลังสินค้า และการเคลื่อนไหวของสินค้าคงคลัง", RateLimit = "180 คำขอ / นาที" },
-            new ApiCategory { Key = "finance", Name = "Finance", BasePath = "/api/v1/finance", Description = "ใบแจ้งหนี้ การชำระเงิน และรายงานทางการเงิน", RateLimit = "60 คำขอ / นาที" },
-            new ApiCategory { Key = "hr", Name = "HR", BasePath = "/api/v1/hr", Description = "ข้อมูลพนักงาน การลา และเงินเดือน (ข้อมูลอ่อนไหว จำกัดสิทธิ์)", RateLimit = "30 คำขอ / นาที" },
+            new ApiCategory { Key = "sales", Icon = "fa:chart-line", Name = "Sales", BasePath = "/api/v1/sales", Description = "จัดการคำสั่งขาย ใบเสนอราคา และข้อมูลลูกค้า สำหรับทีมขายและหน้าร้าน", RateLimit = "120 คำขอ / นาที" },
+            new ApiCategory { Key = "purchase", Icon = "fa:credit-card", Name = "Purchase", BasePath = "/api/v1/purchase", Description = "จัดการใบสั่งซื้อ ผู้ขาย (Vendor) และการอนุมัติจัดซื้อ", RateLimit = "120 คำขอ / นาที" },
+            new ApiCategory { Key = "inventory", Icon = "fa:box", Name = "Inventory", BasePath = "/api/v1/inventory", Description = "ตรวจสอบสต๊อกสินค้า คลังสินค้า และการเคลื่อนไหวของสินค้าคงคลัง", RateLimit = "180 คำขอ / นาที" },
+            new ApiCategory { Key = "finance", Icon = "fa:receipt", Name = "Finance", BasePath = "/api/v1/finance", Description = "ใบแจ้งหนี้ การชำระเงิน และรายงานทางการเงิน", RateLimit = "60 คำขอ / นาที" },
+            new ApiCategory { Key = "hr", Icon = "fa:users", Name = "HR", BasePath = "/api/v1/hr", Description = "ข้อมูลพนักงาน การลา และเงินเดือน (ข้อมูลอ่อนไหว จำกัดสิทธิ์)", RateLimit = "30 คำขอ / นาที" },
         };
         db.ApiCategories.AddRange(categories);
         db.SaveChanges();
@@ -236,22 +236,22 @@ public static class DbSeeder
         db.AppLogEntries.AddRange(
             new AppLogEntry { ApplicationId = app1.Id, ActionType = LogActionType.Create, OccurredAt = new DateTime(2026, 3, 14), Actor = salesUser.Email },
             new AppLogEntry { ApplicationId = app1.Id, ActionType = LogActionType.Review, OccurredAt = new DateTime(2026, 3, 20), Actor = salesUser.Email },
-            new AppLogEntry { ApplicationId = app1.Id, ActionType = LogActionType.Publish, OccurredAt = new DateTime(2026, 4, 2), Actor = "it-digital@megachem.co.th", Note = "คณะกรรมการอนุมัติระดับ Tier 3 (3/3 เสียง)" },
+            new AppLogEntry { ApplicationId = app1.Id, ActionType = LogActionType.Publish, OccurredAt = new DateTime(2026, 4, 2), Actor = "it-digital@megachem.co.th", Note = "คณะกรรมการอนุมัติระดับ Official (3/3 เสียง)" },
             new AppLogEntry { ApplicationId = app1.Id, ActionType = LogActionType.Update, OccurredAt = new DateTime(2026, 8, 5), Actor = salesUser.Email, Note = "เพิ่มสิทธิ์ Inventory API" },
 
             new AppLogEntry { ApplicationId = app2.Id, ActionType = LogActionType.Create, OccurredAt = new DateTime(2026, 6, 2), Actor = purchaseUser.Email },
             new AppLogEntry { ApplicationId = app2.Id, ActionType = LogActionType.Update, OccurredAt = new DateTime(2026, 7, 15), Actor = purchaseUser.Email, Note = "แก้ไข GitHub repository" },
-            new AppLogEntry { ApplicationId = app2.Id, ActionType = LogActionType.Review, OccurredAt = new DateTime(2026, 8, 10), Actor = purchaseUser.Email, Note = "ขอตรวจสอบระดับ Tier 2" },
+            new AppLogEntry { ApplicationId = app2.Id, ActionType = LogActionType.Review, OccurredAt = new DateTime(2026, 8, 10), Actor = purchaseUser.Email, Note = "ขอตรวจสอบระดับ Verify" },
 
             new AppLogEntry { ApplicationId = app3.Id, ActionType = LogActionType.Create, OccurredAt = new DateTime(2026, 7, 30), Actor = financeUser.Email },
 
             new AppLogEntry { ApplicationId = app4.Id, ActionType = LogActionType.Create, OccurredAt = new DateTime(2026, 5, 10), Actor = purchaseUser.Email },
-            new AppLogEntry { ApplicationId = app4.Id, ActionType = LogActionType.Review, OccurredAt = new DateTime(2026, 5, 18), Actor = purchaseUser.Email, Note = "ขอตรวจสอบระดับ Tier 2" },
-            new AppLogEntry { ApplicationId = app4.Id, ActionType = LogActionType.Publish, OccurredAt = new DateTime(2026, 5, 25), Actor = "it-digital@megachem.co.th", Note = "คณะกรรมการอนุมัติระดับ Tier 2 (2/3 เสียง)" },
+            new AppLogEntry { ApplicationId = app4.Id, ActionType = LogActionType.Review, OccurredAt = new DateTime(2026, 5, 18), Actor = purchaseUser.Email, Note = "ขอตรวจสอบระดับ Verify" },
+            new AppLogEntry { ApplicationId = app4.Id, ActionType = LogActionType.Publish, OccurredAt = new DateTime(2026, 5, 25), Actor = "it-digital@megachem.co.th", Note = "คณะกรรมการอนุมัติระดับ Verify (2/3 เสียง)" },
 
             new AppLogEntry { ApplicationId = app5.Id, ActionType = LogActionType.Create, OccurredAt = new DateTime(2026, 2, 1), Actor = hrUser.Email },
-            new AppLogEntry { ApplicationId = app5.Id, ActionType = LogActionType.Review, OccurredAt = new DateTime(2026, 2, 10), Actor = hrUser.Email, Note = "ขอตรวจสอบระดับ Tier 3" },
-            new AppLogEntry { ApplicationId = app5.Id, ActionType = LogActionType.Publish, OccurredAt = new DateTime(2026, 2, 20), Actor = "it-digital@megachem.co.th", Note = "คณะกรรมการอนุมัติระดับ Tier 3 (3/3 เสียง)" }
+            new AppLogEntry { ApplicationId = app5.Id, ActionType = LogActionType.Review, OccurredAt = new DateTime(2026, 2, 10), Actor = hrUser.Email, Note = "ขอตรวจสอบระดับ Official" },
+            new AppLogEntry { ApplicationId = app5.Id, ActionType = LogActionType.Publish, OccurredAt = new DateTime(2026, 2, 20), Actor = "it-digital@megachem.co.th", Note = "คณะกรรมการอนุมัติระดับ Official (3/3 เสียง)" }
         );
 
         // กรรมการเป็นรายแอป — ตัวอย่าง: คำขอที่รอรีวิวมีกรรมการ 3 คนที่ไม่ใช่ผู้ขอ

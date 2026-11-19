@@ -20,8 +20,9 @@ public sealed record WorkflowResult(bool Ok, string? Error = null)
 ///                         └──ปฏิเสธ──▶ Draft                    └────Publish────┘
 ///
 /// เกณฑ์ของแต่ละ Tier อยู่ใน AppTier: Tier 1 ผ่านทันที, Tier 2/3 ต้องได้เสียงกรรมการครบ Application.CommitteeSize (ใหม่ 5, คำขอเดิม 3) + IT รีวิวโค้ดผ่าน
-/// กรรมการเป็นรายแอป: IT เลือก 3 คนให้แต่ละ App และเปลี่ยนได้ทุกเมื่อ (SetReviewersAsync)
-/// นับเฉพาะเสียงของคนที่ยังเป็นกรรมการของ App อยู่ — เปลี่ยนคนระหว่างรีวิว เสียงของคนเดิมในรอบนั้นถูกทิ้ง
+/// กรรมการเป็นชุดเดียวทั้ง Portal (CommitteeMembers, 5 คน, IT ตั้งด้วย SetCommitteeAsync) — ตอนส่งรีวิวคัดลอกลง AppReviewers ของคำขอ
+/// ผู้ขอที่เป็นกรรมการเองถูกตัดออก (คำขอนั้นมีกรรมการ 4 คน: Register 3/4, Verify / Official 4/4)
+/// นับเฉพาะเสียงของคนที่ยังเป็นกรรมการของ App อยู่ — IT เปลี่ยนคณะกรรมการระหว่างรีวิว เสียงของคนที่ถูกเอาออกในรอบนั้นถูกทิ้ง
 /// credential ที่ Gateway ออกให้เฉพาะ Tier ที่ใช้ API ได้ และถูกปิดทันทีเมื่อ App ถูกระงับ
 /// Sandbox ออกตั้งแต่ IT เตรียม repo เสร็จ ส่วน Production ออกหลังอนุมัติ (ดู CredentialAllowed)
 /// credential แยกตามหมวด API ที่ขอ (ProductsCsv) — ขอ 2 หมวดได้ 2 token ต่อ env
@@ -30,9 +31,9 @@ public class ApplicationWorkflow(PortalDbContext db)
 {
     public static string TierLabel(string tier) => tier switch
     {
-        AppTier.Tier1 => "Tier 1 Register",
-        AppTier.Tier2 => "Tier 2 Verify",
-        AppTier.Tier3 => "Tier 3 Official",
+        AppTier.Tier1 => "Register",
+        AppTier.Tier2 => "Verify",
+        AppTier.Tier3 => "Official",
         _ => tier,
     };
 
@@ -70,7 +71,7 @@ public class ApplicationWorkflow(PortalDbContext db)
         if (a.Status == AppStatus.Active)
             return AppTier.CanUseApis(a.Type)
                 ? WorkflowResult.Success
-                : WorkflowResult.Fail("Tier 1 applications do not use APIs and have no credentials");
+                : WorkflowResult.Fail("Register applications do not use APIs and have no credentials");
         if (env == CredEnv.Production)
             return WorkflowResult.Fail("Production credentials are issued only after the application is approved");
 
@@ -98,46 +99,93 @@ public class ApplicationWorkflow(PortalDbContext db)
         if (a.Status is not (AppStatus.Draft or AppStatus.Suspended))
             return WorkflowResult.Fail("Only draft or suspended applications can be submitted for review");
         if (!AppTier.CanUseApis(targetTier) && HasApis(a))
-            return WorkflowResult.Fail("Tier 1 does not support APIs. Remove the API products or select Tier 2.");
+            return WorkflowResult.Fail("Register does not support APIs. Remove the API products or select Verify.");
+        if (await db.CommitteeMembers.CountAsync() < AppTier.CommitteeSize)
+            return WorkflowResult.Fail("The review committee has not been set up yet. Ask IT to choose the committee members.");
 
         a.Status = AppStatus.Pending;
         a.ReviewTarget = targetTier;
         a.ReviewCycle += 1;
         a.UpdatedAt = DateTime.UtcNow;
         Log(a, LogActionType.Review, actor, $"ขอตรวจสอบระดับ {TierLabel(targetTier)}");
+        await SyncReviewersAsync(a, actor);
 
-        // Tier 1 ไม่ต้องรอกรรมการ จึงผ่านทันทีในขั้นนี้
+        // ทุก Tier ต้องรอเสียงกรรมการ (Register 3/5) — เรียกไว้เผื่อเกณฑ์ของ Tier เป็น 0 ในอนาคต
         await TryCompleteReviewAsync(a, actor);
         await db.SaveChangesAsync();
         return WorkflowResult.Success;
     }
 
+    /// <summary>คณะกรรมการชุดปัจจุบัน เรียงตามลำดับที่นั่ง</summary>
+    public Task<List<Identity.User>> CommitteeAsync() =>
+        db.CommitteeMembers.OrderBy(m => m.Id).Select(m => m.User).ToListAsync();
+
     /// <summary>
-    /// IT เลือก/เปลี่ยนกรรมการของ App (ไม่เกิน Application.CommitteeSize คน ไม่ซ้ำกัน และไม่ใช่ผู้ขอเอง) — เปลี่ยนได้ทุกเมื่อ
-    /// ถ้า App กำลังรอรีวิว ความเห็นของคนที่ถูกเอาออกในรอบปัจจุบันจะถูกทิ้ง กรรมการคนใหม่ต้องลงความเห็นเอง
+    /// IT ตั้งคณะกรรมการทั้งชุด (ครบ AppTier.CommitteeSize คน ไม่ซ้ำกัน) — ใช้กับทุกคำขอ
+    /// คำขอที่รอรีวิวอยู่ถูกเปลี่ยนเป็นชุดใหม่ทันที: ความเห็นของคนที่ถูกเอาออกในรอบปัจจุบันถูกทิ้ง ความเห็นของคนที่ยังอยู่ยังนับ
     /// </summary>
-    public async Task<WorkflowResult> SetReviewersAsync(Application a, IReadOnlyCollection<int> userIds, string actor)
+    public async Task<WorkflowResult> SetCommitteeAsync(IReadOnlyCollection<int> userIds, string actor)
     {
         var wanted = userIds.Distinct().ToList();
         if (wanted.Count != userIds.Count)
             return WorkflowResult.Fail("Select a different person for each committee seat");
-        if (wanted.Count > a.CommitteeSize)
-            return WorkflowResult.Fail($"This application has at most {a.CommitteeSize} committee members");
-        if (wanted.Contains(a.OwnerUserId))
-            return WorkflowResult.Fail("The requester cannot be a committee member for their own application");
+        if (wanted.Count != AppTier.CommitteeSize)
+            return WorkflowResult.Fail($"Choose all {AppTier.CommitteeSize} committee members");
         var users = await db.Users.Where(u => wanted.Contains(u.Id)).ToListAsync();
         if (users.Count != wanted.Count)
             return WorkflowResult.Fail("User not found");
 
-        var current = await db.AppReviewers.Include(r => r.User).Where(r => r.ApplicationId == a.Id).ToListAsync();
-        var removed = current.Where(r => !wanted.Contains(r.UserId)).ToList();
-        var added = users.Where(u => current.All(r => r.UserId != u.Id)).OrderBy(u => wanted.IndexOf(u.Id)).ToList();
+        var current = await db.CommitteeMembers.ToListAsync();
+        var removed = current.Where(m => !wanted.Contains(m.UserId)).ToList();
+        var added = wanted.Where(id => current.All(m => m.UserId != id)).ToList();
         if (removed.Count == 0 && added.Count == 0) return WorkflowResult.Success;
+
+        db.CommitteeMembers.RemoveRange(removed);
+        var now = DateTime.UtcNow;
+        foreach (var id in added)
+            db.CommitteeMembers.Add(new CommitteeMember { UserId = id, AddedAt = now, AddedBy = actor });
+        await db.SaveChangesAsync();
+
+        // คำขอที่รอรีวิวอยู่ใช้ชุดใหม่ทันที แล้วตรวจเกณฑ์ใหม่ (คนที่ยังไม่ได้ลงความเห็นอาจถูกเอาออก หรือจำนวนกรรมการของคำขอเปลี่ยน)
+        var pending = await db.Applications.Where(a => a.Status == AppStatus.Pending).ToListAsync();
+        foreach (var app in pending)
+        {
+            await SyncReviewersAsync(app, actor);
+            var target = app.ReviewTarget ?? app.Type;
+            var reviewerIds = await db.AppReviewers.Where(r => r.ApplicationId == app.Id).Select(r => r.UserId).ToListAsync();
+            var rejections = await db.AppVotes.CountAsync(v =>
+                v.ApplicationId == app.Id && v.ReviewCycle == app.ReviewCycle && v.Rejected && reviewerIds.Contains(v.ReviewerUserId));
+            if (rejections > 0 && rejections >= AppTier.RejectionsToClose(target, app.CommitteeSize))
+                await CloseAsRejectedAsync(app, actor, rejections);
+            else if (await TryCompleteReviewAsync(app, actor))
+                await db.SaveChangesAsync();
+        }
+        return WorkflowResult.Success;
+    }
+
+    /// <summary>
+    /// ตั้งกรรมการของคำขอนี้ให้ตรงกับคณะกรรมการชุดปัจจุบัน (ตัดผู้ขอออกถ้าเป็นกรรมการเอง) และตั้ง CommitteeSize ตามจำนวนที่เหลือ
+    /// ถ้าคำขอกำลังรอรีวิว ความเห็นของคนที่ถูกเอาออกในรอบปัจจุบันจะถูกทิ้ง — SaveChanges แล้ว
+    /// </summary>
+    public async Task SyncReviewersAsync(Application a, string actor)
+    {
+        var members = await db.CommitteeMembers.Include(m => m.User).OrderBy(m => m.Id).ToListAsync();
+        var eligible = members.Where(m => m.UserId != a.OwnerUserId).ToList();
+        a.CommitteeSize = eligible.Count;
+
+        var current = await db.AppReviewers.Include(r => r.User).Where(r => r.ApplicationId == a.Id).ToListAsync();
+        var removed = current.Where(r => eligible.All(m => m.UserId != r.UserId)).ToList();
+        var added = eligible.Where(m => current.All(r => r.UserId != m.UserId)).ToList();
+        if (removed.Count == 0 && added.Count == 0)
+        {
+            await db.SaveChangesAsync();
+            return;
+        }
 
         db.AppReviewers.RemoveRange(removed);
         var now = DateTime.UtcNow;
-        foreach (var user in added)
-            db.AppReviewers.Add(new AppReviewer { ApplicationId = a.Id, UserId = user.Id, AssignedAt = now, AssignedBy = actor });
+        foreach (var member in added)
+            db.AppReviewers.Add(new AppReviewer { ApplicationId = a.Id, UserId = member.UserId, AssignedAt = now, AssignedBy = actor });
 
         var discarded = 0;
         if (a.Status == AppStatus.Pending && removed.Count > 0)
@@ -149,17 +197,23 @@ public class ApplicationWorkflow(PortalDbContext db)
             discarded = stale.Count;
         }
 
-        var parts = new List<string>();
-        if (added.Count > 0) parts.Add("เพิ่ม " + string.Join(", ", added.Select(u => u.Email)));
-        if (removed.Count > 0) parts.Add("เอาออก " + string.Join(", ", removed.Select(r => r.User.Email)));
-        if (discarded > 0) parts.Add($"ทิ้งความเห็นของคนที่ถูกเอาออก {discarded} รายการในรอบรีวิวนี้");
-        Log(a, LogActionType.Update, actor, "เปลี่ยนกรรมการ: " + string.Join(" · ", parts));
+        if (current.Count > 0)
+        {
+            var parts = new List<string>();
+            if (added.Count > 0) parts.Add("เพิ่ม " + string.Join(", ", added.Select(m => m.User.Email)));
+            if (removed.Count > 0) parts.Add("เอาออก " + string.Join(", ", removed.Select(r => r.User.Email)));
+            if (discarded > 0) parts.Add($"ทิ้งความเห็นของคนที่ถูกเอาออก {discarded} รายการในรอบรีวิวนี้");
+            Log(a, LogActionType.Update, actor, "เปลี่ยนกรรมการตามคณะกรรมการชุดปัจจุบัน: " + string.Join(" · ", parts));
+        }
         await db.SaveChangesAsync();
-        return WorkflowResult.Success;
     }
 
-    /// <summary>กรรมการของ App นี้ลงความเห็น — กดซ้ำคือแก้ความเห็นของตัวเองในรอบปัจจุบัน</summary>
-    public async Task<WorkflowResult> RecordVoteAsync(Application a, int userId, bool approved, string? note, string actor)
+    /// <summary>
+    /// กรรมการของ App นี้ลงความเห็น — กดซ้ำคือแก้ความเห็นของตัวเองในรอบปัจจุบัน
+    /// approved: อนุมัติ · !approved: ขอให้แก้ (คืนเป็น Draft) · reject: ปฏิเสธ (ต้องมีเหตุผล)
+    /// เสียง Reject ถึง AppTier.RejectionsToClose (ไม่มีทางได้เสียงอนุมัติครบ) → ปิดคำขอเป็น Rejected
+    /// </summary>
+    public async Task<WorkflowResult> RecordVoteAsync(Application a, int userId, bool approved, string? note, string actor, bool reject = false)
     {
         if (a.Status != AppStatus.Pending)
             return WorkflowResult.Fail("This application is not awaiting review");
@@ -169,6 +223,9 @@ public class ApplicationWorkflow(PortalDbContext db)
             .SingleOrDefaultAsync(r => r.ApplicationId == a.Id && r.UserId == userId);
         if (reviewer is null || !string.Equals(reviewer.User.Email, actor, StringComparison.OrdinalIgnoreCase))
             return WorkflowResult.Fail("Only a committee member assigned to this application can record their own decision");
+        if (reject) approved = false;
+        if (reject && string.IsNullOrWhiteSpace(note))
+            return WorkflowResult.Fail("Enter a reason for rejecting this request");
         if (!approved && string.IsNullOrWhiteSpace(note))
             return WorkflowResult.Fail("Enter a reason for requesting changes");
 
@@ -180,12 +237,24 @@ public class ApplicationWorkflow(PortalDbContext db)
             db.AppVotes.Add(existing);
         }
         existing.Approved = approved;
+        existing.Rejected = reject;
         existing.ActorEmail = actor;
         existing.DecidedAt = DateTime.UtcNow;
         existing.Note = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
-        Log(a, LogActionType.Update, actor, approved ? "Committee approval recorded" : $"Changes requested: {existing.Note}");
+        Log(a, LogActionType.Update, actor, approved ? "Committee approval recorded" : reject ? $"Committee rejected: {existing.Note}" : $"Changes requested: {existing.Note}");
         await db.SaveChangesAsync();
 
+        if (reject)
+        {
+            // นับเฉพาะเสียงของคนที่ยังเป็นกรรมการของ App นี้อยู่
+            var target = a.ReviewTarget ?? a.Type;
+            var reviewerIds = await db.AppReviewers.Where(r => r.ApplicationId == a.Id).Select(r => r.UserId).ToListAsync();
+            var rejections = await db.AppVotes.CountAsync(v =>
+                v.ApplicationId == a.Id && v.ReviewCycle == a.ReviewCycle && v.Rejected && reviewerIds.Contains(v.ReviewerUserId));
+            if (rejections >= AppTier.RejectionsToClose(target, a.CommitteeSize))
+                return await CloseAsRejectedAsync(a, actor, rejections);
+            return WorkflowResult.Success;
+        }
         if (!approved) return await RejectAsync(a, actor);
 
         if (await TryCompleteReviewAsync(a, actor))
@@ -331,6 +400,24 @@ public class ApplicationWorkflow(PortalDbContext db)
         return WorkflowResult.Success;
     }
 
+    /// <summary>
+    /// ปิดคำขอเป็น Rejected (ถาวร): เก็บ Tier ที่ขอไว้แสดงผล ปิด credential ที่เคยออก (เช่น Sandbox ช่วงพัฒนา)
+    /// เหตุผลอยู่ใน AppVotes.Note ของเสียง Reject และในประวัติ
+    /// </summary>
+    private async Task<WorkflowResult> CloseAsRejectedAsync(Application a, string actor, int rejections)
+    {
+        var target = a.ReviewTarget ?? a.Type;
+        a.Status = AppStatus.Rejected;
+        a.UpdatedAt = DateTime.UtcNow;
+        var revoked = await RevokeAllCredentialsAsync(a);
+        Log(a, LogActionType.Update, actor,
+            $"Request rejected by the committee ({rejections} of {a.CommitteeSize} rejected, {TierLabel(target)}). The request is closed."
+            + (revoked > 0 ? $" Revoked {revoked} credential(s)." : ""));
+        await db.SaveChangesAsync();
+        return WorkflowResult.Success;
+    }
+
+    /// <summary>"Request changes" — คืนคำขอเป็น Draft ให้ผู้ขอแก้แล้วส่งใหม่ (ไม่ใช่การ Reject)</summary>
     public async Task<WorkflowResult> RejectAsync(Application a, string actor)
     {
         if (a.Status != AppStatus.Pending)
@@ -341,6 +428,29 @@ public class ApplicationWorkflow(PortalDbContext db)
         a.ReviewTarget = null;
         a.UpdatedAt = DateTime.UtcNow;
         Log(a, LogActionType.Update, actor, $"คณะกรรมการปฏิเสธคำขอระดับ {TierLabel(target)}");
+        await db.SaveChangesAsync();
+        return WorkflowResult.Success;
+    }
+
+    /// <summary>
+    /// IT เปิดคำขอที่ถูก Reject กลับมาพัฒนาใหม่ (ต้องใส่เหตุผล) — คำขอกลับเป็น Draft:
+    /// ถ้าผ่านขั้นเตรียม repo มาแล้ว จะอยู่ในขั้น "แก้ไขแล้วส่งใหม่" และได้ Sandbox credential คืน, ถ้าไม่ใช่ ผู้ขอแก้แล้วส่งรีวิวใหม่ได้
+    /// เสียงและเหตุผลของรอบที่ถูก Reject เก็บไว้เป็นประวัติ รอบรีวิวถัดไปเริ่มนับใหม่
+    /// </summary>
+    public async Task<WorkflowResult> ReopenAsync(Application a, string? note, string actor)
+    {
+        if (a.Status != AppStatus.Rejected)
+            return WorkflowResult.Fail("Only rejected requests can be reopened");
+        if (string.IsNullOrWhiteSpace(note))
+            return WorkflowResult.Fail("Enter a reason for reopening this request");
+        if (DevelopmentProcess.Read(a)?.ParentApplicationId != null)
+            return WorkflowResult.Fail("Rejected system updates can't be reopened. Ask the owner to request a new update.");
+
+        a.Status = AppStatus.Draft;
+        a.ReviewTarget = null;
+        a.UpdatedAt = DateTime.UtcNow;
+        Log(a, LogActionType.Update, actor, $"Reopened for development by IT: {note.Trim()}");
+        await IssueDevelopmentCredentialAsync(a, actor);
         await db.SaveChangesAsync();
         return WorkflowResult.Success;
     }
@@ -420,7 +530,7 @@ public class ApplicationWorkflow(PortalDbContext db)
         {
             // Tier 1 ไม่มีสิทธิ์เรียก API — ถ้าเคยมี credential จาก Tier เดิมให้ปิดทิ้ง
             await RevokeAllCredentialsAsync(a);
-            note = $"อนุมัติอัตโนมัติระดับ {TierLabel(target)} (ไม่ต่อ API จึงไม่ออก credential)";
+            note = $"อนุมัติระดับ {TierLabel(target)}: กรรมการ {votes}/{need} เสียง (ไม่ต่อ API จึงไม่ออก credential)";
         }
         else if (HasApis(a))
         {

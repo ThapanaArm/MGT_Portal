@@ -3,14 +3,17 @@
   --glass-face:linear-gradient(125deg,color-mix(in srgb,var(--surface) 88%,transparent),color-mix(in srgb,var(--surface) 68%,transparent));
   --glass-edge:color-mix(in srgb,var(--line) 60%,var(--surface));
   --glass-highlight:color-mix(in srgb,var(--surface) 75%,#fff);
-  --glass-shadow:inset 0 1px 0 var(--glass-highlight),inset 0 -1px 0 color-mix(in srgb,var(--surface) 45%,transparent),0 8px 28px color-mix(in srgb,var(--navy) 5%,transparent);
+  /* Cards and panels: flat, no inner highlight or drop shadow (banners keep --glass-shadow-wide). */
+  --glass-shadow:none;
+  /* Banners keep the original wider shadow. */
+  --glass-shadow-wide:inset 0 1px 0 var(--glass-highlight),inset 0 -1px 0 color-mix(in srgb,var(--surface) 45%,transparent),0 8px 28px color-mix(in srgb,var(--navy) 5%,transparent);
   --glass-accent:linear-gradient(115deg,color-mix(in srgb,var(--mgt-blue) 12%,transparent),transparent 56%,color-mix(in srgb,var(--mgt-green) 9%,transparent));
   --page-glow:radial-gradient(ellipse at 10% 0%,color-mix(in srgb,var(--mgt-blue) 11%,transparent),transparent 48rem),radial-gradient(ellipse at 95% 18%,color-mix(in srgb,var(--mgt-green) 6%,transparent),transparent 38rem);
 }
 /* Navigation retains the original glass rules in portal.css. */
 .portal-nav-item[aria-current="page"] { color:var(--teal-strong); background:linear-gradient(110deg,color-mix(in srgb,var(--mgt-blue) 12%,transparent),color-mix(in srgb,var(--mgt-blue) 5%,transparent)); box-shadow:inset 0 1px 0 color-mix(in srgb,var(--surface) 60%,transparent); border-color:color-mix(in srgb,var(--brand) 8%,transparent); }
 .portal-nav-item[aria-current="page"]::before { width:3px; background:linear-gradient(var(--mgt-blue),var(--mgt-green)); }
-.example-site .example-dashboard-hero,.category-hero { background:var(--glass-accent),var(--glass-face); border:1px solid var(--glass-edge); box-shadow:var(--glass-shadow); backdrop-filter:blur(24px) saturate(135%); -webkit-backdrop-filter:blur(24px) saturate(135%); }
+.example-site .example-dashboard-hero,.category-hero { background:var(--glass-accent),var(--glass-face); border:1px solid var(--glass-edge); box-shadow:var(--glass-shadow-wide); backdrop-filter:blur(24px) saturate(135%); -webkit-backdrop-filter:blur(24px) saturate(135%); }
 .example-site .example-dashboard-hero h2,.category-hero h1 { color:var(--ink); }.example-site .example-dashboard-hero p,.category-hero-copy > p,.category-hero-tags > span,.category-hero-count span { color:var(--ink-dim); }
 .example-site .example-dashboard-hero .workspace-kicker,.category-hero .category-eyebrow,.category-hero-tags > span:first-child { color:var(--teal-strong); }
 .category-hero-icon { color:var(--teal-strong); background:linear-gradient(135deg,color-mix(in srgb,var(--teal-soft) 70%,transparent),color-mix(in srgb,var(--surface) 70%,transparent)); border-color:var(--glass-edge); box-shadow:inset 0 1px 0 var(--glass-highlight); }.category-hero-count { border-color:var(--line); }.category-hero-count strong { color:var(--teal-strong); }

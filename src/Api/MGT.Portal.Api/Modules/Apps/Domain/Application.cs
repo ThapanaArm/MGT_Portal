@@ -23,8 +23,8 @@ public class Application
     public int ReviewCycle { get; set; } = 0;
 
     /// <summary>
-    /// จำนวนกรรมการของคำขอนี้ — ต้องได้เสียงอนุมัติครบทุกคน (ดู AppTier.RequiredVotes)
-    /// คำขอใหม่ = AppTier.CommitteeSize (5) · คำขอที่มีอยู่ก่อน migration CommitteeSizePerApplication = 3
+    /// จำนวนกรรมการของคำขอนี้ ตั้งตอนส่งรีวิวจากคณะกรรมการชุดเดียว (CommitteeMembers): 5 คน หรือ 4 ถ้าผู้ขอเป็นกรรมการเอง
+    /// เกณฑ์เสียงดู AppTier.RequiredVotes
     /// </summary>
     public int CommitteeSize { get; set; } = AppTier.CommitteeSize;
 
@@ -43,7 +43,7 @@ public class Application
     public ICollection<AppScreenshot> Screenshots { get; set; } = new List<AppScreenshot>();
     public ICollection<AppCredential> Credentials { get; set; } = new List<AppCredential>();
     public ICollection<AppVote> Votes { get; set; } = new List<AppVote>();
-    /// <summary>กรรมการของ App นี้ ไม่เกิน CommitteeSize คน (IT เลือก/เปลี่ยนได้ทุกเมื่อ)</summary>
+    /// <summary>กรรมการของ App นี้ — คัดลอกจากคณะกรรมการชุดเดียวตอนส่งรีวิว และเปลี่ยนตามเมื่อ IT เปลี่ยนคณะกรรมการระหว่างรีวิว</summary>
     public ICollection<AppReviewer> Reviewers { get; set; } = new List<AppReviewer>();
     public ICollection<AppLogEntry> Log { get; set; } = new List<AppLogEntry>();
     public ICollection<AppCodeReview> CodeReviews { get; set; } = new List<AppCodeReview>();
@@ -83,6 +83,11 @@ public class AppVote
     /// <summary>Which review cycle this vote belongs to — cleared/incremented each time the app is resubmitted.</summary>
     public int ReviewCycle { get; set; }
     public bool Approved { get; set; }
+    /// <summary>
+    /// กรรมการกด Reject (Approved = false ด้วย) — ต่างจาก "Request changes" (Approved = false, Rejected = false)
+    /// ที่คืนคำขอให้ผู้ขอแก้ Note คือเหตุผล (บังคับใส่)
+    /// </summary>
+    public bool Rejected { get; set; }
     public string? ActorEmail { get; set; }
     public DateTime? DecidedAt { get; set; }
     public string? Note { get; set; }

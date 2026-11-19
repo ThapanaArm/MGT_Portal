@@ -5,6 +5,7 @@ using MGT.Portal.Api.Modules.Catalog;
 using MGT.Portal.Api.Modules.Gateway;
 using MGT.Portal.Api.Modules.Identity;
 using MGT.Portal.Api.Modules.Audit;
+using MGT.Portal.Api.Modules.Scheduling;
 
 namespace MGT.Portal.Api.Infrastructure.Persistence;
 
@@ -36,8 +37,12 @@ public class PortalDbContext(DbContextOptions<PortalDbContext> options, IHttpCon
     public DbSet<AppCredential> AppCredentials => Set<AppCredential>();
     public DbSet<AppLogEntry> AppLogEntries => Set<AppLogEntry>();
     public DbSet<AppReviewer> AppReviewers => Set<AppReviewer>();
+    public DbSet<CommitteeMember> CommitteeMembers => Set<CommitteeMember>();
     public DbSet<AppVote> AppVotes => Set<AppVote>();
     public DbSet<AppCodeReview> AppCodeReviews => Set<AppCodeReview>();
+
+    // Scheduling (ปฏิทิน IT)
+    public DbSet<CalendarEvent> CalendarEvents => Set<CalendarEvent>();
 
     // Access
     public DbSet<AccessGrant> AccessGrants => Set<AccessGrant>();

@@ -3,8 +3,8 @@ using MGT.Portal.Api.Modules.Identity;
 namespace MGT.Portal.Api.Modules.Apps;
 
 /// <summary>
-/// กรรมการของ App หนึ่ง — แต่ละ App มีกรรมการของตัวเอง (Application.CommitteeSize คน: ใหม่ 5, คำขอเดิม 3) (ไม่ใช้ชุดเดียวกันทุก App)
-/// IT เลือกและเปลี่ยนได้ทุกเมื่อผ่าน ApplicationWorkflow.SetReviewersAsync
+/// กรรมการของ App หนึ่ง — คัดลอกจากคณะกรรมการชุดเดียว (CommitteeMember) ตอนส่งรีวิว ผ่าน ApplicationWorkflow.SyncReviewersAsync
+/// เก็บรายชื่อของแต่ละคำขอไว้เป็นประวัติ (คำขอที่จบไปแล้วยังเห็นว่าใครเป็นกรรมการตอนนั้น)
 /// </summary>
 public class AppReviewer
 {

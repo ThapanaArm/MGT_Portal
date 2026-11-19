@@ -83,7 +83,7 @@ export default function UserScopeTable() {
   };
 
   if (!selected) return <div>
-    <header className="portal-page-heading"><span className="workspace-kicker">Admin</span><h1>Access Control</h1><p className="text-ink-dim mt-2">Choose a person to see which APIs they can use and what they can do.</p></header>
+    <header className="portal-page-heading"><h1>Access Control</h1></header>
     <div className="mb-5"><Input aria-label="Find a user" placeholder="Search by name, email, or department..." value={userQuery} onChange={event => setUserQuery(event.target.value)} /></div>
     {error && <p role="alert" className="mb-3">{error}</p>}
     <div className="portal-table-frame"><table className="w-full"><thead><tr>{["User", "Role", "Department", ""].map((label, index) => <th key={index} scope="col">{label}</th>)}</tr></thead><tbody>

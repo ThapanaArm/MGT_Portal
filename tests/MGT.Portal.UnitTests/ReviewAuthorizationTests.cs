@@ -31,6 +31,7 @@ public class ReviewAuthorizationTests
     public async Task Every_requested_developer_must_be_prepared_before_deployment_can_be_requested()
     {
         await using var db = NewDb();
+        SeedCommittee(db);
         var app = new Application { OwnerUserId = 7, ProductsCsv = "sales" };
         db.Applications.Add(app); await db.SaveChangesAsync();
         var owner = Controller(db, 7, "sales@megachem.co.th");
@@ -67,6 +68,7 @@ public class ReviewAuthorizationTests
     public async Task Sent_back_deployment_is_awaiting_changes_and_can_be_requested_again()
     {
         await using var db = NewDb();
+        SeedCommittee(db);
         var ownerUser = new User { Email = "sales@megachem.co.th" };
         var itUser = new User { Email = "it@megachem.co.th" };
         db.Users.AddRange(ownerUser, itUser); await db.SaveChangesAsync();
@@ -92,9 +94,32 @@ public class ReviewAuthorizationTests
     }
 
     [Fact]
-    public async Task Tier1_is_approved_only_after_development_and_a_separate_deployment_request()
+    public async Task Requester_requests_deployment_without_Git_details_and_IT_records_them()
     {
         await using var db = NewDb();
+        SeedCommittee(db);
+        var app = new Application { OwnerUserId = 7 }; db.Applications.Add(app); await db.SaveChangesAsync();
+        var owner = Controller(db, 7, "sales@megachem.co.th");
+        var it = Controller(db, 42, "it@megachem.co.th", "admin");
+        await owner.SaveDevelopmentAccess(app.Id, new("tier1", ["sales@megachem.co.th"], true));
+        await it.PrepareDevelopment(app.Id, new("https://github.com/company/repo", [new("sales@megachem.co.th", true)], true));
+
+        Assert.IsType<NoContentResult>(await owner.RequestDeployment(app.Id, new()));
+        Assert.Equal("review", DevelopmentProcess.Read(app)!.Stage);
+        Assert.Null(DevelopmentProcess.Read(app)!.Commit);
+
+        Assert.IsType<BadRequestObjectResult>(await it.SetDeploymentSource(app.Id, new("main", "invalid")));
+        Assert.IsType<NoContentResult>(await it.SetDeploymentSource(app.Id, new("release/1.0", "a1b2c3d")));
+        Assert.Equal("release/1.0", DevelopmentProcess.Read(app)!.Branch);
+        Assert.Equal("a1b2c3d", DevelopmentProcess.Read(app)!.Commit);
+        Assert.Equal("review", DevelopmentProcess.ReadStored(app)!.Stage);
+    }
+
+    [Fact]
+    public async Task Register_waits_for_the_committee_after_development_and_a_separate_deployment_request()
+    {
+        await using var db = NewDb();
+        SeedCommittee(db);
         var app = new Application { OwnerUserId = 7 }; db.Applications.Add(app); await db.SaveChangesAsync();
         var owner = Controller(db, 7, "sales@megachem.co.th");
         await owner.SaveDevelopmentAccess(app.Id, new("tier1", ["sales@megachem.co.th"], true));
@@ -102,8 +127,9 @@ public class ReviewAuthorizationTests
         await Controller(db, 42, "it@megachem.co.th", "admin").PrepareDevelopment(app.Id,
             new("https://github.com/company/repo", [new("sales@megachem.co.th", true)], true));
         Assert.IsType<NoContentResult>(await owner.RequestDeployment(app.Id, new("main", "a1b2c3d")));
-        Assert.Equal("active", app.Status);
-        Assert.Equal("awaiting-deployment", DevelopmentProcess.Read(app)!.Stage);
+        // Register is no longer approved automatically: it needs 3 of 5 committee approvals.
+        Assert.Equal("pending", app.Status);
+        Assert.Equal("review", DevelopmentProcess.Read(app)!.Stage);
         Assert.Empty(await db.AppCredentials.ToListAsync());
     }
 
@@ -190,6 +216,14 @@ public class ReviewAuthorizationTests
         Assert.NotNull(result.Value);
         Assert.Equal("Updated business name", app.Name);
         Assert.Equal("https://github.com/company/repo", app.Github);
+    }
+
+    /// <summary>คณะกรรมการ 5 คนที่ต้องมีก่อนส่งคำขอเข้ารีวิวได้</summary>
+    private static void SeedCommittee(PortalDbContext db)
+    {
+        for (var i = 1; i <= AppTier.CommitteeSize; i++)
+            db.CommitteeMembers.Add(new CommitteeMember { User = new User { Email = $"member{i}@megachem.co.th" }, AddedBy = "it@megachem.co.th" });
+        db.SaveChanges();
     }
 
     private static PortalDbContext NewDb() => new(new DbContextOptionsBuilder<PortalDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
@@ -301,7 +335,7 @@ public class ReviewAuthorizationTests
         DevelopmentProcess.Write(app, new DevelopmentRequest("live", "tier2", Branch: "main", Commit: "aaaaaaa", LiveBy: "first-it", LiveAt: DateTime.UtcNow.AddDays(-1)));
         app.Credentials.Add(new AppCredential { Env = CredEnv.Production, TokenId = "existing-id", TokenSecret = "existing-secret", Category = "sales" });
         var reviewers = Enumerable.Range(1, AppTier.CommitteeSize).Select(i => new User { Email = $"reviewer{i}@megachem.co.th" }).ToArray();
-        foreach (var reviewer in reviewers) app.Reviewers.Add(new AppReviewer { User = reviewer });
+        foreach (var reviewer in reviewers) db.CommitteeMembers.Add(new CommitteeMember { User = reviewer, AddedBy = "it@megachem.co.th" });
         db.Applications.Add(app); await db.SaveChangesAsync();
         var request = new SystemUpdateRequest("1.1.0", "Improved OCR", "release/1.1", "bbbbbbb");
         Assert.IsType<ForbidResult>(await Controller(db, 999, "other@megachem.co.th").RequestSystemUpdate(app.Id, request));

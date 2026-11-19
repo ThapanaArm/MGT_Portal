@@ -1,13 +1,8 @@
 import { Input, Select, Skeleton } from "@/shared/components/design-system";
 import AppsIllustration from "@/shared/components/AppsIllustration";
-import OrbitIllustration from "@/shared/components/OrbitIllustration";
 
-/** Shown on the light-theme orbit until there are at least three approved apps. */
-const SAMPLE_APPS = [
-  { icon: "fa:chart-column", label: "Reports" }, { icon: "fa:truck", label: "Shipping" }, { icon: "fa:flask", label: "Lab" },
-  { icon: "fa:users", label: "People" }, { icon: "fa:warehouse", label: "Inventory" },
-];
 import { AppIcon } from "@/shared/components/IconPicker";
+import HighlightCarousel from "./HighlightCarousel";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { api } from "@/shared/lib/api";
@@ -15,7 +10,6 @@ import { useLocale } from "@/shared/lib/locale-context";
 import { Btn, EmptyState, ScopeTag, TypeChip } from "@/shared/components/ui";
 import { Alert } from "@/shared/components/feedback";
 import { AppAvatar } from "@/shared/components/MediaPickers";
-import { Carousel } from "@/shared/components/Carousel";
 import type { AppSummaryDto, CategoryDto } from "@/shared/lib/types";
 
 export default function EcosystemPage() {
@@ -55,8 +49,7 @@ export default function EcosystemPage() {
       </div>
       {/* Dark theme: app launcher illustration · Light theme: apps orbiting the MGT hub */}
       <div className="hero-art">
-        <AppsIllustration className="ecosystem-illustration hero-art-dark" count={loading || error ? undefined : apps.length} />
-        <OrbitIllustration className="hero-art-light" hub="fa:globe" compact items={apps.length >= 3 ? apps.map(app => ({ icon: app.icon, label: app.name })) : SAMPLE_APPS} />
+        <AppsIllustration className="ecosystem-illustration" count={loading || error ? undefined : apps.length} />
       </div>
     </section>
     {loading ? <Skeleton rows={3} /> : error ? <Alert tone="danger" title="Unable to load the application catalog"><p>Please try again to reconnect to your workspace.</p><Btn onClick={retry}>Try again</Btn></Alert> : <>
@@ -67,27 +60,7 @@ export default function EcosystemPage() {
       </div>
       {!!highlight.length && <div className="ecosystem-highlights">
         <div className="workspace-section-title"><h2>{t("ecosystem.highlight")}</h2></div>
-        <Carousel label={t("ecosystem.highlight")} variant="centered" slides={highlight.map(app => {
-          const category = app.products[0];
-          const card = <>
-            <div className="ecosystem-feature-art" data-category={category} aria-hidden="true">
-              <div className="ecosystem-feature-mark" data-has-logo={Boolean(app.image)}>
-                {app.image ? <img src={app.image} alt="" /> : <AppIcon value={app.icon} />}
-              </div>
-            </div>
-            <div className="ecosystem-feature-copy">
-              <TypeChip type={app.type} />
-              <strong>{app.name}</strong>
-              <span>{category ? categoryName(category) : "Standalone application"}</span>
-            </div>
-          </>;
-          return {
-            id: String(app.id),
-            title: app.name,
-            content: <Link to={`/ecosystem/${app.id}`} className="ecosystem-card">{card}</Link>,
-            preview: <div className="ecosystem-card">{card}</div>,
-          };
-        })} />
+        <HighlightCarousel apps={highlight} label={t("ecosystem.highlight")} categoryName={categoryName} />
       </div>}
       <section aria-labelledby="all-apps">
         <div className="workspace-section-title"><h2 id="all-apps">{t("ecosystem.exploreApps")}</h2><span role="status">{filtered.length} applications</span></div>

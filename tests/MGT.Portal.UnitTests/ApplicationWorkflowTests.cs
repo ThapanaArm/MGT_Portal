@@ -19,7 +19,7 @@ public class ApplicationWorkflowTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         var db = new PortalDbContext(options);
-        // ผู้ขอ 1 คน + ผู้ใช้ที่ IT เลือกเป็นกรรมการได้ (a, b, c, e, f เป็นกรรมการตั้งต้น 5 คนของแอปในเทสต์, d เป็นตัวสำรอง)
+        // ผู้ขอ 1 คน + ผู้ใช้ที่ IT เลือกเป็นกรรมการได้ (a, b, c, e, f เป็นคณะกรรมการตั้งต้น 5 คน, d เป็นตัวสำรอง)
         db.Users.AddRange(
             new User { Email = OwnerEmail },
             new User { Email = "a@megachem.co.th" },
@@ -37,7 +37,7 @@ public class ApplicationWorkflowTests
     private static Task<int> UserIdAsync(PortalDbContext db, string email) =>
         db.Users.Where(u => u.Email == email).Select(u => u.Id).SingleAsync();
 
-    /// <summary>กรรมการตั้งต้นของแอปในเทสต์ (a, b, c, e, f — ครบ AppTier.CommitteeSize)</summary>
+    /// <summary>คณะกรรมการตั้งต้นในเทสต์ (a, b, c, e, f — ครบ AppTier.CommitteeSize)</summary>
     private static async Task<List<int>> ReviewerIdsAsync(PortalDbContext db) =>
     [
         await UserIdAsync(db, "a@megachem.co.th"),
@@ -47,7 +47,7 @@ public class ApplicationWorkflowTests
         await UserIdAsync(db, "f@megachem.co.th"),
     ];
 
-    /// <summary>สร้างคำขอ Draft ที่มีกรรมการ a, b, c, e, f (กรรมการเป็นรายแอป)</summary>
+    /// <summary>สร้างคำขอ Draft — คณะกรรมการชุดเดียวของ Portal คือ a, b, c, e, f (ตั้งครั้งแรกที่เรียก)</summary>
     private static async Task<Application> NewDraftAsync(PortalDbContext db, string productsCsv = "")
     {
         var a = new Application
@@ -61,9 +61,12 @@ public class ApplicationWorkflowTests
         };
         db.Applications.Add(a);
         await db.SaveChangesAsync();
-        foreach (var id in await ReviewerIdsAsync(db))
-            db.AppReviewers.Add(new AppReviewer { ApplicationId = a.Id, UserId = id, AssignedAt = DateTime.UtcNow, AssignedBy = Actor });
-        await db.SaveChangesAsync();
+        if (!await db.CommitteeMembers.AnyAsync())
+        {
+            foreach (var id in await ReviewerIdsAsync(db))
+                db.CommitteeMembers.Add(new CommitteeMember { UserId = id, AddedAt = DateTime.UtcNow, AddedBy = Actor });
+            await db.SaveChangesAsync();
+        }
         return a;
     }
 
@@ -84,18 +87,82 @@ public class ApplicationWorkflowTests
     }
 
     [Fact]
-    public async Task Tier1_is_approved_immediately_and_gets_no_credentials()
+    public async Task Register_needs_three_of_five_approvals_and_gets_no_credentials()
     {
         await using var db = NewDb();
         var wf = new ApplicationWorkflow(db);
         var a = await NewDraftAsync(db);
+        var ids = await ReviewerIdsAsync(db);
 
-        var result = await wf.SendForReviewAsync(a, AppTier.Tier1, Actor);
+        Assert.True((await wf.SendForReviewAsync(a, AppTier.Tier1, Actor)).Ok);
+        Assert.Equal(AppStatus.Pending, a.Status);
+        foreach (var id in ids.Take(2)) Assert.True((await VoteAsync(db, wf, a, id)).Ok);
+        Assert.Equal(AppStatus.Pending, a.Status);
+        Assert.True((await VoteAsync(db, wf, a, ids[2])).Ok);
 
-        Assert.True(result.Ok);
         Assert.Equal(AppStatus.Active, a.Status);
         Assert.Equal(AppTier.Tier1, a.Type);
         Assert.Equal(0, await ActiveCredentialCount(db, a));
+    }
+
+    /// <summary>ผู้ใช้ id นี้กด Reject พร้อมเหตุผล</summary>
+    private static async Task<WorkflowResult> RejectVoteAsync(PortalDbContext db, ApplicationWorkflow wf, Application a, int userId, string? note = "Duplicates an existing system")
+    {
+        var email = await db.Users.Where(u => u.Id == userId).Select(u => u.Email).SingleAsync();
+        return await wf.RecordVoteAsync(a, userId, false, note, email, reject: true);
+    }
+
+    [Fact]
+    public async Task Rejecting_requires_a_reason_and_one_rejection_closes_a_verify_request()
+    {
+        await using var db = NewDb();
+        var wf = new ApplicationWorkflow(db);
+        var app = await NewDraftAsync(db, "hr");
+        await wf.SendForReviewAsync(app, AppTier.Tier2, Actor);
+        var ids = await ReviewerIdsAsync(db);
+
+        Assert.False((await RejectVoteAsync(db, wf, app, ids[0], note: null)).Ok);
+        Assert.True((await RejectVoteAsync(db, wf, app, ids[0])).Ok);
+
+        Assert.Equal(AppStatus.Rejected, app.Status);
+        var vote = Assert.Single(await db.AppVotes.ToListAsync());
+        Assert.True(vote.Rejected);
+        Assert.False(vote.Approved);
+        Assert.Equal("Duplicates an existing system", vote.Note);
+        // ปิดถาวร: ส่งใหม่ไม่ได้ และลงความเห็นต่อไม่ได้
+        Assert.False((await wf.SendForReviewAsync(app, AppTier.Tier2, Actor)).Ok);
+        Assert.False((await VoteAsync(db, wf, app, ids[1])).Ok);
+    }
+
+    [Fact]
+    public async Task Register_closes_only_when_three_approvals_are_no_longer_possible()
+    {
+        await using var db = NewDb();
+        var wf = new ApplicationWorkflow(db);
+        var app = await NewDraftAsync(db);
+        await wf.SendForReviewAsync(app, AppTier.Tier1, Actor);
+        var ids = await ReviewerIdsAsync(db);
+
+        Assert.True((await RejectVoteAsync(db, wf, app, ids[0])).Ok);
+        Assert.True((await RejectVoteAsync(db, wf, app, ids[1])).Ok);
+        Assert.Equal(AppStatus.Pending, app.Status);   // 3 คนที่เหลือยังอนุมัติครบ 3 ได้
+        Assert.True((await RejectVoteAsync(db, wf, app, ids[2])).Ok);
+        Assert.Equal(AppStatus.Rejected, app.Status);  // เหลือ 2 คน ไม่มีทางครบ 3
+    }
+
+    [Fact]
+    public async Task Register_is_approved_with_three_approvals_despite_two_rejections()
+    {
+        await using var db = NewDb();
+        var wf = new ApplicationWorkflow(db);
+        var app = await NewDraftAsync(db);
+        await wf.SendForReviewAsync(app, AppTier.Tier1, Actor);
+        var ids = await ReviewerIdsAsync(db);
+
+        Assert.True((await RejectVoteAsync(db, wf, app, ids[0])).Ok);
+        Assert.True((await RejectVoteAsync(db, wf, app, ids[1])).Ok);
+        foreach (var id in ids.Skip(2)) Assert.True((await VoteAsync(db, wf, app, id)).Ok);
+        Assert.Equal(AppStatus.Active, app.Status);
     }
 
     [Fact]
@@ -326,30 +393,61 @@ public class ApplicationWorkflowTests
     }
 
     [Fact]
-    public async Task Each_application_has_its_own_committee()
+    public async Task Every_request_uses_the_same_committee()
     {
         await using var db = NewDb();
         var wf = new ApplicationWorkflow(db);
         var first = await NewDraftAsync(db, "hr");
         var second = await NewDraftAsync(db, "hr");
-        var a = await UserIdAsync(db, "a@megachem.co.th");
-        var b = await UserIdAsync(db, "b@megachem.co.th");
-        var c = await UserIdAsync(db, "c@megachem.co.th");
+        var ids = await ReviewerIdsAsync(db);
         var d = await UserIdAsync(db, "d@megachem.co.th");
-        var e = await UserIdAsync(db, "e@megachem.co.th");
-        var f = await UserIdAsync(db, "f@megachem.co.th");
-        Assert.True((await wf.SetReviewersAsync(second, [b, c, d, e, f], Actor)).Ok);
-        await wf.SendForReviewAsync(first, AppTier.Tier2, Actor);
-        await wf.SendForReviewAsync(second, AppTier.Tier2, Actor);
+        Assert.True((await wf.SendForReviewAsync(first, AppTier.Tier2, Actor)).Ok);
+        Assert.True((await wf.SendForReviewAsync(second, AppTier.Tier2, Actor)).Ok);
 
-        Assert.False((await VoteAsync(db, wf, second, a)).Ok); // a เป็นกรรมการของแอปแรกเท่านั้น
-        Assert.True((await VoteAsync(db, wf, second, d)).Ok);
-        Assert.False((await VoteAsync(db, wf, first, d)).Ok);
-        Assert.Equal(new List<int> { a, b, c, e, f }, await db.AppReviewers.Where(r => r.ApplicationId == first.Id).OrderBy(r => r.UserId).Select(r => r.UserId).ToListAsync());
+        foreach (var app in new[] { first, second })
+        {
+            Assert.Equal(ids.Order().ToList(), await db.AppReviewers.Where(r => r.ApplicationId == app.Id).OrderBy(r => r.UserId).Select(r => r.UserId).ToListAsync());
+            Assert.Equal(AppTier.CommitteeSize, app.CommitteeSize);
+        }
+        Assert.False((await VoteAsync(db, wf, second, d)).Ok); // d ไม่ได้อยู่ในคณะกรรมการ
     }
 
     [Fact]
-    public async Task Replacing_a_reviewer_discards_their_decision_and_the_new_member_must_decide()
+    public async Task Requests_wait_until_IT_sets_up_the_committee()
+    {
+        await using var db = NewDb();
+        var wf = new ApplicationWorkflow(db);
+        var app = await NewDraftAsync(db, "hr");
+        db.CommitteeMembers.RemoveRange(await db.CommitteeMembers.ToListAsync());
+        await db.SaveChangesAsync();
+
+        Assert.False((await wf.SendForReviewAsync(app, AppTier.Tier2, Actor)).Ok);
+        Assert.Equal(AppStatus.Draft, app.Status);
+        Assert.True((await wf.SetCommitteeAsync(await ReviewerIdsAsync(db), Actor)).Ok);
+        Assert.True((await wf.SendForReviewAsync(app, AppTier.Tier2, Actor)).Ok);
+    }
+
+    [Fact]
+    public async Task Requester_on_the_committee_sits_out_and_the_other_four_decide()
+    {
+        await using var db = NewDb();
+        var wf = new ApplicationWorkflow(db);
+        var app = await NewDraftAsync(db, "hr");
+        var ids = await ReviewerIdsAsync(db);
+        Assert.True((await wf.SetCommitteeAsync([app.OwnerUserId, ids[0], ids[1], ids[2], ids[3]], Actor)).Ok);
+
+        Assert.True((await wf.SendForReviewAsync(app, AppTier.Tier2, Actor)).Ok);
+        Assert.Equal(4, app.CommitteeSize);
+        Assert.DoesNotContain(app.OwnerUserId, await db.AppReviewers.Where(r => r.ApplicationId == app.Id).Select(r => r.UserId).ToListAsync());
+        foreach (var id in ids.Take(4)) Assert.True((await VoteAsync(db, wf, app, id)).Ok);
+        Assert.True((await wf.RecordCodeReviewAsync(app, true, null, Actor)).Ok);
+        Assert.Equal(AppStatus.Active, app.Status); // Verify: 4/4
+
+        Assert.Equal(3, AppTier.RequiredVotes(AppTier.Tier1, 4)); // Register: 3/4
+    }
+
+    [Fact]
+    public async Task Changing_the_committee_updates_requests_in_review()
     {
         await using var db = NewDb();
         var wf = new ApplicationWorkflow(db);
@@ -359,7 +457,7 @@ public class ApplicationWorkflowTests
         var ids = await ReviewerIdsAsync(db);
         var d = await UserIdAsync(db, "d@megachem.co.th");
 
-        Assert.True((await wf.SetReviewersAsync(app, [ids[0], ids[1], d, ids[3], ids[4]], Actor)).Ok);
+        Assert.True((await wf.SetCommitteeAsync([ids[0], ids[1], d, ids[3], ids[4]], Actor)).Ok);
         Assert.Equal(4, await db.AppVotes.CountAsync(v => v.ApplicationId == app.Id && v.ReviewCycle == app.ReviewCycle));
         Assert.Contains(await db.AppLogEntries.Select(l => l.Note).ToListAsync(), n => n != null && n.Contains("c@megachem.co.th"));
 
@@ -372,55 +470,19 @@ public class ApplicationWorkflowTests
     }
 
     [Fact]
-    public async Task Reviewers_can_be_changed_at_any_time()
+    public async Task Committee_needs_five_different_people()
     {
         await using var db = NewDb();
         var wf = new ApplicationWorkflow(db);
-        var app = await NewDraftAsync(db, "hr");
-        var d = await UserIdAsync(db, "d@megachem.co.th");
-        var ids = await ReviewerIdsAsync(db);
-
-        Assert.True((await wf.SetReviewersAsync(app, [d, ids[1], ids[2], ids[3], ids[4]], Actor)).Ok); // Draft
-        await wf.SendForReviewAsync(app, AppTier.Tier2, Actor);
-        Assert.True((await wf.SetReviewersAsync(app, [.. ids], Actor)).Ok); // Pending
-        await VoteAllAsync(db, wf, app);
-        await wf.RecordCodeReviewAsync(app, true, null, Actor);
-        Assert.Equal(AppStatus.Active, app.Status);
-        Assert.True((await wf.SetReviewersAsync(app, [d], Actor)).Ok); // Active — ใช้กับรอบรีวิวถัดไป
-        Assert.Equal(AppStatus.Active, app.Status);
-    }
-
-    [Fact]
-    public async Task Committee_has_at_most_five_different_people_and_excludes_the_requester()
-    {
-        await using var db = NewDb();
-        var wf = new ApplicationWorkflow(db);
-        var app = await NewDraftAsync(db, "hr");
+        await NewDraftAsync(db, "hr");
         var ids = await ReviewerIdsAsync(db);
         var d = await UserIdAsync(db, "d@megachem.co.th");
 
-        Assert.False((await wf.SetReviewersAsync(app, [.. ids, d], Actor)).Ok);
-        Assert.False((await wf.SetReviewersAsync(app, [ids[0], ids[0], d], Actor)).Ok);
-        Assert.False((await wf.SetReviewersAsync(app, [ids[0], ids[1], app.OwnerUserId], Actor)).Ok);
-        Assert.False((await wf.SetReviewersAsync(app, [ids[0], ids[1], 9999], Actor)).Ok);
-        Assert.Equal(5, await db.AppReviewers.CountAsync(r => r.ApplicationId == app.Id));
-    }
-
-    [Fact]
-    public async Task Request_created_before_the_change_keeps_a_committee_of_three()
-    {
-        await using var db = NewDb();
-        var wf = new ApplicationWorkflow(db);
-        var app = await NewDraftAsync(db, "hr");
-        app.CommitteeSize = AppTier.LegacyCommitteeSize;
-        var ids = await ReviewerIdsAsync(db);
-
-        Assert.False((await wf.SetReviewersAsync(app, [ids[0], ids[1], ids[2], ids[3]], Actor)).Ok);
-        Assert.True((await wf.SetReviewersAsync(app, [ids[0], ids[1], ids[2]], Actor)).Ok);
-        await wf.SendForReviewAsync(app, AppTier.Tier2, Actor);
-        foreach (var id in ids.Take(3)) Assert.True((await VoteAsync(db, wf, app, id)).Ok);
-        Assert.True((await wf.RecordCodeReviewAsync(app, true, null, Actor)).Ok);
-        Assert.Equal(AppStatus.Active, app.Status);
+        Assert.False((await wf.SetCommitteeAsync([.. ids, d], Actor)).Ok);
+        Assert.False((await wf.SetCommitteeAsync([ids[0], ids[1], ids[2], ids[3]], Actor)).Ok);
+        Assert.False((await wf.SetCommitteeAsync([ids[0], ids[0], ids[1], ids[2], ids[3]], Actor)).Ok);
+        Assert.False((await wf.SetCommitteeAsync([ids[0], ids[1], ids[2], ids[3], 9999], Actor)).Ok);
+        Assert.Equal(ids.Order().ToList(), await db.CommitteeMembers.OrderBy(m => m.UserId).Select(m => m.UserId).ToListAsync());
     }
 
     [Fact]
@@ -431,17 +493,28 @@ public class ApplicationWorkflowTests
     }
 
     [Fact]
-    public async Task Fewer_than_five_reviewers_cannot_complete_a_review()
+    public async Task IT_can_reopen_a_rejected_request_for_development()
     {
         await using var db = NewDb();
         var wf = new ApplicationWorkflow(db);
         var app = await NewDraftAsync(db, "hr");
-        var ids = await ReviewerIdsAsync(db);
-        Assert.True((await wf.SetReviewersAsync(app, [ids[0], ids[1], ids[2], ids[3]], Actor)).Ok);
+        Assert.False((await wf.ReopenAsync(app, "Try again", Actor)).Ok); // ยังไม่ถูก Reject
         await wf.SendForReviewAsync(app, AppTier.Tier2, Actor);
-        foreach (var id in ids.Take(4)) await VoteAsync(db, wf, app, id);
-        await wf.RecordCodeReviewAsync(app, true, null, Actor);
-        Assert.Equal(AppStatus.Pending, app.Status);
+        var ids = await ReviewerIdsAsync(db);
+        Assert.True((await RejectVoteAsync(db, wf, app, ids[0])).Ok);
+        Assert.Equal(AppStatus.Rejected, app.Status);
+
+        Assert.False((await wf.ReopenAsync(app, " ", Actor)).Ok); // ต้องมีเหตุผล
+        Assert.True((await wf.ReopenAsync(app, "Scope agreed with the department", Actor)).Ok);
+        Assert.Equal(AppStatus.Draft, app.Status);
+        Assert.Contains(await db.AppLogEntries.Select(l => l.Note).ToListAsync(), n => n != null && n.Contains("Scope agreed"));
+
+        var cycle = app.ReviewCycle;
+        Assert.True((await wf.SendForReviewAsync(app, AppTier.Tier2, Actor)).Ok);
+        Assert.Equal(cycle + 1, app.ReviewCycle); // รอบใหม่ เสียง Reject เดิมไม่นับ
+        await VoteAllAsync(db, wf, app);
+        Assert.True((await wf.RecordCodeReviewAsync(app, true, null, Actor)).Ok);
+        Assert.Equal(AppStatus.Active, app.Status);
     }
 
     [Fact]
@@ -492,13 +565,13 @@ public class ApplicationWorkflowTests
     }
 
     [Theory]
-    [InlineData(AppTier.Tier1, 0, false, false)]
-    [InlineData(AppTier.Tier2, 5, true, true)]
-    [InlineData(AppTier.Tier3, 5, true, true)]
-    public void Tier_rules(string tier, int votes, bool codeReview, bool apis)
+    [InlineData(AppTier.Tier1, 3, 3, false, false)]
+    [InlineData(AppTier.Tier2, 5, 1, true, true)]
+    [InlineData(AppTier.Tier3, 5, 1, true, true)]
+    public void Tier_rules(string tier, int votes, int rejectionsToClose, bool codeReview, bool apis)
     {
         Assert.Equal(votes, AppTier.RequiredVotes(tier, AppTier.CommitteeSize));
-        Assert.Equal(tier == AppTier.Tier1 ? 0 : 3, AppTier.RequiredVotes(tier, AppTier.LegacyCommitteeSize));
+        Assert.Equal(rejectionsToClose, AppTier.RejectionsToClose(tier, AppTier.CommitteeSize));
         Assert.Equal(codeReview, AppTier.RequiresCodeReview(tier));
         Assert.Equal(apis, AppTier.CanUseApis(tier));
     }

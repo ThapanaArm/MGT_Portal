@@ -29,6 +29,8 @@ export interface CategoryDto {
   description: string;
   rateLimit: string;
   endpointCount: number;
+  /** Font Awesome value chosen by an admin, e.g. "fa:chart-line" */
+  icon?: string;
 }
 
 export type ParamRow = [name: string, location: string, type: string, required: string, description: string];
@@ -54,7 +56,8 @@ export interface EndpointDto {
 export type AppType = "tier1" | "tier2" | "tier3";
 /** Application audience */
 export type AppAudience = "self" | "department" | "company";
-export type AppStatus = "draft" | "pending" | "active" | "suspended";
+/** "rejected": closed by the committee; it cannot be edited or sent again. */
+export type AppStatus = "draft" | "pending" | "active" | "suspended" | "rejected";
 export type CredEnv = "sandbox" | "production";
 
 export interface AppSummaryDto {
@@ -85,6 +88,8 @@ export interface CredentialDto {
   category: string;
   tokenId: string;
   tokenSecret: string;
+  /** Production key seen by someone other than IT: tokenId is partly masked and tokenSecret is empty. */
+  hidden?: boolean;
   createdAt: string;
 }
 
@@ -104,6 +109,8 @@ export interface VoteDto {
   actorEmail: string | null;
   decidedAt: string | null;
   note: string | null;
+  /** Rejected the request (approved is false too); note holds the required reason. */
+  rejected?: boolean;
 }
 
 export interface AppDetailDto {
@@ -163,6 +170,12 @@ export interface CodeReviewDto {
 }
 
 /** Committee status of the signed-in user (committees are per application). */
+export interface CommitteeMemberDto {
+  userId: number;
+  email: string;
+  displayName: string;
+}
+
 export interface CommitteeStatusDto {
   isReviewer: boolean;
   pendingAssigned: number;
@@ -231,4 +244,28 @@ export interface UserTokenDto {
   expiresAt: string;
   lastUsedAt: string | null;
   status: "active" | "expired" | "revoked";
+}
+
+export type CalendarKind = "available" | "deploy" | "meeting" | "freeze";
+export type CalendarStatus = "requested" | "confirmed" | "declined" | "cancelled";
+
+/** One entry in the IT calendar. Other people's bookings arrive with private = true and no details. */
+export interface CalendarEventDto {
+  id: number;
+  kind: CalendarKind;
+  status: CalendarStatus;
+  title: string;
+  note: string | null;
+  startAt: string;
+  endAt: string;
+  applicationId: number | null;
+  applicationName: string | null;
+  requestedByName: string | null;
+  requestedByEmail: string | null;
+  decidedBy: string | null;
+  decidedAt: string | null;
+  decisionNote: string | null;
+  updatedAt: string;
+  mine: boolean;
+  private: boolean;
 }

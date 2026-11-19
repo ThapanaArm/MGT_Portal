@@ -11,12 +11,12 @@
 .portal-nav-item { position: relative; transition: background 160ms, color 160ms, border-color 160ms; }
 .portal-nav-item[aria-current="page"] { box-shadow: none; background: color-mix(in srgb, var(--brand) 10%, var(--surface)); }
 .portal-nav-item[aria-current="page"]::before { content: ""; position: absolute; left: -1px; top: 12px; bottom: 12px; width: 3px; background: var(--mgt-blue); border-radius: 4px; }
-.sidebar-brand-header { padding-block: 28px; }
-.sidebar-group-toggle { font-size: 11px; font-weight: 800; color: var(--ink-dim); text-transform: uppercase; letter-spacing: .07em; }
+.sidebar-brand-header { padding-block: 14px 12px; }
+.sidebar-group-toggle { font-size: 12px; font-weight: 800; color: var(--ink-dim); text-transform: uppercase; letter-spacing: .07em; }
 .portal-context-bar { margin-bottom: 24px; border-color: var(--line); box-shadow: 0 4px 20px color-mix(in srgb, var(--ink) 3%, transparent); }
 .portal-page-heading { padding-bottom: 0; border-bottom: 0; margin-bottom: 28px; }
 .portal-content h1 { font-size: clamp(28px, 2.4vw, 36px); letter-spacing: -.035em; }
-.portal-panel { border-color: var(--line); box-shadow: 0 2px 4px color-mix(in srgb, var(--ink) 2%, transparent); }
+.portal-panel { border-color: var(--line); box-shadow: none; }
 .portal-panel-heading { margin-bottom: 20px; }
 .portal-panel-title { letter-spacing: -.025em; }
 .portal-button:active:not(:disabled) { transform: translateY(0) scale(.98); }
@@ -106,8 +106,6 @@
 .ecosystem-stat > svg { font-size: 16px; }
 .ecosystem-stat strong { font-variant-numeric: tabular-nums; }
 .ecosystem-highlights { margin-bottom: 36px; }
-.ecosystem-highlights .mgt-carousel-centered .mgt-carousel-track { --slide-width: clamp(min(100%, 230px), 32%, 420px); }
-.ecosystem-highlights .mgt-carousel:not(.mgt-carousel-centered) .mgt-carousel-stage { max-width: 420px; margin-inline: auto; }
 .ecosystem-highlights .ecosystem-card { height: 100%; overflow-wrap: anywhere; }
 .ecosystem-highlights .ecosystem-card:focus-visible { outline-offset: -3px; }
 .ecosystem-card { position: relative; display: flex; flex-direction: column; min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--ink); text-decoration: none; transition: transform 180ms var(--workspace-ease), box-shadow 180ms, border-color 180ms; }
@@ -143,7 +141,7 @@
 .ecosystem-feature-mark img { width: 100%; height: 100%; min-width: 0; min-height: 0; object-fit: contain; }
 .ecosystem-feature-copy { display: grid; gap: 10px; padding: 18px; }
 .ecosystem-feature-copy strong { font-size: 14px; }
-.ecosystem-feature-copy > span { font-size: 11px; color: var(--ink-dim); }
+.ecosystem-feature-copy > span { font-size: 12px; color: var(--ink-dim); }
 .ecosystem-feature-copy .portal-chip { width: fit-content; }
 .ecosystem-app-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 20px; }
 .ecosystem-app-grid .ecosystem-card { padding: 24px; gap: 16px; }
@@ -151,7 +149,7 @@
 .ecosystem-card-heading > div { min-width: 0; }
 .ecosystem-card-heading strong { display: block; margin-bottom: 6px; font-size: 15px; overflow-wrap: anywhere; }
 .ecosystem-card-description { flex: 1; font-size: 13px; line-height: 1.8; color: var(--ink-dim); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.ecosystem-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 11px; color: var(--ink-dim); }
+.ecosystem-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-dim); }
 .ecosystem-card-arrow { color: var(--teal-strong); transition: transform 180ms; }
 .ecosystem-card:hover .ecosystem-card-arrow { transform: translateX(4px); }
 .example-auth .example-page-heading h1 { margin-bottom: 8px; font-size: clamp(28px, 2.4vw, 36px); }
@@ -164,7 +162,7 @@
 .workspace-welcome > div:first-child p { max-width: 96ch; }
 .example-auth .example-metrics { gap: 16px; }
 .mgt-stat { position: relative; padding: 24px; overflow: hidden; }
-.mgt-stat::after { content: ""; position: absolute; top: 24px; right: 24px; width: 8px; height: 8px; border-radius: 50%; background: var(--mgt-green); box-shadow: 0 0 0 5px var(--green-soft); }
+.mgt-stat::after { content: ""; position: absolute; top: 24px; right: 24px; width: 8px; height: 8px; border-radius: 50%; background: var(--mgt-green); }
 .mgt-stat > span { padding-right: 24px; }
 .example-auth .mgt-stat > strong { font-size: 32px; line-height: 1.2; font-variant-numeric: tabular-nums; }
 .example-work-modules .portal-panel { position: relative; display: flex; flex-direction: column; align-items: flex-start; transition: border-color 180ms, box-shadow 180ms, transform 180ms; }
@@ -185,8 +183,7 @@
   .ecosystem-welcome { padding: 28px 24px; min-height: auto; }
   .ecosystem-stat { padding: 18px 12px; }
   .ecosystem-stat strong { font-size: 22px; }
-  .ecosystem-stat small { font-size: 10px; }
-  .ecosystem-highlights .mgt-carousel-centered .mgt-carousel-track { --slide-width: 78%; }
+  .ecosystem-stat small { font-size: 12px; }
   .ecosystem-app-grid { grid-template-columns: minmax(0,1fr); }
   .ecosystem-feature-copy { padding: 14px; }
   .ecosystem-feature-art { height: 132px; }
@@ -212,6 +209,6 @@
 /* Tabs share the same restrained active treatment in Portal and Example. */
 .mgt-tabs button { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:46px; padding-inline:16px; flex-shrink:0; }
 .mgt-tabs button:focus-visible { outline:2px solid var(--brand); outline-offset:-4px; border-radius:10px 10px 0 0; }
-.mgt-tab-count { padding:2px 6px; border-radius:6px; background:color-mix(in srgb,var(--surface-2) 75%,transparent); font-size:10px; line-height:1.5; color:var(--ink-dim); font-weight:600; font-variant-numeric:tabular-nums; }
+.mgt-tab-count { padding:2px 6px; border-radius:6px; background:color-mix(in srgb,var(--surface-2) 75%,transparent); font-size:12px; line-height:1.5; color:var(--ink-dim); font-weight:600; font-variant-numeric:tabular-nums; }
 .mgt-tabs button[aria-selected="true"] .mgt-tab-count { color:var(--teal-strong); background:color-mix(in srgb,var(--surface) 75%,transparent); }
 .audience-toolbar .mgt-tabs { margin-bottom:0; }

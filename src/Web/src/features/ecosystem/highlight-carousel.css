@@ -1,0 +1,61 @@
+/* Ecosystem Highlights: large centre card, smaller cards on both sides with a gap between them (no overlap). */
+.hl-carousel { --hl-gap: 28px; }
+/* cqw (not %) so the card width also works in heights: a % height has no size to resolve against and collapsed the stage. */
+.hl-carousel { container-type: inline-size; --hl-width: clamp(240px, 30cqw, 360px); }
+.hl-stage { position: relative; height: calc(var(--hl-width) * .6 + 140px); overflow: hidden; }
+.hl-card {
+  position: absolute; top: 50%; left: 50%; width: var(--hl-width);
+  display: flex; flex-direction: column; overflow: hidden; padding: 0;
+  border: 1px solid var(--line); border-radius: 18px; background: var(--surface); color: var(--ink); text-align: left; text-decoration: none;
+  /* Side card is 80% wide, so centre-to-centre = half of each card (50% + 40%) plus the gap. */
+  transform: translate(-50%, -50%) translateX(calc(var(--offset) * (90% + var(--hl-gap)))) scale(.8);
+  transition: transform .4s cubic-bezier(.2,.7,.2,1), opacity .4s, box-shadow .2s;
+  z-index: 1; cursor: pointer;
+}
+.hl-card.is-center { transform: translate(-50%, -50%) scale(1); z-index: 3; box-shadow: 0 18px 40px rgb(18 38 63 / .14); }
+.hl-card.is-side { z-index: 2; opacity: .75; }
+.hl-card.is-side:hover { opacity: 1; }
+.hl-card.is-hidden { opacity: 0; pointer-events: none; transform: translate(-50%, -50%) translateX(calc(var(--offset) * (90% + var(--hl-gap)))) scale(.6); }
+.hl-card:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
+/* Cover: up to three screenshots in a row on a tinted band; the logo badge overlaps its bottom-left edge. */
+.hl-cover {
+  --feature-accent: var(--mgt-blue);
+  position: relative; display: flex; gap: 8px; width: 100%; height: calc(var(--hl-width) * .5); flex: none; padding: 12px 12px 0;
+  background: color-mix(in srgb, var(--feature-accent) 12%, var(--surface));
+}
+.hl-cover[data-category="hr"] { --feature-accent: var(--mgt-green); }
+.hl-cover[data-category="finance"] { --feature-accent: #b37c25; }
+.hl-cover[data-category="inventory"] { --feature-accent: #168d85; }
+.hl-cover[data-category="purchase"] { --feature-accent: #7d65bb; }
+.hl-shot { position: relative; flex: 1; min-width: 0; overflow: hidden; border: 1px solid color-mix(in srgb, var(--feature-accent) 25%, var(--line)); border-bottom: 0; border-radius: 10px 10px 0 0; background: #fff; }
+.hl-shot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.hl-cover-empty { display: grid; place-items: center; flex: 1; padding-bottom: 12px; color: color-mix(in srgb, var(--feature-accent) 35%, transparent); font-size: calc(var(--hl-width) * .18); }
+.hl-logo {
+  position: absolute; left: 16px; bottom: calc(var(--hl-width) * -.1); z-index: 1;
+  display: grid; place-items: center; width: calc(var(--hl-width) * .2); aspect-ratio: 1; overflow: hidden;
+  border: 3px solid var(--surface); border-radius: 14px; background: var(--feature-accent); color: #fff; font-size: calc(var(--hl-width) * .08);
+  box-shadow: 0 4px 12px rgb(18 38 63 / .12);
+}
+.hl-logo[data-has-logo="true"] { background: #fff; }
+.hl-logo img { width: 100%; height: 100%; object-fit: cover; }
+.hl-details { display: grid; gap: 8px; width: 100%; padding: calc(var(--hl-width) * .1 + 10px) 16px 16px; border-top: 1px solid var(--line); }
+.hl-title { overflow: hidden; font-size: 15px; font-weight: 800; line-height: 1.3; white-space: nowrap; text-overflow: ellipsis; }
+.hl-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.hl-meta small { color: var(--ink-dim); font-size: 12px; }
+
+.hl-arrow {
+  position: absolute; top: 50%; z-index: 4; display: grid; place-items: center; width: 40px; height: 40px; translate: 0 -50%;
+  border-radius: 50%; background: var(--brand); color: #fff; box-shadow: 0 0 0 3px var(--surface);
+}
+.hl-arrow.is-prev { left: max(4px, calc(50% - var(--hl-width) * 1.3 - var(--hl-gap) - 64px)); }
+.hl-arrow.is-next { right: max(4px, calc(50% - var(--hl-width) * 1.3 - var(--hl-gap) - 64px)); }
+.hl-dots { display: flex; justify-content: center; gap: 4px; margin-top: 10px; }
+.hl-dots > button { display: grid; place-items: center; width: 28px; height: 28px; }
+.hl-dots > button::before { content: ""; width: 10px; height: 4px; border-radius: 8px; background: var(--ink-faint); transition: width .2s; }
+.hl-dots > button[aria-current="true"]::before { width: 18px; background: var(--brand); }
+
+@media (max-width: 640px) {
+  .hl-carousel { --hl-width: 72cqw; }
+  .hl-carousel { --hl-gap: 14px; }
+}
+@media (prefers-reduced-motion: reduce) { .hl-card { transition: none; } }

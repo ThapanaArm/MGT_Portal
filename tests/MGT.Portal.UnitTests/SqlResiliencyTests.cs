@@ -46,7 +46,10 @@ public class SqlResiliencyTests
         var owner = new User { Email = "owner@example.com" };
         var app = new Application { Owner = owner, Name = "Live application", Status = AppStatus.Active, Type = AppTier.Tier2 };
         DevelopmentProcess.Write(app, new DevelopmentRequest("live", AppTier.Tier2, Branch: "main", Commit: "aaaaaaa"));
-        db.Applications.Add(app); await db.SaveChangesAsync();
+        db.Applications.Add(app);
+        for (var i = 1; i <= AppTier.CommitteeSize; i++)
+            db.CommitteeMembers.Add(new CommitteeMember { User = new User { Email = $"member{i}@example.com" }, AddedBy = "it@example.com" });
+        await db.SaveChangesAsync();
         var principal = new ClaimsPrincipal(new ClaimsIdentity([
             new(ClaimTypes.NameIdentifier, owner.Id.ToString()), new(ClaimTypes.Email, owner.Email), new(ClaimTypes.Role, "sales")], "Test"));
         var controller = new ApplicationsController(db, new DataBoundaryResolver(db), new ApplicationWorkflow(db)) {

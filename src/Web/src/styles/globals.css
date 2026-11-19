@@ -255,9 +255,11 @@ button:not(:disabled),
   0% { transform: scale(1); opacity: 0.5; }
   80%, 100% { transform: scale(1.8); opacity: 0; }
 }
+/* The sweep layer is as wide as its card; the light band sits at 40–60%, so -60% → 60% starts fully off
+   the left edge and ends fully off the right edge (it used to stop about halfway across the card). */
 @keyframes mgt-sweep {
-  0% { transform: translateX(-120%); }
-  60%, 100% { transform: translateX(220%); }
+  0% { transform: translateX(-60%); }
+  60%, 100% { transform: translateX(60%); }
 }
 
 .mgt-float { animation: mgt-float 7s ease-in-out infinite; }

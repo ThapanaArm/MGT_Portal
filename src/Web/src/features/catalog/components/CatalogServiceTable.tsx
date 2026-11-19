@@ -14,9 +14,9 @@ const methodRank = (method: string) => {
 /** Platform boxes in this order; anything else follows alphabetically, cards without a platform go last. */
 const PLATFORM_ORDER = ["SAP", "Zoho", "Supabase"];
 const PLATFORM_NOTES: Record<string, string> = {
-  SAP: "SAP S/4HANA — sales orders written straight to SAP (API_SALES_ORDER_SRV)",
-  Zoho: "Zoho CRM — deals, quotes and sales orders; Zoho approval and the RPA to SAP run as usual",
-  Supabase: "Supabase — read-only copy of sales data for reports",
+  SAP: "SAP S/4HANA: sales orders written straight to SAP (API_SALES_ORDER_SRV)",
+  Zoho: "Zoho CRM: deals, quotes and sales orders. Zoho approval and the RPA to SAP run as usual",
+  Supabase: "Supabase: read-only copy of sales data for reports",
 };
 const platformOf = (endpoint: EndpointDto) => endpoint.sourcePlatform?.trim() || "Not specified";
 const platformRank = (name: string) => {

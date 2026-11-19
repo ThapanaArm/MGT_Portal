@@ -24,12 +24,14 @@ public class ModuleBoundaryTests
 
     public static TheoryData<string, string[]> Rules => new()
     {
-        { Modules + "Identity", new[] { Modules + "Catalog", Modules + "Apps", Modules + "Access", Modules + "Gateway" } },
-        { Modules + "Catalog",  new[] { Modules + "Identity", Modules + "Apps", Modules + "Access", Modules + "Gateway" } },
-        { Modules + "Apps",     new[] { Modules + "Access", Modules + "Gateway" } },
-        { Modules + "Access",   new[] { Modules + "Apps", Modules + "Gateway" } },
-        { Modules + "Gateway",  new[] { Modules + "Identity", Modules + "Access" } },
-        { Shared,               new[] { Modules + "Identity", Modules + "Catalog", Modules + "Apps", Modules + "Access", Modules + "Gateway" } },
+        { Modules + "Identity", new[] { Modules + "Catalog", Modules + "Apps", Modules + "Access", Modules + "Gateway", Modules + "Scheduling" } },
+        { Modules + "Catalog",  new[] { Modules + "Identity", Modules + "Apps", Modules + "Access", Modules + "Gateway", Modules + "Scheduling" } },
+        { Modules + "Apps",     new[] { Modules + "Access", Modules + "Gateway", Modules + "Scheduling" } },
+        { Modules + "Access",   new[] { Modules + "Apps", Modules + "Gateway", Modules + "Scheduling" } },
+        { Modules + "Gateway",  new[] { Modules + "Identity", Modules + "Access", Modules + "Scheduling" } },
+        // ปฏิทิน IT อ้างถึงคำขอแอปและผู้ใช้ได้ แต่ไม่ยุ่งกับ Catalog / Access / Gateway
+        { Modules + "Scheduling", new[] { Modules + "Catalog", Modules + "Access", Modules + "Gateway" } },
+        { Shared,               new[] { Modules + "Identity", Modules + "Catalog", Modules + "Apps", Modules + "Access", Modules + "Gateway", Modules + "Scheduling" } },
     };
 
     [Theory]

@@ -3,7 +3,6 @@ import { AppIcon } from "@/shared/components/IconPicker";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import ApiIllustration from "@/shared/components/ApiIllustration";
-import OrbitIllustration from "@/shared/components/OrbitIllustration";
 import { useLocale } from "@/shared/lib/locale-context";
 import { api } from "@/shared/lib/api";
 import AudienceToggle from "@/features/catalog/components/AudienceToggle";
@@ -11,13 +10,7 @@ import EndpointCard from "@/features/catalog/components/EndpointCard";
 import { EmptyRow } from "@/shared/components/ui";
 import type { CategoryDto, EndpointDto } from "@/shared/lib/types";
 
-const CATEGORY_ICONS: Record<string, string> = {
-  sales: "fa:chart-line",
-  purchase: "fa:credit-card",
-  inventory: "fa:box",
-  finance: "fa:receipt",
-  hr: "fa:users",
-};
+import { categoryIcon } from "@/shared/lib/categories";
 
 const SUGGESTIONS = ["Sales", "Invoices", "Stock", "Purchase order approval", "Leave requests", "Payroll", "Customers"];
 
@@ -71,10 +64,9 @@ export default function ExplorePage() {
             <button onClick={() => navigate("/getting-started")} className="bg-[#89c64a] text-[#10210b] rounded-lg px-4 py-2.5 font-bold transition hover:-translate-y-px">{t("ecosystem.requestAccess")}</button>
           </div>
         </div>
-        {/* Dark theme: API call illustration · Light theme: business areas orbiting the MGT hub */}
+        {/* API call illustration in both themes; colours follow the light / dark theme */}
         <div className="hero-art">
-          <ApiIllustration className="ecosystem-illustration hero-art-dark" />
-          <OrbitIllustration className="hero-art-light" hub="fa:code" items={categories.map(c => ({ icon: CATEGORY_ICONS[c.key] ?? "fa:box", label: c.name }))} />
+          <ApiIllustration className="ecosystem-illustration" />
         </div>
       </section>
 
@@ -125,7 +117,7 @@ export default function ExplorePage() {
               catFilter === c.key ? "bg-teal-soft border-teal text-teal-strong" : "border-line-strong bg-surface text-ink-dim hover:bg-surface-2"
             }`}
           >
-            <span className="inline-flex items-center gap-2"><AppIcon value={CATEGORY_ICONS[c.key] ?? "fa:box"} /> {c.name}</span>
+            <span className="inline-flex items-center gap-2"><AppIcon value={categoryIcon(c)} /> {c.name}</span>
           </button>
         ))}
       </div>

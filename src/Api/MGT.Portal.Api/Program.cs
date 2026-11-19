@@ -12,6 +12,7 @@ using MGT.Portal.Api.Modules.Gateway;
 using MGT.Portal.Api.Modules.Identity;
 using MGT.Portal.Api.Shared;
 using MGT.Portal.Api.Modules.Audit;
+using MGT.Portal.Api.Modules.Scheduling;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,6 +40,7 @@ builder.Services.AddScoped<GatewayUserPermissionFilter>();
 builder.Services.AddHttpContextAccessor();
 // Apps — กติกาการอนุมัติตาม Tier
 builder.Services.AddScoped<ApplicationWorkflow>();
+builder.Services.AddScoped<CalendarService>();
 builder.Services.AddScoped<GatewayUserContext>();
 // Catalog — ตอนนี้มีแค่ controller ไม่มี service ที่ต้องลงทะเบียน
 // Gateway — แอปใช้ Token ID/Secret เรียกข้อมูลจริง (ตอนนี้: SaleOrder จาก Supabase)

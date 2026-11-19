@@ -47,7 +47,7 @@ export function SidebarCount({ children, highlight = false }: { children: React.
   return (
     <span
       data-highlight={highlight}
-      className={`text-[11px] font-mono font-semibold rounded-full px-1.5 min-w-6 text-center ${
+      className={`text-[12px] font-mono font-semibold rounded-full px-1.5 min-w-6 text-center ${
         highlight ? "text-white bg-brand" : "text-ink-faint bg-surface-2"
       }`}
     >
@@ -57,13 +57,13 @@ export function SidebarCount({ children, highlight = false }: { children: React.
 }
 
 
-export function SidebarFrame({children,collapsed=false,onToggle,home="/dashboard",caption="MGT PORTAL",id="portal-sidebar",onBrandClick}:{children:React.ReactNode;collapsed?:boolean;onToggle?:()=>void;home?:string;caption?:string;id?:string;onBrandClick?:React.MouseEventHandler<HTMLAnchorElement>}){return <aside id={id} aria-label="Main navigation" data-collapsed={collapsed} className="portal-sidebar flex flex-col flex-shrink-0">      <div className="sidebar-brand-header">
+export function SidebarFrame({children,collapsed=false,onToggle,home="/ecosystem",caption="MGT PORTAL",id="portal-sidebar",onBrandClick}:{children:React.ReactNode;collapsed?:boolean;onToggle?:()=>void;home?:string;caption?:string;id?:string;onBrandClick?:React.MouseEventHandler<HTMLAnchorElement>}){return <aside id={id} aria-label="Main navigation" data-collapsed={collapsed} className="portal-sidebar flex flex-col flex-shrink-0">      <div className="sidebar-brand-header">
         {collapsed && onToggle ? <button type="button" className="sidebar-logo-toggle" onClick={onToggle} aria-controls={id} aria-expanded={false} aria-label="Expand sidebar" title="Expand sidebar">
           <img src="/mgt-logo.png" alt="" />
           <AppIcon value="fa:sidebar"/>
         </button> : <Link to={home} onClick={onBrandClick} className="sidebar-brand">
-        <img src="/mgt-logo.png" alt="MGT — Do It Right" className="w-[148px] h-auto object-contain" />
-        <span className="text-[12px] text-ink-faint font-extrabold tracking-[0.14em] uppercase">{caption}</span>
+        <img src="/mgt-logo.png" alt="MGT, Do It Right" className="h-auto object-contain" />
+        <span className="text-ink-faint font-extrabold uppercase">{caption}</span>
       </Link>}
       {onToggle && !collapsed && <button type="button" className="sidebar-collapse-button" onClick={onToggle} aria-controls={id} aria-expanded={!collapsed} aria-label="Collapse sidebar" title="Collapse sidebar">
         <AppIcon value="fa:sidebar"/>

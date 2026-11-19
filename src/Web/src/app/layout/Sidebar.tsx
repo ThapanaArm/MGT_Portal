@@ -5,33 +5,35 @@ import { useLocation } from "react-router";
 import { useAuth } from "@/shared/lib/auth";
 import { useLocale } from "@/shared/lib/locale-context";
 import { api } from "@/shared/lib/api";
-import type { CategoryDto, CommitteeStatusDto } from "@/shared/lib/types";
+import type { CommitteeStatusDto } from "@/shared/lib/types";
 
-const CATEGORY_ICONS: Record<string, string> = {
-  sales: "fa:chart-line",
-  purchase: "fa:credit-card",
-  inventory: "fa:box",
-  finance: "fa:receipt",
-  hr: "fa:users",
-};
+import { categoryIcon, useCategories } from "@/shared/lib/categories";
 
 export default function Sidebar({ collapsed = false, onToggle }: { collapsed?: boolean; onToggle?: () => void }) {
   const { user } = useAuth();
   const { t } = useLocale();
-  const { pathname } = useLocation();
-  const [categories, setCategories] = useState<CategoryDto[]>([]);
+  const { pathname, search } = useLocation();
+  const reviewTab = pathname === "/reviews" ? new URLSearchParams(search).get("tab") ?? "deployment" : null;
+  const categories = useCategories();
   const [pendingCount, setPendingCount] = useState(0);
   const [appCount, setAppCount] = useState(0);
   const [committee, setCommittee] = useState(false);
-
-  useEffect(() => {
-    api.get<CategoryDto[]>("/api/categories").then(setCategories).catch(() => {});
-  }, []);
+  const [prepCount, setPrepCount] = useState(0);
+  const [deployCount, setDeployCount] = useState(0);
+  const [bookingCount, setBookingCount] = useState(0);
 
   useEffect(() => { api.get<CommitteeStatusDto>("/api/committee/me").then(status => setCommittee(status.isReviewer)).catch(() => setCommittee(false)); }, [user?.id, pathname]);
 
   useEffect(() => {
-    api.get<{ id: number }[]>("/api/applications").then((apps) => setAppCount(apps.length)).catch(() => {});
+    api.get<{ id: number; status: string; processStage?: string | null }[]>("/api/applications").then((apps) => {
+      setAppCount(apps.length);
+      if (user?.roleKey === "admin") {
+        // Same lists as the App Management tabs: waiting for IT preparation, and approved but not live yet.
+        setPrepCount(apps.filter((app) => app.processStage === "setup").length);
+        setDeployCount(apps.filter((app) => app.status === "active" && ["awaiting-deployment", "deployed"].includes(app.processStage ?? "")).length);
+      }
+    }).catch(() => {});
+    if (user?.roleKey === "admin") api.get<{ requested: number }>("/api/calendar/summary").then(summary => setBookingCount(summary.requested)).catch(() => {});
     if (user?.roleKey === "admin" || committee) {
       api
         .get<{ status: string }[]>("/api/applications/review-queue")
@@ -42,7 +44,6 @@ export default function Sidebar({ collapsed = false, onToggle }: { collapsed?: b
 
   return (
     <SidebarFrame collapsed={collapsed} onToggle={onToggle} caption={t("nav.brandCaption")}>
-      <NavItem label="Dashboard" href="/dashboard" active={pathname === "/dashboard"}><AppIcon value="fa:chart-column" /> Dashboard</NavItem>
 
 
       <div className="flex flex-col gap-0.5">
@@ -59,6 +60,10 @@ export default function Sidebar({ collapsed = false, onToggle }: { collapsed?: b
         </NavItem>
       </div>
 
+      <NavItem label="IT Calendar" href="/calendar" active={pathname === "/calendar"}>
+        <AppIcon value="fa:calendar" /><span className="flex-1">IT Calendar</span>{bookingCount > 0 && <NavCount highlight>{bookingCount}</NavCount>}
+      </NavItem>
+
       <div className="flex flex-col gap-0.5">
         <NavItem label={t("nav.gettingStarted")} href="/getting-started" active={pathname === "/getting-started"}>
           <AppIcon value="fa-solid:book-open" /> {t("nav.gettingStarted")}
@@ -71,7 +76,7 @@ export default function Sidebar({ collapsed = false, onToggle }: { collapsed?: b
         </NavItem>
         {categories.map((c) => (
           <NavItem label={c.name} key={c.key} href={`/catalog/${c.key}`} active={pathname === `/catalog/${c.key}`}>
-            <AppIcon value={CATEGORY_ICONS[c.key] ?? "fa:box"} />
+            <AppIcon value={categoryIcon(c)} />
             <span className="flex-1">{c.name}</span>
             <NavCount>{c.endpointCount}</NavCount>
           </NavItem>
@@ -80,14 +85,36 @@ export default function Sidebar({ collapsed = false, onToggle }: { collapsed?: b
 
 
 
-      {(user?.roleKey === "admin" || committee) && <NavItem label="Requests and reviews" href="/reviews" active={pathname === "/reviews"}><AppIcon value="fa:check" /><span className="flex-1">Requests and reviews</span>{pendingCount > 0 && <NavCount highlight>{pendingCount}</NavCount>}</NavItem>}
-      {user?.roleKey === "admin" && (
-        <NavGroup label="Administration" icon={<AppIcon value="fa:gear" />} active={pathname.startsWith("/admin/")} collapsed={collapsed}>
-          <NavItem label={t("nav.manageApis")} href="/admin/apis" active={pathname === "/admin/apis"}>
-            <AppIcon value="fa:gear" /> {t("nav.manageApis")}
+      {user?.roleKey === "admin" ? (
+        <NavGroup label="App Management" icon={<AppIcon value="fa:check" />} active={pathname === "/reviews"} collapsed={collapsed}>
+          <NavItem label="Review queue" href="/reviews?tab=reviews" active={reviewTab === "reviews"}>
+            <AppIcon value="fa:users" /><span className="flex-1">Review queue</span>{pendingCount > 0 && <NavCount highlight>{pendingCount}</NavCount>}
           </NavItem>
+          <NavItem label="IT preparation" href="/reviews?tab=preparation" active={reviewTab === "preparation"}>
+            <AppIcon value="fa:tools" /><span className="flex-1">IT preparation</span>{prepCount > 0 && <NavCount highlight>{prepCount}</NavCount>}
+          </NavItem>
+          <NavItem label="Deployment" href="/reviews?tab=deployment" active={reviewTab === "deployment"}>
+            <AppIcon value="fa:rotate" /><span className="flex-1">Deployment</span>{deployCount > 0 && <NavCount highlight>{deployCount}</NavCount>}
+          </NavItem>
+        </NavGroup>
+      ) : committee && <NavItem label="Requests and reviews" href="/reviews" active={pathname === "/reviews"}><AppIcon value="fa:check" /><span className="flex-1">Requests and reviews</span>{pendingCount > 0 && <NavCount highlight>{pendingCount}</NavCount>}</NavItem>}
+      {user?.roleKey === "admin" && (
+        <NavGroup label={t("nav.manageApis")} icon={<AppIcon value="fa:code" />} active={pathname === "/admin/apis" || pathname === "/admin/categories"} collapsed={collapsed}>
+          <NavItem label="Categories" href="/admin/categories" active={pathname === "/admin/categories"}>
+            <AppIcon value="fa:sitemap" /> Categories
+          </NavItem>
+          <NavItem label="APIs" href="/admin/apis" active={pathname === "/admin/apis"}>
+            <AppIcon value="fa:gear" /> APIs
+          </NavItem>
+        </NavGroup>
+      )}
+      {user?.roleKey === "admin" && (
+        <NavGroup label="Administration" icon={<AppIcon value="fa:gear" />} active={pathname.startsWith("/admin/") && pathname !== "/admin/apis" && pathname !== "/admin/categories"} collapsed={collapsed}>
           <NavItem label={t("nav.accessControl")} href="/admin/access" active={pathname === "/admin/access"}>
             <AppIcon value="fa:users" /> {t("nav.accessControl")}
+          </NavItem>
+          <NavItem label="Committee" href="/admin/committee" active={pathname === "/admin/committee"}>
+            <AppIcon value="fa-solid:user-check" /> Committee
           </NavItem>
           <NavItem label="User management" href="/admin/users" active={pathname === "/admin/users"}>
             <AppIcon value="fa:users" /> User management

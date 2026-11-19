@@ -60,7 +60,7 @@ export default function AdminAuditPage() {
     const link = document.createElement("a"); link.href = url; link.download = `work-summary-${applied.from}-${applied.to}.csv`; link.click(); URL.revokeObjectURL(url);
   };
   return <div>
-    <header className="portal-page-heading"><span className="workspace-kicker">Admin</span><h1>Audit & work summary</h1><p className="text-ink-dim mt-2">See who changed what, review before and after values, and summarize recorded activity.</p></header>
+    <header className="portal-page-heading"><h1>Audit & work summary</h1></header>
     <form className="audit-filters" onSubmit={event => { event.preventDefault(); setPage(1); setApplied({ ...filters }); }}>
       <label>From<Input required type="date" value={filters.from} onChange={event => patch("from", event.target.value)} /></label>
       <label>Through<Input required type="date" value={filters.to} onChange={event => patch("to", event.target.value)} /></label>

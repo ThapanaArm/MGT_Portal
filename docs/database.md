@@ -12,7 +12,7 @@
 | Identity | `Users` | `Modules/Identity/Domain/User.cs` | ผู้ใช้, รหัสผ่าน (BCrypt), ระดับองค์กร, ขอบเขตข้อมูล |
 | Identity | `Roles` | `Modules/Identity/Domain/Role.cs` | บทบาทและ scope ที่ได้ (`*` = admin) |
 | Identity | `Teams` | `Modules/Identity/Domain/Team.cs` | ทีม ใช้กำหนดว่า Manager เห็นข้อมูลของใคร |
-| Catalog | `ApiCategories` | `Modules/Catalog/Domain/ApiCategory.cs` | หมวด API (sales, purchase, ...) |
+| Catalog | `ApiCategories` | `Modules/Catalog/Domain/ApiCategory.cs` | หมวด API (sales, purchase, ...) — แอดมินเพิ่ม/แก้/ลบ (เฉพาะหมวดว่าง) ได้จากหน้า Manage APIs |
 | Catalog | `ApiEndpoints` | `Modules/Catalog/Domain/ApiEndpoint.cs` | endpoint ในแต่ละหมวด พร้อมตัวอย่าง request/response |
 | Apps | `Applications` | `Modules/Apps/Domain/Application.cs` | คำขอ/ทะเบียน App |
 | Apps | `AppScreenshots` | 〃 | รูปหน้าจอของ App (base64) |
@@ -20,7 +20,9 @@
 | Apps | `AppLogEntries` | 〃 | ประวัติการเปลี่ยนแปลงของ App |
 | Apps | `AppVotes` | 〃 | ความเห็นของกรรมการ (ผูกกับบัญชีผู้ใช้) ต่อรอบการรีวิว |
 | Apps | `AppCodeReviews` | 〃 | ผล IT code review ต่อรอบการรีวิว (Tier 2/3) |
-| Apps | `AppReviewers` | `Modules/Apps/Domain/AppReviewer.cs` | กรรมการรายแอป — `Applications.CommitteeSize` คนต่อ App (ใหม่ 5, คำขอเดิม 3), IT เลือก/เปลี่ยนได้ทุกเมื่อ |
+| Scheduling | `CalendarEvents` | `Modules/Scheduling/Domain/CalendarEvent.cs` | ปฏิทิน IT — ช่วงว่าง (available), วัน deploy, นัดคุย (meeting), ช่วง Freeze · User ขอจอง (requested) แล้ว IT ยืนยัน/ปฏิเสธ |
+| Apps | `CommitteeMembers` | `Modules/Apps/Domain/CommitteeMember.cs` | คณะกรรมการชุดเดียวของ Portal (5 คน) ใช้กับทุกคำขอ — IT ตั้งที่ Administration > Committee |
+| Apps | `AppReviewers` | `Modules/Apps/Domain/AppReviewer.cs` | กรรมการของแต่ละคำขอ — คัดลอกจาก `CommitteeMembers` ตอนส่งรีวิว (ตัดผู้ขอออกถ้าเป็นกรรมการ) เก็บเป็นประวัติ |
 | Access | `AccessGrants` | `Modules/Access/Domain/AccessGrant.cs` | สิทธิ์เพิ่มเติมที่ admin ให้ผู้ใช้รายคน มีวันหมดอายุ |
 | Access | `ApiTokens` | `Modules/Access/Domain/ApiToken.cs` | token ส่วนตัวที่ผู้ใช้สร้างจากหน้า "Token ของฉัน" |
 
@@ -78,6 +80,7 @@ erDiagram
         nvarchar BasePath
         nvarchar Description
         nvarchar RateLimit
+        nvarchar Icon
     }
     ApiEndpoints {
         int Id PK

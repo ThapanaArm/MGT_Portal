@@ -19,6 +19,18 @@ internal sealed class AppReviewerConfiguration : IEntityTypeConfiguration<AppRev
     }
 }
 
+internal sealed class CommitteeMemberConfiguration : IEntityTypeConfiguration<CommitteeMember>
+{
+    public void Configure(EntityTypeBuilder<CommitteeMember> b)
+    {
+        b.HasOne(m => m.User).WithMany().HasForeignKey(m => m.UserId).OnDelete(DeleteBehavior.Restrict);
+        b.Property(m => m.AddedBy).HasMaxLength(256);
+
+        // คนหนึ่งอยู่ในคณะกรรมการได้ที่นั่งเดียว
+        b.HasIndex(m => m.UserId).IsUnique();
+    }
+}
+
 internal sealed class ApplicationConfiguration : IEntityTypeConfiguration<Application>
 {
     public void Configure(EntityTypeBuilder<Application> b)

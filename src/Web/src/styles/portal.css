@@ -11,34 +11,26 @@ body { font-family: var(--font-ui); -webkit-font-smoothing: antialiased; backgro
 .portal-content h2 { letter-spacing: -.02em; }
 .portal-page-heading { margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--line); }
 .portal-page-heading > p { max-width: 72ch; font-size: 14px; line-height: 1.8; }
-.portal-page-heading > div:first-child { font-size: 11px; letter-spacing: .04em; }
+.portal-page-heading > div:first-child { font-size: 12px; letter-spacing: .04em; }
 /* Navigation: flush rail, fixed brand header, inset scroll area. */
 .portal-sidebar { position: sticky; top: 0; width: 248px; height: 100dvh; flex-shrink: 0; padding: 0; gap: 0; overflow: hidden; border: 0; border-right: 1px solid var(--line); border-radius: 0; background: var(--nav-glass); color: var(--ink); box-shadow: none; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
-.sidebar-brand-header { display: flex; align-items: center; flex-shrink: 0; margin: 0 16px; padding: 26px 12px 22px; border-bottom: 1px solid var(--line); }
-.sidebar-brand { display: flex; flex-direction: column; gap: 9px; min-width: 0; }
-.sidebar-brand img { width: 118px; height: auto; }
-.sidebar-brand > span { color: var(--ink-faint); font-size: 9px; font-weight: 800; letter-spacing: .14em; }
+.sidebar-brand-header { display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin: 0 16px; padding: 14px 12px 12px; border-bottom: 1px solid var(--line); }
+.sidebar-brand { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; text-align: center; }
+.sidebar-brand img { width: 67px; height: auto; }
+.sidebar-brand > span { color: var(--ink-faint); font-size: 9px; font-weight: 800; letter-spacing: .14em; line-height: 1.2; white-space: nowrap; }
 .sidebar-collapse-button { position: absolute; top: 10px; right: 10px; display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; background: transparent; color: var(--ink-dim); }
 .sidebar-collapse-button:hover { color: var(--teal-strong); }
 .sidebar-navigation { display: flex; flex-direction: column; gap: 14px; flex: 1; min-height: 0; margin: 0 6px 8px 4px; padding: 16px 8px 16px 10px; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
-/* Chrome 121+ ignores ::-webkit-scrollbar once scrollbar-width/color are set and then draws a wide bar with arrow buttons on Windows,
-   so the standard properties are only for browsers without ::-webkit-scrollbar (Firefox). */
-@supports not selector(::-webkit-scrollbar) {
-  .sidebar-navigation { scrollbar-width: thin; scrollbar-color: transparent transparent; }
-  .sidebar-navigation:hover,.sidebar-navigation:focus-within { scrollbar-color: var(--line-strong) transparent; }
-}
-.sidebar-navigation::-webkit-scrollbar { width: 6px; }
-.sidebar-navigation::-webkit-scrollbar-track { background: transparent; }
-.sidebar-navigation::-webkit-scrollbar-thumb { background: transparent; border-radius: 8px; border: 1px solid transparent; background-clip: padding-box; }
-.sidebar-navigation:hover::-webkit-scrollbar-thumb,.sidebar-navigation:focus-within::-webkit-scrollbar-thumb { background-color: var(--line-strong); }
-.sidebar-navigation::-webkit-scrollbar-button { display: none; height: 0; width: 0; }
+/* No visible scrollbar line: the list still scrolls (wheel, touch, keyboard) and soft fades at the top and bottom show there is more. */
+.sidebar-navigation { scrollbar-width: none; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 28px), transparent 100%); mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 28px), transparent 100%); }
+.sidebar-navigation::-webkit-scrollbar { display: none; width: 0; height: 0; }
 .portal-nav-item { min-height: 42px; padding: 10px 12px; gap: 10px; font-size: 13px; font-weight: 650; color: var(--ink-dim); border: 1px solid transparent; border-radius: var(--mgt-radius-sm); }
 .portal-nav-item[aria-current="page"] { color: var(--teal-strong); background: var(--teal-soft); border-color: transparent; box-shadow: inset 3px 0 var(--mgt-green); }
 .portal-nav-item:not([aria-current="page"]):hover { color: var(--ink); background: var(--surface-2); }
 .sidebar-item-icon { display: inline-flex; align-items: center; justify-content: center; width: 18px; flex-shrink: 0; }
 .sidebar-item-copy { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
-.sidebar-item-copy > span:last-child:not(.flex-1) { color: var(--ink-dim); background: var(--surface-2); font-size: 10px; }
-.sidebar-group-toggle { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; padding: 6px 12px; border: 0; border-radius: 6px; background: transparent; color: var(--ink-faint); font-size: 11px; font-weight: 700; text-align: left; letter-spacing: 0; }
+.sidebar-item-copy > span:last-child:not(.flex-1) { color: var(--ink-dim); background: var(--surface-2); font-size: 12px; }
+.sidebar-group-toggle { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; padding: 6px 12px; border: 0; border-radius: 6px; background: transparent; color: var(--ink-faint); font-size: 12px; font-weight: 700; text-align: left; letter-spacing: 0; }
 .sidebar-group-toggle:hover { color: var(--ink); }
 .sidebar-group-toggle .sidebar-group-chevron { width: 12px; opacity: .65; transition: transform .15s; }
 .sidebar-group-toggle[aria-expanded="false"] .sidebar-group-chevron { transform: rotate(-90deg); }
@@ -77,13 +69,13 @@ body { font-family: var(--font-ui); -webkit-font-smoothing: antialiased; backgro
 .user-profile-copy { display: grid; gap: 2px; min-width: 0; }
 .user-profile-copy strong,.user-profile-copy small { max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .user-profile-copy strong { font-size: 12px; font-weight: 700; }
-.user-profile-copy small { color: var(--ink-dim); font-size: 10px; }
+.user-profile-copy small { color: var(--ink-dim); font-size: 12px; }
 .user-profile-chevron { color: var(--ink-faint); margin-left: 6px; }
 .user-profile-menu { position: absolute; top: calc(100% + 12px); right: 0; z-index: 30; width: 272px; padding: 8px; border: 1px solid var(--line); border-radius: var(--mgt-radius-md); background: var(--surface); box-shadow: 0 8px 28px rgb(10 30 55 / .15); }
 .user-profile-identity { display: grid; gap: 4px; padding: 12px 10px 16px; margin-bottom: 6px; border-bottom: 1px solid var(--line); }
 .user-profile-identity strong { font-size: 14px; }
 .user-profile-identity span { color: var(--ink-dim); font-size: 12px; overflow-wrap: anywhere; }
-.user-profile-identity small { width: fit-content; padding: 3px 8px; margin-top: 4px; border-radius: 5px; color: var(--teal-strong); background: var(--teal-soft); font-size: 10px; }
+.user-profile-identity small { width: fit-content; padding: 3px 8px; margin-top: 4px; border-radius: 5px; color: var(--teal-strong); background: var(--teal-soft); font-size: 12px; }
 .user-profile-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 10px; border: 0; border-radius: var(--mgt-radius-sm); color: var(--ink-dim); background: transparent; font-size: 12px; text-align: left; }
 .user-profile-menu button:hover { color: var(--ink); background: var(--surface-2); }
 .user-profile-menu .user-profile-logout { color: var(--danger); }
@@ -97,10 +89,10 @@ body { font-family: var(--font-ui); -webkit-font-smoothing: antialiased; backgro
 :is(.portal-detail-grid, .portal-settings-grid) > .portal-panel { margin-bottom: 0; }
 .portal-table-frame { overflow-x: auto; }
 .portal-content table { font-size: 13px; }
-.portal-content table th { padding: 12px 16px; color: var(--ink-dim); background: var(--surface-2); font-size: 11px; font-weight: 700; letter-spacing: .03em; }
+.portal-content table th { padding: 12px 16px; color: var(--ink-dim); background: var(--surface-2); font-size: 12px; font-weight: 700; letter-spacing: .03em; }
 .portal-content table td { padding: 16px; }
 .portal-content table tr:last-child td { border-bottom: 0; }
-.portal-table-frame td:first-child .font-mono { max-width: 230px; overflow-wrap: anywhere; font-size: 11px; }
+.portal-table-frame td:first-child .font-mono { max-width: 230px; overflow-wrap: anywhere; font-size: 12px; }
 .portal-content :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]), select, textarea) { min-height: 42px; border-radius: var(--mgt-radius-sm); background-color: var(--surface); font-size: 14px; }
 .portal-content :where(input, select, textarea):focus-visible { outline: 3px solid color-mix(in srgb, var(--teal) 16%, transparent); border-color: var(--teal); }
 .portal-heading-with-action { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 24px; }
@@ -140,7 +132,7 @@ body { font-family: var(--font-ui); -webkit-font-smoothing: antialiased; backgro
 .sidebar-drawer { position: fixed; inset: 0 auto 0 0; width: min(300px, 88vw); height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: var(--surface); overflow: hidden; box-shadow: 16px 0 48px rgb(0 0 0 / .2); }
 .sidebar-drawer::backdrop { background: rgb(8 20 35 / .42); }
 .sidebar-drawer .portal-sidebar { position: static; width: 100%; height: 100dvh; border: 0; background: var(--surface); }
-.sidebar-drawer .sidebar-brand-header { padding-right: 44px; }
+.sidebar-drawer .sidebar-brand-header { padding-inline: 44px; }
 .sidebar-drawer-close { position: absolute; top: 14px; right: 16px; z-index: 1; display: grid; place-items: center; width: 30px; height: 30px; border: 0; border-radius: 6px; color: var(--ink-dim); background: var(--surface-2); font-size: 22px; }
 @supports not (backdrop-filter: blur(1px)) { .portal-sidebar,.portal-context-bar { background: var(--surface); } }
 @media (max-width: 1180px) { .portal-settings-grid { grid-template-columns: minmax(0, 1fr); } }
@@ -154,7 +146,7 @@ body { font-family: var(--font-ui); -webkit-font-smoothing: antialiased; backgro
  .context-menu-toggle { width: 30px; height: 30px; }
  .breadcrumb-home { display: none; } .content-breadcrumb-card ol { display: block; min-width: 0; }
  .content-breadcrumb-card li { display: none; } .content-breadcrumb-card li:last-child { display: block; }
- .content-breadcrumb-card li:last-child > span[aria-current] { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+ .content-breadcrumb-card li:last-child > span[aria-current] { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
  .breadcrumb-divider,.user-profile-copy,.user-profile-chevron,.topbar-account-controls > div:first-child > svg { display: none; }
  .topbar-account-controls { gap: 8px; } .user-profile { padding-left: 8px; } .user-profile > summary { padding: 2px; }
  .user-profile-menu { width: min(272px, calc(100vw - 48px)); }
@@ -162,7 +154,7 @@ body { font-family: var(--font-ui); -webkit-font-smoothing: antialiased; backgro
  .portal-app-form { grid-template-columns: minmax(0, 1fr); }
  .portal-endpoint > div:first-child { padding: 16px; }
  .ecosystem-welcome { padding: 24px; gap: 24px; }
- .ecosystem-stats { gap: 8px; } .ecosystem-stat { padding: 14px 10px; } .ecosystem-stat small { font-size: 10px; }
+ .ecosystem-stats { gap: 8px; } .ecosystem-stat { padding: 14px 10px; } .ecosystem-stat small { font-size: 12px; }
 }
 @media (max-width: 420px) { .api-illustration > .relative { transform: scale(.83); } .ecosystem-illustration { height: 220px; } }
 @media (prefers-reduced-motion: reduce) { .sidebar-logo-toggle > *,.sidebar-group-toggle svg,.ecosystem-card { transition: none; } }
@@ -171,13 +163,56 @@ body { font-family: var(--font-ui); -webkit-font-smoothing: antialiased; backgro
 .portal-context-bar {
   border-color: rgb(255 255 255 / .76);
   background: linear-gradient(115deg, rgb(255 255 255 / .66), rgb(239 248 255 / .32) 48%, rgb(244 252 239 / .28)), color-mix(in srgb, var(--surface) 22%, transparent);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / .95), inset 0 -1px 0 rgb(255 255 255 / .28), inset 1px 0 0 rgb(255 255 255 / .5), 0 8px 28px rgb(35 70 110 / .08), 0 1px 3px rgb(35 70 110 / .04);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .95), inset 0 -1px 0 rgb(255 255 255 / .28), inset 1px 0 0 rgb(255 255 255 / .5);
   backdrop-filter: blur(28px) saturate(165%);
   -webkit-backdrop-filter: blur(28px) saturate(165%);
 }
 :root[data-theme=dark] .portal-context-bar {
   border-color: rgb(161 197 232 / .22);
   background: linear-gradient(115deg, rgb(83 126 174 / .2), rgb(18 38 63 / .38) 55%, rgb(60 95 67 / .13)), rgb(10 25 43 / .42);
-  box-shadow: inset 0 1px 0 rgb(207 230 255 / .18), inset 0 -1px 0 rgb(153 192 225 / .05), 0 8px 28px rgb(0 0 0 / .16);
+  box-shadow: inset 0 1px 0 rgb(207 230 255 / .18), inset 0 -1px 0 rgb(153 192 225 / .05);
 }
 @supports not (backdrop-filter: blur(1px)) { .portal-context-bar { background: var(--surface); } }
+
+/* App bar (2026-11-18): menu button · logo · program name on the left, account on the right.
+   The bar and the sidebar float as rounded glass panels with no divider lines; the sidebar is
+   hidden until the menu button is pressed. Content scrolls under the bar, so the blur has a job. */
+.portal-appbar {
+  position: sticky; top: 12px; z-index: 60; height: 64px; margin: 12px clamp(12px, 1.5vw, 20px) 0;
+  display: flex; align-items: center; gap: 14px; padding: 0 14px 0 12px; border-radius: 20px;
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  backdrop-filter: blur(22px) saturate(160%); -webkit-backdrop-filter: blur(22px) saturate(160%);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 55%, transparent);
+}
+:root[data-theme="dark"] .portal-appbar { background: color-mix(in srgb, var(--surface) 70%, transparent); box-shadow: inset 0 1px 0 rgb(207 230 255 / .12); }
+.portal-appbar-menu { display: grid; place-items: center; width: 42px; height: 42px; flex: none; border: 0; border-radius: 14px; background: color-mix(in srgb, var(--surface-2) 80%, transparent); color: var(--ink); font-size: 18px; transition: background .15s, color .15s; }
+.portal-appbar-menu:hover { background: var(--teal-soft); color: var(--teal-strong); }
+.portal-appbar-menu[aria-expanded="true"] { background: var(--teal-soft); color: var(--teal-strong); }
+.portal-appbar-menu:focus { outline: none; }
+.portal-appbar-menu:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.portal-appbar-brand { display: flex; align-items: center; gap: 14px; min-width: 0; color: var(--ink); text-decoration: none; }
+.portal-appbar-brand img { height: 36px; width: auto; flex: none; }
+.portal-appbar-brand span { font-size: 16px; font-weight: 800; white-space: nowrap; }
+.portal-appbar .portal-topbar { margin-left: auto; }
+.portal-appbar .user-profile { border-left: 0; padding-left: 0; }
+
+/* Sidebar: a rounded glass panel under the bar, no border lines, no second logo. */
+.portal-shell > .portal-sidebar {
+  top: 88px; height: calc(100dvh - 100px); margin: 12px 0 12px clamp(12px, 1.5vw, 20px);
+  border: 0; border-radius: 20px;
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  backdrop-filter: blur(22px) saturate(160%); -webkit-backdrop-filter: blur(22px) saturate(160%);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 55%, transparent);
+}
+:root[data-theme="dark"] .portal-shell > .portal-sidebar { background: color-mix(in srgb, var(--surface) 70%, transparent); box-shadow: inset 0 1px 0 rgb(207 230 255 / .12); }
+.portal-shell > .portal-sidebar .sidebar-brand-header { display: none; }
+.portal-shell > .portal-sidebar .sidebar-navigation { padding-top: 12px; }
+/* Breadcrumb stays at the top of the page and scrolls away with it (only the app bar stays). */
+.portal-context-bar { position: relative; top: auto; }
+@supports not (backdrop-filter: blur(1px)) { .portal-appbar, .portal-shell > .portal-sidebar { background: var(--surface); } }
+@media (max-width: 760px) {
+  .portal-appbar { top: 8px; height: 56px; margin: 8px 8px 0; gap: 10px; border-radius: 16px; }
+  .portal-appbar-brand img { height: 30px; }
+  .portal-appbar-brand span { font-size: 14px; }
+}
+@media (max-width: 420px) { .portal-appbar-brand span { display: none; } }

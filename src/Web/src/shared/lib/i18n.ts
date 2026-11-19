@@ -84,7 +84,7 @@ export const dictionaries = {
     },
     designSystem: {
       title: "MGT Design System",
-      desc: "Megachem's shared design standard — colors, type, components, and page patterns used across every app. Review each example and state before you build.",
+      desc: "Megachem's shared design standard: colors, type, components, and page patterns used across every app. Review each example and state before you build.",
       tabFoundations: "Foundations",
       tabComponents: "Components",
       tabPatterns: "Page Patterns",
